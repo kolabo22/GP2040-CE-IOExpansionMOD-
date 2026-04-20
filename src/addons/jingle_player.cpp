@@ -19,22 +19,22 @@ bool JinglePlayerAddon::available() {
  * 初期設定：起動時に一度だけ実行
  */
 void JinglePlayerAddon::setup() {
+    // GPIO初期化
     gpio_init(JINGLE_PLAYER_VPP_PIN);
     gpio_set_dir(JINGLE_PLAYER_VPP_PIN, GPIO_OUT);
-    gpio_put(JINGLE_PLAYER_VPP_PIN, 1); // Idle High
+    gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
 
     gpio_init(JINGLE_PLAYER_BUSY_PIN);
     gpio_set_dir(JINGLE_PLAYER_BUSY_PIN, GPIO_IN);
     gpio_pull_up(JINGLE_PLAYER_BUSY_PIN);
     
-    // 現在のモードを取得して初期値とする
-    lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
     bootPlayed = false;
 
-    // v0.7.12 でリンクエラーを回避しつつ設定モードを判定する方法
-    if (Storage::getInstance().getConfig().configMode) {
-        lastInputMode = 20; 
-    }
+    // v0.7.12 において、起動時のモード（inputMode）を直接参照します。
+    // S2ボタン押下で起動した場合、システムは storage の値を上書きせず 
+    // 実行時にのみモードを切り替えるため、現在の Gamepad インスタンスの状態、
+    // もしくは Storage から取得できる最新の inputMode をそのまま ID 判定に使用します。
+    lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
 }
 
 /**
