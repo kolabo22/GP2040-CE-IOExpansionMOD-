@@ -31,12 +31,11 @@ void JinglePlayerAddon::setup() {
     lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
     bootPlayed = false;
 
-    // S2ボタン(WebConfigモード)での起動を検知
-    // v0.7.12 では Storage 内部の config 構造体にある configMode を参照します
-    if (Storage::getInstance().getConfig().configMode) {
-        lastInputMode = 20; // 内部ID 20 (Config) として扱う
+    // v0.7.12 で WebConfig起動を判定する正しい方法
+    extern bool isConfigMode; // グローバル変数を参照
+    if (isConfigMode) {
+        lastInputMode = 20; 
     }
-
 }
 
 /**
