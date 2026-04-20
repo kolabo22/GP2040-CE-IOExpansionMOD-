@@ -68,15 +68,23 @@ void JinglePlayerAddon::playJingleByMode() {
         sendOneLineCommand(0x13); // Stop
         sleep_ms(50);
     }
-    sendOneLineCommand(0x0A);
+    
+    sendOneLineCommand(0x0A); // クリア
     sleep_ms(10);
-    sendOneLineCommand(lastInputMode + 1); 
-    sleep_ms(10);
-    sendOneLineCommand(0x0B);
-}
+    
+    // IDをミニメニューの並び順（曲番号）に変換
+    uint8_t songNumber = 0;
+    if (lastInputMode == 20) {
+        songNumber = 20; // コンフィグモードは20曲目
+    } else if (lastInputMode <= 18) {
+        songNumber = lastInputMode + 1; // それ以外は ID + 1
+    }
 
-bool JinglePlayerAddon::isPlaying() {
-    return gpio_get(JINGLE_PLAYER_BUSY_PIN) == 1;
+    if (songNumber > 0) {
+        sendOneLineCommand(songNumber); 
+        sleep_ms(10);
+        sendOneLineCommand(0x0B); // 再生
+    }
 }
 
 void JinglePlayerAddon::sendOneLineCommand(uint8_t addr) {
