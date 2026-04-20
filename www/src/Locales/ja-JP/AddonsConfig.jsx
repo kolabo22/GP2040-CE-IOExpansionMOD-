@@ -191,4 +191,7 @@ export default {
 	'tg16-extension-data-pin2-label': 'データ GPIO 端子 2 (D_SELECT)',
 	'tg16-extension-data-pin3-label': 'データ GPIO 端子 3 (L_RUN)',
 	'tg16-extension-desc-header': 'PCエンジン/TurboGrafx-16 拡張マッピング',
+  'jingle-player-label': 'ジングル再生 (JQ8900)',
+  'jingle-volume-label': '再生音量 (0-30)',
+  'jingle-player-description': '起動時やメニュー終了時に、現在のモードに応じた音を鳴らします。',
 };
