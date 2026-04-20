@@ -1,17 +1,16 @@
 #include "addons/jingle_player.h"
-#include "ConfigManager.h"
+#include "storagemanager.h"
 #include "hardware/gpio.h"
 #include "hardware/sync.h"
 #include "pico/time.h"
 
-// extern "C" で囲む（将来的にhttpdコールバック等を追加する場合の備え）
-extern "C" {
-    // 依存関係解決のため実体をハンドラより前に配置
-}
+// GP2040-CE v0.7.12 用のピン定義と設定取得
+#define JINGLE_PLAYER_VPP_PIN 21
+#define JINGLE_PLAYER_BUSY_PIN 20
 
 bool JinglePlayerAddon::available() {
-    // 本来はConfigManagerから有効フラグを取得
-    return true; 
+    // Storage から Web コンフィグの設定を取得
+    return Storage::getInstance().getAddonOptions().jinglePlayerOptions.enabled;
 }
 
 void JinglePlayerAddon::setup() {
@@ -23,23 +22,34 @@ void JinglePlayerAddon::setup() {
     gpio_set_dir(JINGLE_PLAYER_BUSY_PIN, GPIO_IN);
     gpio_pull_up(JINGLE_PLAYER_BUSY_PIN);
 
-    // 初期モード保持
-    lastInputMode = (uint8_t)ConfigManager::getInstance().getOptions().inputMode;
-    currentVolume = 20; // デフォルト音量
+    // 設定値の取得
+    const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
+    uint8_t volume = (uint8_t)options.volume;
+    
+    // 初期モード保持 (ConfigManager ではなく Storage を使用)
+    lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
 
     // 起動時の初期化シーケンス
-    setVolume(currentVolume);
+    setVolume(volume);
     playJingleByMode();
 }
 
+void JinglePlayerAddon::preprocess() {
+    // 抽象クラスエラー回避のために実装
+}
+
 void JinglePlayerAddon::process() {
-    uint8_t currentMode = (uint8_t)ConfigManager::getInstance().getOptions().inputMode;
+    uint8_t currentMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
     
-    // モードが変更された瞬間（ミニメニュー脱出後など）を検知
+    // モードが変更された瞬間を検知
     if (currentMode != lastInputMode) {
         playJingleByMode();
         lastInputMode = currentMode;
     }
+}
+
+void JinglePlayerAddon::postprocess(bool reportSent) {
+    // 抽象クラスエラー回避のために実装
 }
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
@@ -48,7 +58,6 @@ void JinglePlayerAddon::setVolume(uint8_t volume) {
     sendOneLineCommand(0x0A); // 数値クリア
     sleep_ms(5);
     
-    // 2桁の数値を送る（例：20なら 0x02 -> 0x00）
     if (volume >= 10) {
         sendOneLineCommand(volume / 10);
         sleep_ms(5);
@@ -60,12 +69,10 @@ void JinglePlayerAddon::setVolume(uint8_t volume) {
 }
 
 void JinglePlayerAddon::playJingleByMode() {
-    // 再生中の場合は停止させてから次を流す
     if (isPlaying()) {
         sendOneLineCommand(0x13); // Stop
         sleep_ms(10);
     }
-
     sendOneLineCommand(0x0A); // 数値クリア
     sleep_ms(5);
     sendOneLineCommand(lastInputMode + 1); // モード0->曲1
@@ -74,7 +81,6 @@ void JinglePlayerAddon::playJingleByMode() {
 }
 
 bool JinglePlayerAddon::isPlaying() {
-    // JQ8900のBUSY端子は「再生中にHigh」
     return gpio_get(JINGLE_PLAYER_BUSY_PIN) == 1;
 }
 
@@ -82,16 +88,16 @@ void JinglePlayerAddon::sendOneLineCommand(uint8_t addr) {
     uint32_t status = save_and_disable_interrupts();
     
     gpio_put(JINGLE_PLAYER_VPP_PIN, 0);
-    sleep_us(4000); // Guide: 4ms
+    sleep_us(4000);
 
     for (int i = 0; i < 8; i++) {
         gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
         if (addr & 0x01) {
-            sleep_us(600); // 3:1 ratio
+            sleep_us(600);
             gpio_put(JINGLE_PLAYER_VPP_PIN, 0);
             sleep_us(200);
         } else {
-            sleep_us(200); // 1:3 ratio
+            sleep_us(200);
             gpio_put(JINGLE_PLAYER_VPP_PIN, 0);
             sleep_us(600);
         }
@@ -99,6 +105,4 @@ void JinglePlayerAddon::sendOneLineCommand(uint8_t addr) {
     }
     gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
     restore_interrupts(status);
-void JinglePlayerAddon::preprocess() {}
-void JinglePlayerAddon::postprocess(bool reportSent) {}
-	}
+}
