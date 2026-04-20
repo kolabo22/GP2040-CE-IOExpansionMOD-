@@ -12,7 +12,7 @@ public:
     virtual bool available() override;
     virtual void setup() override;
     virtual void process() override;
-    virtual uint16_t get_priority() override { return 100; } // 優先度設定
+ 	  virtual std::string name() override { return "JinglePlayer"; }
 
 private:
     void sendOneLineCommand(uint8_t cmd);
