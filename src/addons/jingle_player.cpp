@@ -13,25 +13,27 @@ bool JinglePlayerAddon::available() {
     return Storage::getInstance().getAddonOptions().jinglePlayerOptions.enabled;
 }
 
-void JinglePlayerAddon::setup() {
-    gpio_init(JINGLE_PLAYER_VPP_PIN);
-    gpio_set_dir(JINGLE_PLAYER_VPP_PIN, GPIO_OUT);
-    gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
+void JinglePlayerAddon::process() {
+    // 1. 起動直後の1回限りの再生処理
+    if (!bootPlayed) {
+        const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
+        setVolume((uint8_t)options.volume);
+        sleep_ms(10);
+        
+        // 現在のモードを取得して初期保持
+        lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
+        
+        playJingleByMode();
+        bootPlayed = true;
+        return;
+    }
 
-    gpio_init(JINGLE_PLAYER_BUSY_PIN);
-    gpio_set_dir(JINGLE_PLAYER_BUSY_PIN, GPIO_IN);
-    gpio_pull_up(JINGLE_PLAYER_BUSY_PIN);
-
-    // 設定値の取得
-    const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    uint8_t volume = (uint8_t)options.volume;
-    
-    // 初期モード保持 (ConfigManager ではなく Storage を使用)
-    lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
-
-    // 起動時の初期化シーケンス
-    //setVolume(volume);
-    //playJingleByMode();
+    // 2. モード（機種）変更の検知
+    uint8_t currentMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
+    if (currentMode != lastInputMode) {
+        lastInputMode = currentMode; // 先に更新
+        playJingleByMode();
+    }
 }
 
 void JinglePlayerAddon::preprocess() {
@@ -85,26 +87,26 @@ bool JinglePlayerAddon::isPlaying() {
 }
 
 void JinglePlayerAddon::sendOneLineCommand(uint8_t addr) {
-    uint32_t status = save_and_disable_interrupts();
-    
+    // 割り込み禁止（save_and_disable_interrupts）を一旦削除、または極力短くします
     gpio_put(JINGLE_PLAYER_VPP_PIN, 0);
-    sleep_us(4000);
+    sleep_us(4000); // Guide: 4ms
 
     for (int i = 0; i < 8; i++) {
         gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
         if (addr & 0x01) {
-            sleep_us(600);
+            sleep_us(600); // 3:1 ratio
             gpio_put(JINGLE_PLAYER_VPP_PIN, 0);
             sleep_us(200);
         } else {
-            sleep_us(200);
+            sleep_us(200); // 1:3 ratio
             gpio_put(JINGLE_PLAYER_VPP_PIN, 0);
             sleep_us(600);
         }
         addr >>= 1;
     }
     gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
-    restore_interrupts(status);
+    // 最後に短い猶予を入れる
+    sleep_us(500); 
 }
 
 void JinglePlayerAddon::reinit() {
