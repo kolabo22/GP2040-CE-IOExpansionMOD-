@@ -18,11 +18,11 @@ void JinglePlayerAddon::process() {
     if (!bootPlayed) {
         const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
         setVolume((uint8_t)options.volume);
-        sleep_ms(10);
         
-        // 現在のモードを取得して初期保持
+        // 現在のモードを初期値として保持
         lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
         
+        sleep_ms(10);
         playJingleByMode();
         bootPlayed = true;
         return;
@@ -31,13 +31,9 @@ void JinglePlayerAddon::process() {
     // 2. モード（機種）変更の検知
     uint8_t currentMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
     if (currentMode != lastInputMode) {
-        lastInputMode = currentMode; // 先に更新
+        lastInputMode = currentMode;
         playJingleByMode();
     }
-}
-
-void JinglePlayerAddon::preprocess() {
-    // 抽象クラスエラー回避のために実装
 }
 
 void JinglePlayerAddon::process() {
