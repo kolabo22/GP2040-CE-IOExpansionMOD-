@@ -31,9 +31,8 @@ void JinglePlayerAddon::setup() {
     lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
     bootPlayed = false;
 
-    // v0.7.12 で WebConfig起動を判定する正しい方法
-    extern bool isConfigMode; // グローバル変数を参照
-    if (isConfigMode) {
+    // v0.7.12 でリンクエラーを回避しつつ設定モードを判定する方法
+    if (Storage::getInstance().getConfig().configMode) {
         lastInputMode = 20; 
     }
 }
