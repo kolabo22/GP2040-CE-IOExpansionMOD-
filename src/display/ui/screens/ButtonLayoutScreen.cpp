@@ -325,6 +325,13 @@ GPWidget* ButtonLayoutScreen::pushElement(GPButtonLayout element) {
     if (element.elementType == GP_ELEMENT_LEVER) {
         return addLever(element.parameters.x1, element.parameters.y1, element.parameters.x2, element.parameters.y2, element.parameters.stroke, element.parameters.fill, element.parameters.value);
     } else if ((element.elementType == GP_ELEMENT_BTN_BUTTON) || (element.elementType == GP_ELEMENT_DIR_BUTTON) || (element.elementType == GP_ELEMENT_PIN_BUTTON)) {
+    
+			// --- ここから追加 ---
+    // ボタンのサイズ（x2, y2）を小さくする（例: 80%のサイズにする）
+    element.parameters.x2 = (element.parameters.x2 * 9) / 10;
+    element.parameters.y2 = (element.parameters.y2 * 9) / 10;
+    // --- ここまで追加 ---
+			
         GPButton* button = addButton(element.parameters.x1, element.parameters.y1, element.parameters.x2, element.parameters.y2, element.parameters.stroke, element.parameters.fill, element.parameters.value);
 
         // set type of button
