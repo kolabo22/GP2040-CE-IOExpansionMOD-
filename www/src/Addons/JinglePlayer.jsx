@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormCheck, Row, Col } from 'react-bootstrap';
+import * as yup from 'yup'; // ← これを追加
 import Section from '../Components/Section';
 
 export const jinglePlayerScheme = {
