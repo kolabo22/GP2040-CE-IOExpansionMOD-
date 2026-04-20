@@ -8,21 +8,20 @@
 bool WiiExtensionInput::available() {
     const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
     if (options.enabled) {
-        // addon is enabled. let's scan available blocks.
-        wii = new WiiExtensionDevice();
-        PeripheralI2CScanResult result = PeripheralManager::getInstance().scanForI2CDevice(wii->getDeviceAddresses());
-        if (result.address > -1) {
-            wii->setAddress(result.address);
-            wii->setI2C(PeripheralManager::getInstance().getI2C(result.block));
+        auto i2c1_inst = PeripheralManager::getInstance().getI2C(1); // I2C1を指定
+        if (i2c1_inst != nullptr) {
+            wii = new WiiExtensionDevice();
+            wii->setI2C(i2c1_inst);
+            wii->setAddress(0x52);
+            wii->begin(); // 起動時に刺さっていればここで認識完了、刺さっていなければスルーされる
             return true;
-        } else {
-            delete wii;
         }
     }
     return false;
 }
 
 void WiiExtensionInput::setup() {
+    const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
     nextTimer = getMillis();
 
 #if WII_EXTENSION_DEBUG==true
@@ -48,15 +47,34 @@ void WiiExtensionInput::setup() {
 }
 
 void WiiExtensionInput::process() {
-    if (nextTimer < getMillis()) {
-        wii->poll();
+    uint32_t now = getMillis();
+
+    if (nextTimer < now) {
+        if (wii->extensionType == WII_EXTENSION_NONE) {
+            // 再試行の間隔を5秒以上に伸ばし、カクつきの頻度を激減させる
+            static uint32_t lastRetry = 0;
+            if (now - lastRetry > 5000) { 
+                // begin()の前に、I2Cバスがビジーでないか一瞬だけ確認するなどの
+                // 軽いチェックを入れるのが理想ですが、まずは間隔をあけるのが一番効きます
+                wii->begin();
+                wii->start();
+                lastRetry = now;
+            }
+        } else {
+            // 接続中は通常の高速ポーリング
+            wii->poll();
+            if (wii->extensionType == WII_EXTENSION_NONE) {
+                currentConfig = NULL;
+            }
+        }
 
         update();
-              
-        nextTimer = getMillis() + uIntervalMS;
+        nextTimer = now + uIntervalMS;
     }
 
+    // 入力処理（ここはNONEならスキップされるのでスタッターに関係なし）
     if (currentConfig != NULL) {
+        // ...既存の処理...
         queueAnalogChange(WiiAnalogs::WII_ANALOG_LEFT_X, leftX, lastLeftX);
         queueAnalogChange(WiiAnalogs::WII_ANALOG_LEFT_Y, leftY, lastLeftY);
         queueAnalogChange(WiiAnalogs::WII_ANALOG_RIGHT_X, rightX, lastRightX);
@@ -273,6 +291,19 @@ void WiiExtensionInput::update() {
             accelerometerZ = wii->getController()->motionState[WiiMotions::WII_ACCELEROMETER_Z];
             isAccelerometer = true;
         }
+     // --- 共通デッドゾーン処理を追加 ---
+        uint16_t dz = 1000; // LEDが消えない場合はこの値を大きく（例: 2000）してください
+        uint16_t mid = joystickMid;
+
+        if (abs((int)leftX - (int)mid) < dz) leftX = mid;
+        if (abs((int)leftY - (int)mid) < dz) leftY = mid;
+        if (abs((int)rightX - (int)mid) < dz) rightX = mid;
+        if (abs((int)rightY - (int)mid) < dz) rightY = mid;
+
+        // トリガーの微小な誤反応もカット
+        if (triggerLeft < 10) triggerLeft = 0;
+        if (triggerRight < 10) triggerRight = 0;
+        // ---------------------------------
     } else {
         currentConfig = NULL;
     }
