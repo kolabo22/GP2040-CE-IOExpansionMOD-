@@ -13,32 +13,33 @@ bool JinglePlayerAddon::available() {
 }
 
 void JinglePlayerAddon::setup() {
-    // GPIO初期化
     gpio_init(JINGLE_PLAYER_VPP_PIN);
     gpio_set_dir(JINGLE_PLAYER_VPP_PIN, GPIO_OUT);
-    gpio_put(JINGLE_PLAYER_VPP_PIN, 1); // Idle High
+    gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
 
     gpio_init(JINGLE_PLAYER_BUSY_PIN);
     gpio_set_dir(JINGLE_PLAYER_BUSY_PIN, GPIO_IN);
     gpio_pull_up(JINGLE_PLAYER_BUSY_PIN);
     
+    // 重要：起動時のモードをここで正確に掴んでおく
+    lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
     bootPlayed = false;
 }
 
-void JinglePlayerAddon::preprocess() {
-    // 抽象クラスエラー回避
-}
-
 void JinglePlayerAddon::process() {
-    // 1. 起動直後の1回限りの再生処理
+    // 1. 起動直後の再生
     if (!bootPlayed) {
+        // システム起動直後のノイズや不安定さを避けるため、少し長めに待つ
+        static uint32_t bootDelay = 0;
+        if (bootDelay < 200) { // 約200~500ms程度待機（ループ回数で調整）
+            bootDelay++;
+            return;
+        }
+
         const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
         setVolume((uint8_t)options.volume);
         
-        // 現在のモードを初期値として保持
-        lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
-        
-        sleep_ms(10);
+        sleep_ms(50); // JQ8900が音量設定を受け付ける時間を稼ぐ
         playJingleByMode();
         bootPlayed = true;
         return;
@@ -48,45 +49,28 @@ void JinglePlayerAddon::process() {
     uint8_t currentMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
     if (currentMode != lastInputMode) {
         lastInputMode = currentMode;
+        // 連続送信を避けるため、少し待ってから再生
+        sleep_ms(50); 
         playJingleByMode();
     }
 }
 
-void JinglePlayerAddon::postprocess(bool reportSent) {
-    // 抽象クラスエラー回避
-}
-
-void JinglePlayerAddon::reinit() {
-    // 抽象クラスエラー回避
-}
-
-void JinglePlayerAddon::setVolume(uint8_t volume) {
-    if (volume > 30) volume = 30;
-    
-    sendOneLineCommand(0x0A); // 数値クリア
-    sleep_ms(5);
-    
-    if (volume >= 10) {
-        sendOneLineCommand(volume / 10);
-        sleep_ms(5);
-    }
-    sendOneLineCommand(volume % 10);
-    sleep_ms(5);
-    
-    sendOneLineCommand(0x0C); // 音量設定コマンド
-}
-
 void JinglePlayerAddon::playJingleByMode() {
+    // 既存の再生がまだ続いていれば止める
     if (isPlaying()) {
         sendOneLineCommand(0x13); // Stop
-        sleep_ms(10);
+        sleep_ms(50); // 停止が完了するまで待つ
     }
+    
     sendOneLineCommand(0x0A); // 数値クリア
-    sleep_ms(5);
-    sendOneLineCommand(lastInputMode + 1); // モード0->曲1
-    sleep_ms(5);
+    sleep_ms(10);
+    
+    // lastInputMode (0:XInput, 1:Switch...) に 1 を足して 00001.mp3... を再生
+    sendOneLineCommand(lastInputMode + 1); 
+    sleep_ms(10);
     sendOneLineCommand(0x0B); // 選曲確定・再生
 }
+
 
 bool JinglePlayerAddon::isPlaying() {
     // BUSYピンがHigh(1)なら再生中
