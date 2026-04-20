@@ -2,7 +2,7 @@
 #define _JINGLE_PLAYER_H_
 
 #include "gp2040.h"
-#include "interfaces/gpaddon.h"
+#include "gpaddon.h"
 
 #define JINGLE_PLAYER_VPP_PIN 21
 #define JINGLE_PLAYER_BUSY_PIN 20
