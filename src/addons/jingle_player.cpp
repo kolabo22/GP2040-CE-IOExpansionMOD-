@@ -99,4 +99,6 @@ void JinglePlayerAddon::sendOneLineCommand(uint8_t addr) {
     }
     gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
     restore_interrupts(status);
-}
+void JinglePlayerAddon::preprocess() {}
+void JinglePlayerAddon::postprocess(bool reportSent) {}
+	}
