@@ -20,6 +20,7 @@ private:
     void setVolume(uint8_t volume);
     bool isPlaying();
     uint8_t lastInputMode;
+    bool bootPlayed;
 };
 
 #endif
