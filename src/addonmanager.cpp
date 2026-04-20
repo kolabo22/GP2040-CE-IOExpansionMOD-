@@ -1,5 +1,6 @@
 #include "addonmanager.h"
 #include "usbhostmanager.h"
+#include "addons/jingle_player.h"
 
 bool AddonManager::LoadAddon(GPAddon* addon) {
     if (addon->available()) {
