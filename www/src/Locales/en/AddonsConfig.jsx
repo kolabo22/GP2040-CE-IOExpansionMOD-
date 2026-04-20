@@ -217,4 +217,7 @@ export default {
 	'tg16-extension-data-pin2-label': 'Data GPIO Pin 2 (D_SELECT)',
 	'tg16-extension-data-pin3-label': 'Data GPIO Pin 3 (L_RUN)',
 	'tg16-extension-desc-header': 'PC Engine/TurboGrafx-16 Extension Mapping',
+  'jingle-player-label': 'Jingle Player (JQ8900)',
+  'jingle-volume-label': 'Playback Volume (0-30)',
+  'jingle-player-description': 'Plays a specific jingle based on the selected Input Mode upon startup or menu exit.',	
 };
