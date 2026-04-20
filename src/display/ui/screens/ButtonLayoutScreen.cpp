@@ -328,13 +328,10 @@ GPWidget* ButtonLayoutScreen::pushElement(GPButtonLayout element) {
     
 		// --- ここから追加 ---
     // ボタンのサイズ（x2, y2）を小さくする（例: 80%のサイズにする）
-    element.parameters.x1 = (element.parameters.x1 * 8) / 10;
-    element.parameters.y1 = (element.parameters.y1 * 8) / 10;			
     element.parameters.x2 = (element.parameters.x2 * 8) / 10;
     element.parameters.y2 = (element.parameters.y2 * 8) / 10;
 	  // Y座標（y1）を 4ピクセル上にずらす
 		element.parameters.y1 -= 4;
-		element.parameters.y2 -= 4;	
 		// --- ここまで追加 ---
 			
         GPButton* button = addButton(element.parameters.x1, element.parameters.y1, element.parameters.x2, element.parameters.y2, element.parameters.stroke, element.parameters.fill, element.parameters.value);
