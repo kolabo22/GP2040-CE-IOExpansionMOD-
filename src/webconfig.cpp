@@ -1887,6 +1887,15 @@ std::string setAddonOptions()
     docToValue(heTriggerOptions.emaSmoothing, doc, "heTriggerSmoothing");
     docToValue(heTriggerOptions.smoothingFactor, doc, "heTriggerSmoothingFactor");
 
+		// --- JQ8900Addon設定の保存 (setAddonOptions内の末尾付近) ---
+		// ※JinglePlayerOptionsという構造体がStorageに追加されている前提です
+		JinglePlayerOptions& jingleOptions = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
+		docToValue(jingleOptions.enabled, doc, "JinglePlayerEnabled");
+		docToValue(jingleOptions.volume, doc, "jingleVolume");
+		const JinglePlayerOptions& jingleOptions = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
+		writeDoc(doc, "JinglePlayerEnabled", jingleOptions.enabled);
+		writeDoc(doc, "jingleVolume", jingleOptions.volume);
+	
     EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
 
     return serialize_json(doc);
