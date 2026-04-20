@@ -30,8 +30,8 @@ void JinglePlayerAddon::setup() {
     lastInputMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
 
     // 起動時の初期化シーケンス
-    setVolume(volume);
-    playJingleByMode();
+    //setVolume(volume);
+    //playJingleByMode();
 }
 
 void JinglePlayerAddon::preprocess() {
