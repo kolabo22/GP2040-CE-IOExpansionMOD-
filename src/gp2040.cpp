@@ -54,7 +54,11 @@ static absolute_time_t rebootDelayTimeout = nil_time;
 void GP2040::setup() {
 	Storage::getInstance().init();
 
+	// Reduce CPU if USB host is enabled
 	PeripheralManager::getInstance().initUSB();
+	if ( PeripheralManager::getInstance().isUSBEnabled(0) ) {
+		set_sys_clock_khz(120000, true); // Set Clock to 120MHz to avoid potential USB timing issues
+	}
 
 	// I2C & SPI rely on the system clock
 	PeripheralManager::getInstance().initSPI();
@@ -87,14 +91,14 @@ void GP2040::setup() {
 
 	// check setup options and add modes to the list
 	// user modes
-	bootActions.emplace(GAMEPAD_MASK_B1, gamepadOptions.inputModeB1);
-	bootActions.emplace(GAMEPAD_MASK_B2, gamepadOptions.inputModeB2);
-	bootActions.emplace(GAMEPAD_MASK_B3, gamepadOptions.inputModeB3);
-	bootActions.emplace(GAMEPAD_MASK_B4, gamepadOptions.inputModeB4);
-	bootActions.emplace(GAMEPAD_MASK_L1, gamepadOptions.inputModeL1);
-	bootActions.emplace(GAMEPAD_MASK_L2, gamepadOptions.inputModeL2);
-	bootActions.emplace(GAMEPAD_MASK_R1, gamepadOptions.inputModeR1);
-	bootActions.emplace(GAMEPAD_MASK_R2, gamepadOptions.inputModeR2);
+	bootActions.insert({GAMEPAD_MASK_B1, gamepadOptions.inputModeB1});
+	bootActions.insert({GAMEPAD_MASK_B2, gamepadOptions.inputModeB2});
+	bootActions.insert({GAMEPAD_MASK_B3, gamepadOptions.inputModeB3});
+	bootActions.insert({GAMEPAD_MASK_B4, gamepadOptions.inputModeB4});
+	bootActions.insert({GAMEPAD_MASK_L1, gamepadOptions.inputModeL1});
+	bootActions.insert({GAMEPAD_MASK_L2, gamepadOptions.inputModeL2});
+	bootActions.insert({GAMEPAD_MASK_R1, gamepadOptions.inputModeR1});
+	bootActions.insert({GAMEPAD_MASK_R2, gamepadOptions.inputModeR2});
 
 	// Initialize our ADC (various add-ons)
 	adc_init();
@@ -291,22 +295,26 @@ void GP2040::run() {
 		rndis_init();
 	}
 
-	while (1) { // LOOP
+		while (1) { // LOOP
 		this->getReinitGamepad(gamepad);
 
 		memcpy(&prevState, &gamepad->state, sizeof(GamepadState));
 
-		// Debounce
+		// 1. 物理ピンの読み取り
 		debounceGpioGetAll();
-		// Read Gamepad
 		gamepad->read();
 
+		// 【修正ポイント】ここにあった checkRawState を下に移動し、
+		// 代わりに PreprocessAddons をここに持ってきます
+		addons.PreprocessAddons(); // PCF8575の入力を state に反映
+
+		// 2. アドオンの入力が反映された「後」でイベント判定を行う
 		checkRawState(prevState, gamepad->state);
 
 		// Process USB Host on Core0
 		USBHostManager::getInstance().process();
 
-		// Config Loop (Web-Config skips Core0 add-ons)
+		// Config Loop
 		if (configMode == true) {
 			inputDriver->process(gamepad);
 			rebootHotkeys.process(gamepad, configMode);
@@ -314,12 +322,10 @@ void GP2040::run() {
 			continue;
 		}
 
-		// Pre-Process add-ons for MPGS
-		addons.PreprocessAddons();
+		// 【注意】PreprocessAddons は上で呼んだので、ここは削除またはコメントアウトします
+		// addons.PreprocessAddons(); // ←ここは消す
 
-		
-
-		gamepad->process(); // process through MPGS
+		gamepad->process(); // マクロエンジン(InputMacro)の実行
 
 		
 
@@ -517,7 +523,7 @@ void GP2040::RebootHotkeys::process(Gamepad* gamepad, bool configMode) {
 	}
 }
 
-void GP2040::checkRawState(const GamepadState& prevState, const GamepadState& currState) {
+void GP2040::checkRawState(GamepadState prevState, GamepadState currState) {
     // buttons pressed
     if (
         ((currState.aux & ~prevState.aux) != 0) ||
@@ -537,7 +543,7 @@ void GP2040::checkRawState(const GamepadState& prevState, const GamepadState& cu
     }
 }
 
-void GP2040::checkProcessedState(const GamepadState& prevState, const GamepadState& currState) {
+void GP2040::checkProcessedState(GamepadState prevState, GamepadState currState) {
     // buttons pressed
     if (
         ((currState.aux & ~prevState.aux) != 0) ||
