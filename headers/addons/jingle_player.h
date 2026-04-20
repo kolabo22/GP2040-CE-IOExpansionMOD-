@@ -10,6 +10,7 @@ public:
     virtual void setup() override;
     virtual void process() override;
     virtual void preprocess() override;
+		virtual void reinit() override;
     virtual void postprocess(bool reportSent) override;
     virtual std::string name() override { return "JinglePlayer"; }
 
