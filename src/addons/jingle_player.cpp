@@ -4,13 +4,29 @@
 #include "hardware/sync.h"
 #include "pico/time.h"
 
-// GP2040-CE v0.7.12 用のピン定義と設定取得
+// GP2040-CE v0.7.12 用のピン定義
 #define JINGLE_PLAYER_VPP_PIN 21
 #define JINGLE_PLAYER_BUSY_PIN 20
 
 bool JinglePlayerAddon::available() {
-    // Storage から Web コンフィグの設定を取得
     return Storage::getInstance().getAddonOptions().jinglePlayerOptions.enabled;
+}
+
+void JinglePlayerAddon::setup() {
+    // GPIO初期化
+    gpio_init(JINGLE_PLAYER_VPP_PIN);
+    gpio_set_dir(JINGLE_PLAYER_VPP_PIN, GPIO_OUT);
+    gpio_put(JINGLE_PLAYER_VPP_PIN, 1); // Idle High
+
+    gpio_init(JINGLE_PLAYER_BUSY_PIN);
+    gpio_set_dir(JINGLE_PLAYER_BUSY_PIN, GPIO_IN);
+    gpio_pull_up(JINGLE_PLAYER_BUSY_PIN);
+    
+    bootPlayed = false;
+}
+
+void JinglePlayerAddon::preprocess() {
+    // 抽象クラスエラー回避
 }
 
 void JinglePlayerAddon::process() {
@@ -36,18 +52,12 @@ void JinglePlayerAddon::process() {
     }
 }
 
-void JinglePlayerAddon::process() {
-    uint8_t currentMode = (uint8_t)Storage::getInstance().getGamepadOptions().inputMode;
-    
-    // モードが変更された瞬間を検知
-    if (currentMode != lastInputMode) {
-        playJingleByMode();
-        lastInputMode = currentMode;
-    }
+void JinglePlayerAddon::postprocess(bool reportSent) {
+    // 抽象クラスエラー回避
 }
 
-void JinglePlayerAddon::postprocess(bool reportSent) {
-    // 抽象クラスエラー回避のために実装
+void JinglePlayerAddon::reinit() {
+    // 抽象クラスエラー回避
 }
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
@@ -79,11 +89,11 @@ void JinglePlayerAddon::playJingleByMode() {
 }
 
 bool JinglePlayerAddon::isPlaying() {
+    // BUSYピンがHigh(1)なら再生中
     return gpio_get(JINGLE_PLAYER_BUSY_PIN) == 1;
 }
 
 void JinglePlayerAddon::sendOneLineCommand(uint8_t addr) {
-    // 割り込み禁止（save_and_disable_interrupts）を一旦削除、または極力短くします
     gpio_put(JINGLE_PLAYER_VPP_PIN, 0);
     sleep_us(4000); // Guide: 4ms
 
@@ -101,10 +111,5 @@ void JinglePlayerAddon::sendOneLineCommand(uint8_t addr) {
         addr >>= 1;
     }
     gpio_put(JINGLE_PLAYER_VPP_PIN, 1);
-    // 最後に短い猶予を入れる
     sleep_us(500); 
-}
-
-void JinglePlayerAddon::reinit() {
-    // 空でOK
 }
