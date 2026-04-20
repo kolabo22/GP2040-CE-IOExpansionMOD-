@@ -523,7 +523,7 @@ void GP2040::RebootHotkeys::process(Gamepad* gamepad, bool configMode) {
 	}
 }
 
-void GP2040::checkRawState(GamepadState prevState, GamepadState currState) {
+void GP2040::checkRawState(const GamepadState& prevState, const GamepadState& currState) {
     // buttons pressed
     if (
         ((currState.aux & ~prevState.aux) != 0) ||
@@ -543,7 +543,7 @@ void GP2040::checkRawState(GamepadState prevState, GamepadState currState) {
     }
 }
 
-void GP2040::checkProcessedState(GamepadState prevState, GamepadState currState) {
+void GP2040::checkProcessedState(const GamepadState& prevState, const GamepadState& currState) {
     // buttons pressed
     if (
         ((currState.aux & ~prevState.aux) != 0) ||
