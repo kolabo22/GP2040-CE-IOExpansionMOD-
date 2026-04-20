@@ -32,9 +32,11 @@ void JinglePlayerAddon::setup() {
     bootPlayed = false;
 
     // S2ボタン(WebConfigモード)での起動を検知
-    if (Storage::getInstance().getConfigMode()) {
-        lastInputMode = 20; // 内部ID 20 として扱う
+    // v0.7.12 では Storage::getInstance().configMode が public メンバとして存在します
+    if (Storage::getInstance().configMode) {
+        lastInputMode = 20; // 内部ID 20 (Config) として扱う
     }
+
 }
 
 /**
