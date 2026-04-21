@@ -1,5 +1,9 @@
 #include "addons/jingle_player.h"
 #include "storagemanager.h"
+#include "enums.pb.h" // BootModeの定義が含まれる場所
+
+// 外部で定義されている起動モード変数を参照
+extern ConfigMode currentConfigMode;
 
 void JinglePlayerAddon::setup() {
     const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
@@ -16,17 +20,16 @@ void JinglePlayerAddon::setup() {
     setVolume(this->volume);
     sleep_ms(100);
 
-    // BootMode判定: Storage経由で取得
-    if (Storage::getInstance().getBootMode() == BOOT_MODE_WEB_CONFIG) {
-        play(21); // Configモード（S2起動）
+    // Configモード（S2起動）かどうかの判定
+    if (currentConfigMode != ConfigMode::CONFIG_MODE_NONE) {
+        play(21); // Config用 (0021.mp3)
     } else {
         uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
-        play(idToPlay); // 通常起動
+        play(idToPlay); // 通常起動用
     }
 }
 
 void JinglePlayerAddon::preprocess() {}
-
 void JinglePlayerAddon::process() {}
 
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
@@ -34,14 +37,12 @@ void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
     buf[0] = 0xAA;
     buf[1] = type;
     buf[2] = len;
-    
     uint16_t sum = buf[0] + buf[1] + buf[2];
     for (int i = 0; i < len; i++) {
         buf[3 + i] = data[i];
         sum += data[i];
     }
     buf[3 + len] = (uint8_t)(sum & 0xFF);
-    
     uart_write_blocking(JQ8900_UART, buf, len + 4);
 }
 
@@ -53,10 +54,7 @@ void JinglePlayerAddon::setVolume(uint8_t volume) {
 
 void JinglePlayerAddon::play(uint16_t trackId) {
     if (!this->enabled) return;
-    uint8_t d[2] = {
-        (uint8_t)((trackId >> 8) & 0xFF), 
-        (uint8_t)(trackId & 0xFF)
-    };
+    uint8_t d[2] = { (uint8_t)(trackId >> 8), (uint8_t)(trackId & 0xFF) };
     sendCommand(0x07, d, 2);
 }
 
