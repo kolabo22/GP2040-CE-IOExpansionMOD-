@@ -14,6 +14,7 @@ class JinglePlayerAddon : public GPAddon {
 public:
     void setup();
     void preprocess();
+    void process(); // ← これを追加しないとエラーになります
     void setVolume(uint8_t volume); 
     void play(uint16_t trackId);    
     void stop();
