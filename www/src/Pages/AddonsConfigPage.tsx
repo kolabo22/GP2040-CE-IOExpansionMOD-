@@ -170,11 +170,19 @@ const FormContext = ({ setStoredData }) => {
 };
 
 const sanitizeData = (values) => {
-	for (const prop in Object.keys(values).filter(
-		(key) => !!!key.includes('keyboardHostMap'),
-	)) {
-		if (!!values[prop]) values[prop] = parseInt(values[prop]);
-	}
+    Object.keys(values).forEach((key) => {
+        if (key.includes('keyboardHostMap')) return;
+        
+        // オブジェクト（jinglePlayerOptionsなど）の中身を再帰的に数値化
+        if (typeof values[key] === 'object' && values[key] !== null) {
+            Object.keys(values[key]).forEach((subKey) => {
+                if (typeof values[key][subKey] === 'number' || 
+                    (typeof values[key][subKey] === 'string' && !isNaN(values[key][subKey]))) {
+                    values[key][subKey] = parseInt(values[key][subKey]);
+                }
+            });
+        }
+    });
 };
 
 function flattenObject(object) {
