@@ -2,10 +2,12 @@
 #include "storagemanager.h"
 
 void JinglePlayerAddon::setup() {
+    // 確実に存在する型名を参照
     const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     this->enabled = options.enabled;
     this->volume = (uint8_t)options.volume;
 
+    // UART初期化
     uart_init(JQ8900_UART, JQ8900_BAUD);
     gpio_set_function(JQ8900_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(JQ8900_RX_PIN, GPIO_FUNC_UART);
@@ -16,14 +18,9 @@ void JinglePlayerAddon::setup() {
     setVolume(this->volume);
     sleep_ms(100);
 
-    // 起動判定を最も安全な「設定読み込み時」のフラグベースに変更
-    // Configモード（S2起動）かどうかの判定を一時的にシンプル化
-    if (Storage::getInstance().getDisplayOptions().buttonLayout == 255) { // 暫定：起動判定用
-         play(21); 
-    } else {
-         uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
-         play(idToPlay);
-    }
+    // まずは動作確認のため、設定されたIDを再生（Config判定はビルド成功後に再構築）
+    uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
+    play(idToPlay);
 }
 
 void JinglePlayerAddon::preprocess() {}
