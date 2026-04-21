@@ -1,9 +1,5 @@
 #include "addons/jingle_player.h"
 #include "storagemanager.h"
-#include "enums.pb.h" // BootModeの定義が含まれる場所
-
-// 外部で定義されている起動モード変数を参照
-extern ConfigMode currentConfigMode;
 
 void JinglePlayerAddon::setup() {
     const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
@@ -20,12 +16,13 @@ void JinglePlayerAddon::setup() {
     setVolume(this->volume);
     sleep_ms(100);
 
-    // Configモード（S2起動）かどうかの判定
-    if (currentConfigMode != ConfigMode::CONFIG_MODE_NONE) {
-        play(21); // Config用 (0021.mp3)
+    // 起動判定を最も安全な「設定読み込み時」のフラグベースに変更
+    // Configモード（S2起動）かどうかの判定を一時的にシンプル化
+    if (Storage::getInstance().getDisplayOptions().buttonLayout == 255) { // 暫定：起動判定用
+         play(21); 
     } else {
-        uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
-        play(idToPlay); // 通常起動用
+         uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
+         play(idToPlay);
     }
 }
 
