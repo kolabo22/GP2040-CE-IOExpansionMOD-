@@ -7,7 +7,7 @@ export const jinglePlayerScheme = {
 	jinglePlayerOptions: yup.object().shape({
 		enabled: yup.boolean().label('Enabled'),
 		volume: yup.number().label('Volume').min(0).max(30).required(),
-		selectedId: yup.number().label('Selected Jingle ID').min(0).max(20).required(),
+		selectedId: yup.number().label('Selected Jingle ID').min(1).max(21).required(),
 	}),
 };
 
@@ -22,14 +22,19 @@ export const jinglePlayerState = {
 const JinglePlayer = ({ values, errors, handleChange, setFieldValue }) => {
 	const { t } = useTranslation();
 
-	// ページ読み込み時にデータ構造が古い（selectedIdがない等）場合、初期値を流し込む
+	// 【重要】これがないと、新規追加した selectedId が空で送信されセーブに失敗します
 	useEffect(() => {
-		if (values.jinglePlayerOptions && values.jinglePlayerOptions.selectedId === undefined) {
-			setFieldValue('jinglePlayerOptions.selectedId', 1);
+		if (values.jinglePlayerOptions) {
+			if (values.jinglePlayerOptions.selectedId === undefined) {
+				setFieldValue('jinglePlayerOptions.selectedId', 1);
+			}
+			if (values.jinglePlayerOptions.volume === undefined) {
+				setFieldValue('jinglePlayerOptions.volume', 15);
+			}
 		}
-	}, [values, setFieldValue]);
+	}, []);
 
-	const jingleOptions = Array.from({ length: 20 }, (_, i) => ({
+	const jingleOptions = Array.from({ length: 21 }, (_, i) => ({
 		label: `Jingle ${i + 1}`,
 		value: i + 1,
 	}));
@@ -53,28 +58,26 @@ const JinglePlayer = ({ values, errors, handleChange, setFieldValue }) => {
 							/>
 						</div>
 					</div>
-
 					<div className="col-sm-6">
-						<label className="form-label">Volume ({values.jinglePlayerOptions?.volume || 0})</label>
+						<label className="form-label">Volume ({values.jinglePlayerOptions?.volume ?? 15})</label>
 						<input
 							type="range"
 							className="form-range"
 							name="jinglePlayerOptions.volume"
 							min="0"
 							max="30"
-							value={values.jinglePlayerOptions?.volume || 0}
+							value={values.jinglePlayerOptions?.volume ?? 15}
 							onChange={handleChange}
 						/>
 					</div>
 				</div>
-
 				<div className="row">
 					<div className="col-sm-6">
 						<FormSelect
-							label="Selected Jingle (0001.mp3 - 0020.mp3)"
+							label="Selected Jingle (0001.mp3 - 0021.mp3)"
 							name="jinglePlayerOptions.selectedId"
 							className="form-select"
-							value={values.jinglePlayerOptions?.selectedId || 1}
+							value={values.jinglePlayerOptions?.selectedId ?? 1}
 							onChange={handleChange}
 							error={errors.jinglePlayerOptions?.selectedId}
 						>
