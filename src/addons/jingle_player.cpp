@@ -2,12 +2,10 @@
 #include "storagemanager.h"
 
 void JinglePlayerAddon::setup() {
-    // 確実に存在する型名を参照
     const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     this->enabled = options.enabled;
     this->volume = (uint8_t)options.volume;
 
-    // UART初期化
     uart_init(JQ8900_UART, JQ8900_BAUD);
     gpio_set_function(JQ8900_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(JQ8900_RX_PIN, GPIO_FUNC_UART);
@@ -18,16 +16,27 @@ void JinglePlayerAddon::setup() {
     setVolume(this->volume);
     sleep_ms(100);
 
-    // まずは動作確認のため、設定されたIDを再生（Config判定はビルド成功後に再構築）
+    // 起動音の再生
     uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
     play(idToPlay);
 }
 
 void JinglePlayerAddon::preprocess() {}
 void JinglePlayerAddon::process() {}
+void JinglePlayerAddon::postprocess(bool) {} // 実装追加
+void JinglePlayerAddon::reinit() {}          // 実装追加
+
+bool JinglePlayerAddon::available() {
+    const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
+    return options.enabled;
+}
+
+std::string JinglePlayerAddon::name() {
+    return "JinglePlayer";
+}
 
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
-    uint8_t buf[10];
+    uint8_t buf[10]; // サイズ明示
     buf[0] = 0xAA;
     buf[1] = type;
     buf[2] = len;
@@ -42,13 +51,13 @@ void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
     if (volume > 30) volume = 30;
-    uint8_t d[1] = {volume};
+    uint8_t d[1] = {volume}; // 配列として定義
     sendCommand(0x13, d, 1);
 }
 
 void JinglePlayerAddon::play(uint16_t trackId) {
     if (!this->enabled) return;
-    uint8_t d[2] = { (uint8_t)(trackId >> 8), (uint8_t)(trackId & 0xFF) };
+    uint8_t d[2] = { (uint8_t)(trackId >> 8), (uint8_t)(trackId & 0xFF) }; // 配列として定義
     sendCommand(0x07, d, 2);
 }
 
