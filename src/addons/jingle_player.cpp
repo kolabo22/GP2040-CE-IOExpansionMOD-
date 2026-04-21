@@ -6,25 +6,31 @@ void JinglePlayerAddon::setup() {
     this->enabled = options.enabled;
     this->volume = (uint8_t)options.volume;
 
-    // --- UART1の初期化をより確実に ---
+    // UART1 (GP20/21) の初期化
     uart_init(JQ8900_UART, JQ8900_BAUD);
-    
-    // GPIO20(TX), GPIO21(RX)にUART機能を割り当て
     gpio_set_function(JQ8900_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(JQ8900_RX_PIN, GPIO_FUNC_UART);
+    uart_set_format(JQ8900_UART, 8, 1, UART_PARITY_NONE);
 
-    // 有効でない場合は終了
+    // アドオンが無効なら何もしない
     if (!this->enabled) return;
 
-    // モジュールの起動待ち（長めに設定）
+    // JQ8900の起動準備待ち
     sleep_ms(1000); 
 
     // 音量設定
     setVolume(this->volume);
     sleep_ms(200);
 
-    // 起動テスト再生 (selectedIdが正しく読めていない可能性を考慮し、強制的に1番を再生)
-    play(1); 
+    // --- 再生ロジックの判定 ---
+    // ② S2ボタン押しながら電源投入（Configモード）かどうかの判定
+    if (Storage::getInstance().getConfigMode() == ConfigMode::CONFIG_MODE_WEB_CONFIG) {
+        play(21); // 0021.mp3 (Config用)
+    } else {
+        // ① 通常起動時：選択されているIDを再生（未設定なら1）
+        uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
+        play(idToPlay);
+    }
 }
 
 void JinglePlayerAddon::preprocess() {}
@@ -37,12 +43,13 @@ bool JinglePlayerAddon::available() {
     return options.enabled;
 }
 
+// 【重要】ここを proto のフィールド名と一致させないと WebConfig のセーブが効きません
 std::string JinglePlayerAddon::name() {
-    return "JinglePlayer";
+    return "jinglePlayerOptions";
 }
 
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
-    uint8_t buf[10]; // 配列サイズを固定
+    uint8_t buf[10];
     buf[0] = 0xAA;
     buf[1] = type;
     buf[2] = len;
@@ -53,18 +60,16 @@ void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
     }
     buf[3 + len] = (uint8_t)(sum & 0xFF);
     
-    // 送信
     uart_write_blocking(JQ8900_UART, buf, len + 4);
 }
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
     if (volume > 30) volume = 30;
-    uint8_t d[1] = {volume}; // 配列として宣言
+    uint8_t d[1] = {volume};
     sendCommand(0x13, d, 1);
 }
 
 void JinglePlayerAddon::play(uint16_t trackId) {
-    // enabledチェックを外し、テストのために必ず送信するようにします
     uint8_t d[2] = { (uint8_t)(trackId >> 8), (uint8_t)(trackId & 0xFF) };
     sendCommand(0x07, d, 2);
 }
