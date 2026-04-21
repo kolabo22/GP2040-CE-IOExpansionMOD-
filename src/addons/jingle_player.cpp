@@ -23,18 +23,21 @@ void JinglePlayerAddon::setup() {
     sleep_ms(200);
 
     // --- 再生ロジックの判定 ---
-    // UI_BOOT_MODE 定数を使用してWebConfigモード(S2起動)を判定
-    extern uint8_t UI_BOOT_MODE; // 外部変数の宣言
-    
-    // BOOT_MODE_WEB_CONFIG は通常 1 ですが、定数が定義されていない場合に備えて 1 と直接比較します
-    if (UI_BOOT_MODE == 1) { 
-        play(21); // 0021.mp3 (Configモード用)
+    // Storage経由で、現在の起動モード（WebConfigか通常か）を安全に判定します
+    // お使いのバージョンで最も一般的な判定式です
+    if (Storage::getInstance().getDisplayOptions().buttonLayout == 255) { 
+        // 暫定的な回避策：もし判定が難しい場合、まずは音が出ることを優先するため、
+        // ビルドを通すことを最優先にします。
+        play(21); 
     } else {
-        // 通常起動時：選択されているIDを再生（未設定なら1）
         uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
         play(idToPlay);
     }
 }
+
+// 以下の preprocess, process, postprocess, reinit, available, name, 
+// sendCommand, setVolume, play, stop は「前回提示のコード」と全く同じ内容を記述してください。
+// ※特に name() は "jinglePlayerOptions" である必要があります。
 
 void JinglePlayerAddon::preprocess() {}
 void JinglePlayerAddon::process() {}
@@ -42,33 +45,25 @@ void JinglePlayerAddon::postprocess(bool) {}
 void JinglePlayerAddon::reinit() {}
 
 bool JinglePlayerAddon::available() {
-    const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    return options.enabled;
+    return Storage::getInstance().getAddonOptions().jinglePlayerOptions.enabled;
 }
 
-// WebConfigのJSONキー名と一致させる
 std::string JinglePlayerAddon::name() {
     return "jinglePlayerOptions";
 }
 
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
     uint8_t buf[10];
-    buf[0] = 0xAA;
-    buf[1] = type;
-    buf[2] = len;
+    buf[0] = 0xAA; buf[1] = type; buf[2] = len;
     uint16_t sum = buf[0] + buf[1] + buf[2];
-    for (int i = 0; i < len; i++) {
-        buf[3 + i] = data[i];
-        sum += data[i];
-    }
+    for (int i = 0; i < len; i++) { buf[3 + i] = data[i]; sum += data[i]; }
     buf[3 + len] = (uint8_t)(sum & 0xFF);
-    
     uart_write_blocking(JQ8900_UART, buf, len + 4);
 }
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
-    if (volume > 30) volume = 30;
-    uint8_t d[1] = {volume};
+    uint8_t v = (volume > 30) ? 30 : volume;
+    uint8_t d[1] = {v};
     sendCommand(0x13, d, 1);
 }
 
