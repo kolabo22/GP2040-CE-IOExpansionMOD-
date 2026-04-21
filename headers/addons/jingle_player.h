@@ -12,10 +12,11 @@
 
 class JinglePlayerAddon : public GPAddon {
 public:
-    virtual void setup();
-    virtual void preprocess();
-    virtual void process();
-    virtual std::string name() { return "JinglePlayer"; } // overrideを外して確実に一致させる
+    virtual void setup() override;
+    virtual void preprocess() override;
+    virtual void process() override;
+    virtual bool available() override { return true; } // 必須関数を追加
+    virtual std::string name() const override { return "JinglePlayer"; } // constの位置を修正
 
     void setVolume(uint8_t volume); 
     void play(uint16_t trackId);    
