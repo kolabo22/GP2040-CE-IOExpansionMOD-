@@ -15,8 +15,10 @@ public:
     virtual void setup() override;
     virtual void preprocess() override;
     virtual void process() override;
-    virtual bool available() override { return true; } // 必須関数を追加
-    virtual std::string name() const override { return "JinglePlayer"; } // constの位置を修正
+    virtual void postprocess(bool) override; // 必須：引数boolが必要
+    virtual void reinit() override;          // 必須
+    virtual bool available() override;
+    virtual std::string name() override;      // constなしが正解
 
     void setVolume(uint8_t volume); 
     void play(uint16_t trackId);    
