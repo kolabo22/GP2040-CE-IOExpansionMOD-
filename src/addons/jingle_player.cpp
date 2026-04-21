@@ -2,7 +2,7 @@
 #include "storagemanager.h"
 
 void JinglePlayer::setup() {
-    // 1. WebConfigから現在の設定を読み込む
+    // 1. WebConfig（Storage）から保存されている設定を取得
     const JingleOptions& options = Storage::getInstance().getAddonOptions().jingleOptions;
     this->enabled = options.enabled;
     this->volume = options.volume;
@@ -13,19 +13,16 @@ void JinglePlayer::setup() {
     gpio_set_function(JQ8900_RX_PIN, GPIO_FUNC_UART);
     uart_set_format(JQ8900_UART, 8, 1, UART_PARITY_NONE);
 
-    // 3. 有効なら初期音量を設定し、起動音を鳴らす
+    // 3. 有効設定なら初期音量を送信し、起動音(0001.mp3)を鳴らす
     if (this->enabled) {
         setVolume(this->volume);
-        sleep_ms(100); // モジュールの安定待ち
-        play(1);      // 0001.mp3 を起動音として再生
+        sleep_ms(100); // JQ8900の起動・通信安定待ち
+        play(1);      // テスト再生: 0001.mp3
     }
 }
 
-/**
- * 毎フレーム呼ばれる処理（必要に応じて）
- */
+// アドオンとして必須の関数（空でOK）
 void JinglePlayer::preprocess() {
-    // ボタン入力の監視など、特定の条件で音を鳴らしたい場合はここに記述します
 }
 
 void JinglePlayer::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
@@ -51,7 +48,9 @@ void JinglePlayer::setVolume(uint8_t volume) {
 }
 
 void JinglePlayer::play(uint16_t trackId) {
+    // 有効でない場合は送信しない
     if (!this->enabled) return;
+    
     uint8_t d = {(uint8_t)(trackId >> 8), (uint8_t)(trackId & 0xFF)};
     sendCommand(0x07, d, 2);
 }
