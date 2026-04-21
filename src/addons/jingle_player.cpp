@@ -12,7 +12,7 @@ void JinglePlayerAddon::setup() {
     gpio_set_function(JQ8900_RX_PIN, GPIO_FUNC_UART);
     uart_set_format(JQ8900_UART, 8, 1, UART_PARITY_NONE);
 
-    // アドオンが無効なら何もしない
+    // アドオンが無効なら終了
     if (!this->enabled) return;
 
     // JQ8900の起動準備待ち
@@ -23,11 +23,14 @@ void JinglePlayerAddon::setup() {
     sleep_ms(200);
 
     // --- 再生ロジックの判定 ---
-    // ② S2ボタン押しながら電源投入（Configモード）かどうかの判定
-    if (Storage::getInstance().getConfigMode() == ConfigMode::CONFIG_MODE_WEB_CONFIG) {
-        play(21); // 0021.mp3 (Config用)
+    // UI_BOOT_MODE 定数を使用してWebConfigモード(S2起動)を判定
+    extern uint8_t UI_BOOT_MODE; // 外部変数の宣言
+    
+    // BOOT_MODE_WEB_CONFIG は通常 1 ですが、定数が定義されていない場合に備えて 1 と直接比較します
+    if (UI_BOOT_MODE == 1) { 
+        play(21); // 0021.mp3 (Configモード用)
     } else {
-        // ① 通常起動時：選択されているIDを再生（未設定なら1）
+        // 通常起動時：選択されているIDを再生（未設定なら1）
         uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
         play(idToPlay);
     }
@@ -43,7 +46,7 @@ bool JinglePlayerAddon::available() {
     return options.enabled;
 }
 
-// 【重要】ここを proto のフィールド名と一致させないと WebConfig のセーブが効きません
+// WebConfigのJSONキー名と一致させる
 std::string JinglePlayerAddon::name() {
     return "jinglePlayerOptions";
 }
