@@ -1,6 +1,5 @@
 #include "addons/jingle_player.h"
 #include "storagemanager.h"
-#include "system.h" // 小文字に修正
 
 void JinglePlayerAddon::setup() {
     const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
@@ -17,18 +16,17 @@ void JinglePlayerAddon::setup() {
     setVolume(this->volume);
     sleep_ms(100);
 
-    // BootMode判定
-    if (System::getBootMode() == BootMode::BOOT_MODE_CONFIG) {
-        play(21);
+    // BootMode判定: Storage経由で取得
+    if (Storage::getInstance().getBootMode() == BOOT_MODE_WEB_CONFIG) {
+        play(21); // Configモード（S2起動）
     } else {
         uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
-        play(idToPlay);
+        play(idToPlay); // 通常起動
     }
 }
 
 void JinglePlayerAddon::preprocess() {}
 
-// GPAddonとして必須の実装
 void JinglePlayerAddon::process() {}
 
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
