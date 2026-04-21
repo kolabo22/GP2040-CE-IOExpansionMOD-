@@ -1,9 +1,8 @@
 #include "addons/jingle_player.h"
 #include "storagemanager.h"
-#include "System.h" // 大文字のSystem.hが必要な場合があります
+#include "system.h" // 小文字に修正
 
 void JinglePlayerAddon::setup() {
-    // 1. 型名を JinglePlayerOptions に修正
     const JinglePlayerOptions& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     this->enabled = options.enabled;
     this->volume = (uint8_t)options.volume;
@@ -18,17 +17,19 @@ void JinglePlayerAddon::setup() {
     setVolume(this->volume);
     sleep_ms(100);
 
-    // 2. BootModeの判定方法を修正
-    if (System::getBootMode() == BOOT_MODE_CONFIG) {
+    // BootMode判定
+    if (System::getBootMode() == BootMode::BOOT_MODE_CONFIG) {
         play(21);
     } else {
-        // protoに追加した selectedId を参照
         uint16_t idToPlay = (options.selectedId > 0) ? (uint16_t)options.selectedId : 1;
         play(idToPlay);
     }
 }
 
 void JinglePlayerAddon::preprocess() {}
+
+// GPAddonとして必須の実装
+void JinglePlayerAddon::process() {}
 
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
     uint8_t buf[10];
@@ -48,7 +49,7 @@ void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
     if (volume > 30) volume = 30;
-    uint8_t d[1] = {volume}; // 配列として定義
+    uint8_t d[1] = {volume};
     sendCommand(0x13, d, 1);
 }
 
@@ -57,7 +58,7 @@ void JinglePlayerAddon::play(uint16_t trackId) {
     uint8_t d[2] = {
         (uint8_t)((trackId >> 8) & 0xFF), 
         (uint8_t)(trackId & 0xFF)
-    }; // 配列として定義
+    };
     sendCommand(0x07, d, 2);
 }
 
