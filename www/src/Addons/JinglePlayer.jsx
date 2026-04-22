@@ -22,14 +22,11 @@ export const jinglePlayerState = {
 const JinglePlayer = ({ values, errors, handleChange, setFieldValue }) => {
 	const { t } = useTranslation();
 
-	// 【重要】これがないと、新規追加した selectedId が空で送信されセーブに失敗します
+	// ページ読み込み時にデータ構造を補完
 	useEffect(() => {
 		if (values.jinglePlayerOptions) {
 			if (values.jinglePlayerOptions.selectedId === undefined) {
 				setFieldValue('jinglePlayerOptions.selectedId', 1);
-			}
-			if (values.jinglePlayerOptions.volume === undefined) {
-				setFieldValue('jinglePlayerOptions.volume', 15);
 			}
 		}
 	}, []);
@@ -64,10 +61,9 @@ const JinglePlayer = ({ values, errors, handleChange, setFieldValue }) => {
 							type="range"
 							className="form-range"
 							name="jinglePlayerOptions.volume"
-							min="0"
-							max="30"
+							min="0" max="30"
 							value={values.jinglePlayerOptions?.volume ?? 15}
-							onChange={handleChange}
+							onChange={(e) => setFieldValue('jinglePlayerOptions.volume', parseInt(e.target.value, 10))}
 						/>
 					</div>
 				</div>
@@ -78,7 +74,7 @@ const JinglePlayer = ({ values, errors, handleChange, setFieldValue }) => {
 							name="jinglePlayerOptions.selectedId"
 							className="form-select"
 							value={values.jinglePlayerOptions?.selectedId ?? 1}
-							onChange={handleChange}
+							onChange={(e) => setFieldValue('jinglePlayerOptions.selectedId', parseInt(e.target.value, 10))}
 							error={errors.jinglePlayerOptions?.selectedId}
 						>
 							{jingleOptions.map((option) => (
