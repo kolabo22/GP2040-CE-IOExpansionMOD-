@@ -1,33 +1,29 @@
 void JinglePlayerAddon::process() {
-    // 起動直後の判定を少し遅らせるためのカウンター
-    static uint32_t bootDelayCount = 0;
+    static uint32_t bootDelay = 0;
 
-    // 1. 起動直後の再生（少し待ってから判定することでS2起動を確実に拾う）
+    // 起動直後の再生（約100ms程度待ってから判定）
     if (!_hasPlayedOnBoot) {
-        if (bootDelayCount < 50) { // 約50回分（数十ms）待機
-            bootDelayCount++;
+        if (bootDelay < 200) { // ループ回数で待機
+            bootDelay++;
             return;
         }
-
-        // ここでようやく判定
-        bool currentConfigMode = DriverManager::getInstance().isConfigMode();
+        
+        bool isConfig = DriverManager::getInstance().isConfigMode();
         setVolume(this->volume);
-
-        if (currentConfigMode) {
-            play(21); // ここで21番が鳴るはず
+        if (isConfig) {
+            play(21); // 設定モード：21番
         } else {
-            playSelectedModeJingle();
+            playSelectedModeJingle(); // 通常：機種別
         }
-
         _hasPlayedOnBoot = true;
-        _wasConfigMode = currentConfigMode;
+        _wasConfigMode = isConfig;
         return;
     }
 
-    // 2. 設定モードからの復帰判定
-    bool currentConfigMode = DriverManager::getInstance().isConfigMode();
-    if (_wasConfigMode && !currentConfigMode) {
+    // 設定モードからの復帰（WebUIを閉じた時）
+    bool currentConfig = DriverManager::getInstance().isConfigMode();
+    if (_wasConfigMode && !currentConfig) {
         playSelectedModeJingle();
     }
-    _wasConfigMode = currentConfigMode;
+    _wasConfigMode = currentConfig;
 }
