@@ -3,39 +3,35 @@
 #include "drivermanager.h"
 
 void JinglePlayerAddon::setup() {
-    // 1. メモリ上の値を読み込み（セーブが成功していれば反映される）
-    auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    this->enabled = options.enabled;
-    this->volume = (uint8_t)options.volume;
-    
-    // セーブエラー対策：options.enabledがfalseでも、コード上で強制的に動かす
-    this->enabled = true; 
-    if (this->volume == 0) this->volume = 15; // 初期値0なら15に設定
-
-    // 2. UART初期化（sleepなしの安全版）
+    // UART初期化
     uart_init(JQ8900_UART, JQ8900_BAUD);
     gpio_set_function(JQ8900_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(JQ8900_RX_PIN, GPIO_FUNC_UART);
 
-    // 3. 音量設定
-    setVolume(this->volume);
-
-    // 4. 【最優先】設定モード判定
-    // 判定順序を入れ替え、ConfigModeなら即座に21番を鳴らす
-    if (DriverManager::getInstance().isConfigMode()) {
-        play(21); // 設定モード用 (0021.mp3)
-        _wasConfigMode = true;
-    } else {
-        // 通常起動なら機種別を再生
-        playSelectedModeJingle();
-        _wasConfigMode = false;
-    }
+    this->enabled = true;
+    this->volume = 15; // WebUI保存ができるまでは15で固定
+    
+    _hasPlayedOnBoot = false; 
+    _wasConfigMode = false;
 }
 
 void JinglePlayerAddon::process() {
     bool currentConfigMode = DriverManager::getInstance().isConfigMode();
 
-    // 設定画面（WebUI）を閉じてゲーム画面に戻った瞬間の判定
+    // 1. 起動直後の1回だけ実行（setupより後に実行されるため判定が確実）
+    if (!_hasPlayedOnBoot) {
+        setVolume(this->volume);
+        if (currentConfigMode) {
+            play(21); // 設定モードなら21番 (0021.mp3)
+        } else {
+            playSelectedModeJingle(); // 通常なら機種別
+        }
+        _hasPlayedOnBoot = true;
+        _wasConfigMode = currentConfigMode;
+        return;
+    }
+
+    // 2. 設定モード（WebUI等）から脱出した瞬間の判定
     if (_wasConfigMode && !currentConfigMode) {
         playSelectedModeJingle();
     }
@@ -44,13 +40,35 @@ void JinglePlayerAddon::process() {
 
 void JinglePlayerAddon::playSelectedModeJingle() {
     InputMode mode = Storage::getInstance().getConfig().gamepadOptions.inputMode;
-    uint16_t trackId = (uint16_t)mode + 1;
+    uint16_t trackId = 1;
 
-    // リスト外チェック
-    if (trackId > 20) trackId = 1;
-
+    // リストに完全準拠させた機種別ID（内部ID+1ではない例外もカバー）
+    switch (mode) {
+        case INPUT_MODE_XINPUT:       trackId = 1;  break; // 0001.mp3
+        case INPUT_MODE_SWITCH:       trackId = 2;  break; // 0002.mp3
+        case INPUT_MODE_PS3:          trackId = 3;  break; // 0003.mp3
+        case INPUT_MODE_PS4:          trackId = 4;  break; // 0004.mp3
+        case INPUT_MODE_KEYBOARD:     trackId = 5;  break; // 0005.mp3
+        case INPUT_MODE_XBONE:        trackId = 6;  break; // 0006.mp3
+        case INPUT_MODE_PS5:          trackId = 7;  break; // 0007.mp3
+        case INPUT_MODE_MDMINI:       trackId = 8;  break; // 0008.mp3
+        case INPUT_MODE_NEOGEO:       trackId = 10; break; // 0010.mp3
+        case INPUT_MODE_PCEMINI:      trackId = 11; break; // 0011.mp3
+        case INPUT_MODE_ASTRO:        trackId = 15; break; // 0015.mp3
+        case INPUT_MODE_PSCLASSIC:    trackId = 16; break; // 0016.mp3
+        case INPUT_MODE_XBOXORIGINAL: trackId = 17; break; // 0017.mp3
+        case INPUT_MODE_EGRET:        trackId = 18; break; // 0018.mp3
+        case INPUT_MODE_GENERIC:      trackId = 19; break; // 0019.mp3
+        default:                      trackId = 1;  break;
+    }
     play(trackId);
 }
+
+void JinglePlayerAddon::preprocess() {}
+void JinglePlayerAddon::postprocess(bool) {}
+void JinglePlayerAddon::reinit() {}
+bool JinglePlayerAddon::available() { return true; }
+std::string JinglePlayerAddon::name() { return "jinglePlayerOptions"; }
 
 // --- 通信プロトコル（安全な固定配列版） ---
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
@@ -80,9 +98,6 @@ void JinglePlayerAddon::setVolume(uint8_t volume) {
     sendCommand(0x13, d, 1);
 }
 
-void JinglePlayerAddon::preprocess() {}
-void JinglePlayerAddon::postprocess(bool) {}
-void JinglePlayerAddon::reinit() {}
-bool JinglePlayerAddon::available() { return true; }
-std::string JinglePlayerAddon::name() { return "jinglePlayerOptions"; }
-void JinglePlayerAddon::stop() { sendCommand(0x04, nullptr, 0); }
+void JinglePlayerAddon::stop() {
+    sendCommand(0x04, nullptr, 0);
+}
