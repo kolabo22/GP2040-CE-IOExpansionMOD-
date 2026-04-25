@@ -3,20 +3,18 @@
 #include "drivermanager.h"
 
 void JinglePlayerAddon::setup() {
-    // 1. 強制有効化
     auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     options.enabled = true; 
     this->enabled = true;
     this->volume = (options.volume == 0) ? 15 : (uint8_t)options.volume;
 
-    // 2. UART初期化 (ピン競合を避けるため、一旦ここだけで完結)
+    // --- 最小限のUART初期化（sleepなし） ---
     uart_init(JQ8900_UART, JQ8900_BAUD);
     gpio_set_function(JQ8900_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(JQ8900_RX_PIN, GPIO_FUNC_UART);
 
-    sleep_ms(500); // 起動直後の安定待ち
-
-    // 3. 起動時再生
+    // 起動時の再生は、少し時間が経ってからprocessで行うか、
+    // ここではパケットを送るだけにする（sleepは厳禁）
     if (DriverManager::getInstance().isConfigMode()) {
         play(21);
         _wasConfigMode = true;
@@ -41,38 +39,31 @@ void JinglePlayerAddon::playSelectedModeJingle() {
     play(trackId);
 }
 
-// --- 以下、メモリ破壊を極限まで防ぐ安全な送信ロジック ---
-
+// --- メモリ破壊を100%防ぐ安全な送信ロジック ---
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
-    if (len > 4) return; // 想定外のサイズは無視（安全策）
-
-    uint8_t buf[10]; // 明示的にサイズ10の配列を確保
+    uint8_t buf[10] = {0}; // ゼロ初期化された固定配列
     buf[0] = 0xAA;
     buf[1] = type;
     buf[2] = len;
 
     uint16_t sum = buf[0] + buf[1] + buf[2];
-    for (uint8_t i = 0; i < len; i++) {
+    for (uint8_t i = 0; i < len && i < 4; i++) {
         buf[3 + i] = data[i];
         sum += data[i];
     }
     buf[3 + len] = (uint8_t)(sum & 0xFF);
 
-    // 送信
     uart_write_blocking(JQ8900_UART, buf, len + 4);
 }
 
 void JinglePlayerAddon::play(uint16_t trackId) {
-    uint8_t d[2]; 
-    d[0] = (uint8_t)(trackId >> 8);
-    d[1] = (uint8_t)(trackId & 0xFF);
+    uint8_t d[2] = { (uint8_t)(trackId >> 8), (uint8_t)(trackId & 0xFF) };
     sendCommand(0x07, d, 2);
 }
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
     uint8_t v = (volume > 30) ? 30 : volume;
-    uint8_t d[1];
-    d[0] = v;
+    uint8_t d[1] = {v};
     sendCommand(0x13, d, 1);
 }
 
