@@ -1,15 +1,15 @@
 #include "addons/jingle_player.h"
 #include "storagemanager.h"
-#include "drivermanager.h" // ← これを追加
+#include "drivermanager.h" // 判定のために追加
 
 void JinglePlayerAddon::setup() {
-    // 【重要】WebUIの保存エラー対策として、メモリ上の値を強制的に有効化
+    // 【重要】WebUIの保存エラー対策：メモリ上の値を強制的に有効化
     auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     options.enabled = true; 
 
     this->enabled = options.enabled;
     this->volume = (uint8_t)options.volume;
-    if (this->volume == 0) this->volume = 15; // 初期値が0なら音量を中間に設定
+    if (this->volume == 0) this->volume = 15; 
 
     // UART1 (GP20/21) の初期化
     uart_init(JQ8900_UART, JQ8900_BAUD);
@@ -24,10 +24,11 @@ void JinglePlayerAddon::setup() {
     setVolume(this->volume);
     sleep_ms(200);
 
-    // 起動時の判定
-		if (DriverManager::getInstance().isConfigMode()) { // 修正後
-    	play(21); 
-    	_wasConfigMode = true;
+    // 起動時の判定（DriverManagerを使用するように修正）
+    if (DriverManager::getInstance().isConfigMode()) { 
+        // 1. 設定モードで起動
+        play(21); // 0021.mp3 を再生
+        _wasConfigMode = true;
     } else {
         // 2. 通常起動
         playSelectedModeJingle();
@@ -36,8 +37,8 @@ void JinglePlayerAddon::setup() {
 }
 
 void JinglePlayerAddon::process() {
-    // 設定モード（WebUI等）から脱出した瞬間の判定
-    bool currentConfigMode = Storage::getInstance().getConfigMode();
+    // 設定モード（WebUI等）から脱出した瞬間の判定（DriverManagerを使用するように修正）
+    bool currentConfigMode = DriverManager::getInstance().isConfigMode();
 
     if (_wasConfigMode && !currentConfigMode) {
         // 設定画面を閉じてゲームに戻った瞬間に機種別ジングルを鳴らす
@@ -48,14 +49,12 @@ void JinglePlayerAddon::process() {
 
 // 機種（InputMode）ごとのID計算と再生
 void JinglePlayerAddon::playSelectedModeJingle() {
-    // 現在の保存された入力モード（0〜18）を取得
     InputMode mode = Storage::getInstance().getConfig().gamepadOptions.inputMode;
 
     // リスト準拠：内部ID + 1 が MP3ファイル番号
-    // 例: XInput(0) -> 1番, PS4(3) -> 4番
     uint16_t trackId = (uint16_t)mode + 1;
 
-    // 範囲外チェック（予備音源がある21番未満に制限）
+    // 範囲外チェック
     if (trackId > 20) trackId = 1;
 
     play(trackId);
@@ -66,7 +65,6 @@ void JinglePlayerAddon::postprocess(bool) {}
 void JinglePlayerAddon::reinit() {}
 
 bool JinglePlayerAddon::available() {
-    // セーブデータ問題回避のため、常に動く状態にする
     return true; 
 }
 
@@ -76,7 +74,7 @@ std::string JinglePlayerAddon::name() {
 
 // UARTプロトコル送信
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
-    uint8_t buf[12];
+    uint8_t buf[10]; // サイズを明示的に確保
     buf[0] = 0xAA;
     buf[1] = type;
     buf[2] = len;
@@ -96,7 +94,6 @@ void JinglePlayerAddon::setVolume(uint8_t volume) {
 }
 
 void JinglePlayerAddon::play(uint16_t trackId) {
-    // 0x07 コマンド: 高位バイト, 低位バイトの順で指定
     uint8_t d[2] = { (uint8_t)(trackId >> 8), (uint8_t)(trackId & 0xFF) };
     sendCommand(0x07, d, 2);
 }
