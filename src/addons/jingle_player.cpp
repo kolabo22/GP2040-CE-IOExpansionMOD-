@@ -3,22 +3,30 @@
 #include "drivermanager.h"
 
 void JinglePlayerAddon::setup() {
+    // 1. メモリ上の値を読み込み（セーブが成功していれば反映される）
     auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    options.enabled = true; 
-    this->enabled = true;
-    this->volume = (options.volume == 0) ? 15 : (uint8_t)options.volume;
+    this->enabled = options.enabled;
+    this->volume = (uint8_t)options.volume;
+    
+    // セーブエラー対策：options.enabledがfalseでも、コード上で強制的に動かす
+    this->enabled = true; 
+    if (this->volume == 0) this->volume = 15; // 初期値0なら15に設定
 
-    // --- 最小限のUART初期化（sleepなし） ---
+    // 2. UART初期化（sleepなしの安全版）
     uart_init(JQ8900_UART, JQ8900_BAUD);
     gpio_set_function(JQ8900_TX_PIN, GPIO_FUNC_UART);
     gpio_set_function(JQ8900_RX_PIN, GPIO_FUNC_UART);
 
-    // 起動時の再生は、少し時間が経ってからprocessで行うか、
-    // ここではパケットを送るだけにする（sleepは厳禁）
+    // 3. 音量設定
+    setVolume(this->volume);
+
+    // 4. 【最優先】設定モード判定
+    // 判定順序を入れ替え、ConfigModeなら即座に21番を鳴らす
     if (DriverManager::getInstance().isConfigMode()) {
-        play(21);
+        play(21); // 設定モード用 (0021.mp3)
         _wasConfigMode = true;
     } else {
+        // 通常起動なら機種別を再生
         playSelectedModeJingle();
         _wasConfigMode = false;
     }
@@ -26,6 +34,8 @@ void JinglePlayerAddon::setup() {
 
 void JinglePlayerAddon::process() {
     bool currentConfigMode = DriverManager::getInstance().isConfigMode();
+
+    // 設定画面（WebUI）を閉じてゲーム画面に戻った瞬間の判定
     if (_wasConfigMode && !currentConfigMode) {
         playSelectedModeJingle();
     }
@@ -35,13 +45,16 @@ void JinglePlayerAddon::process() {
 void JinglePlayerAddon::playSelectedModeJingle() {
     InputMode mode = Storage::getInstance().getConfig().gamepadOptions.inputMode;
     uint16_t trackId = (uint16_t)mode + 1;
+
+    // リスト外チェック
     if (trackId > 20) trackId = 1;
+
     play(trackId);
 }
 
-// --- メモリ破壊を100%防ぐ安全な送信ロジック ---
+// --- 通信プロトコル（安全な固定配列版） ---
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
-    uint8_t buf[10] = {0}; // ゼロ初期化された固定配列
+    uint8_t buf[10] = {0};
     buf[0] = 0xAA;
     buf[1] = type;
     buf[2] = len;
