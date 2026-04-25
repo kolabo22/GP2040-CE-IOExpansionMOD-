@@ -1,5 +1,6 @@
 #include "addons/jingle_player.h"
 #include "storagemanager.h"
+#include "drivermanager.h" // ← これを追加
 
 void JinglePlayerAddon::setup() {
     // 【重要】WebUIの保存エラー対策として、メモリ上の値を強制的に有効化
@@ -24,10 +25,9 @@ void JinglePlayerAddon::setup() {
     sleep_ms(200);
 
     // 起動時の判定
-    if (Storage::getInstance().getConfigMode()) { 
-        // 1. 設定モードで起動
-        play(21); // 0021.mp3 を再生
-        _wasConfigMode = true;
+		if (DriverManager::getInstance().isConfigMode()) { // 修正後
+    	play(21); 
+    	_wasConfigMode = true;
     } else {
         // 2. 通常起動
         playSelectedModeJingle();
