@@ -2,13 +2,13 @@
 #include "storagemanager.h"
 
 void JinglePlayerAddon::setup() {
-    // 【重要】セーブデータ肥大化対策：メモリ上の値を強制的に書き換える
+    // 【重要】WebUIの保存エラー対策として、メモリ上の値を強制的に有効化
     auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    options.enabled = true; // 強制有効化
+    options.enabled = true; 
 
     this->enabled = options.enabled;
     this->volume = (uint8_t)options.volume;
-    if (this->volume == 0) this->volume = 15; // 0なら適度な音量に
+    if (this->volume == 0) this->volume = 15; // 初期値が0なら音量を中間に設定
 
     // UART1 (GP20/21) の初期化
     uart_init(JQ8900_UART, JQ8900_BAUD);
@@ -23,40 +23,42 @@ void JinglePlayerAddon::setup() {
     setVolume(this->volume);
     sleep_ms(200);
 
-    // --- 再生ロジックの判定 ---
+    // 起動時の判定
     if (Storage::getInstance().getConfigMode()) { 
-        // 1. 設定モードで起動した場合
-        play(90); // 設定モード専用 (例: 090.mp3)
+        // 1. 設定モードで起動
+        play(21); // 0021.mp3 を再生
         _wasConfigMode = true;
     } else {
-        // 2. 通常起動時：保存されている機種設定（InputMode）を見て鳴らし分け
+        // 2. 通常起動
         playSelectedModeJingle();
         _wasConfigMode = false;
     }
 }
 
 void JinglePlayerAddon::process() {
-    // 3. ミニメニュー（WebUI等）から脱出した瞬間の判定
+    // 設定モード（WebUI等）から脱出した瞬間の判定
     bool currentConfigMode = Storage::getInstance().getConfigMode();
 
     if (_wasConfigMode && !currentConfigMode) {
-        // 設定モードから抜けてゲームに戻った瞬間に機種別ジングルを鳴らす
+        // 設定画面を閉じてゲームに戻った瞬間に機種別ジングルを鳴らす
         playSelectedModeJingle();
     }
     _wasConfigMode = currentConfigMode;
 }
 
-// 機種（InputMode）ごとの判定ロジック
+// 機種（InputMode）ごとのID計算と再生
 void JinglePlayerAddon::playSelectedModeJingle() {
+    // 現在の保存された入力モード（0〜18）を取得
     InputMode mode = Storage::getInstance().getConfig().gamepadOptions.inputMode;
-    switch (mode) {
-        case INPUT_MODE_XINPUT:  play(10); break; // PC (010.mp3)
-        case INPUT_MODE_SWITCH:  play(20); break; // Switch (020.mp3)
-        case INPUT_MODE_PS4:     play(30); break; // PS4 (030.mp3)
-        case INPUT_MODE_PS3:     play(40); break; // PS3 (040.mp3)
-        case INPUT_MODE_KEYBOARD:play(50); break; // Keyboard (050.mp3)
-        default:                 play(1);  break; // デフォルト (001.mp3)
-    }
+
+    // リスト準拠：内部ID + 1 が MP3ファイル番号
+    // 例: XInput(0) -> 1番, PS4(3) -> 4番
+    uint16_t trackId = (uint16_t)mode + 1;
+
+    // 範囲外チェック（予備音源がある21番未満に制限）
+    if (trackId > 20) trackId = 1;
+
+    play(trackId);
 }
 
 void JinglePlayerAddon::preprocess() {}
@@ -64,7 +66,7 @@ void JinglePlayerAddon::postprocess(bool) {}
 void JinglePlayerAddon::reinit() {}
 
 bool JinglePlayerAddon::available() {
-    // ここも強制的にtrueを返せば、WebUIの設定に関わらずアドオンが動きます
+    // セーブデータ問題回避のため、常に動く状態にする
     return true; 
 }
 
@@ -72,12 +74,17 @@ std::string JinglePlayerAddon::name() {
     return "jinglePlayerOptions";
 }
 
-// --- 通信プロトコル部分は変更なし ---
+// UARTプロトコル送信
 void JinglePlayerAddon::sendCommand(uint8_t type, uint8_t* data, uint8_t len) {
-    uint8_t buf[10];
-    buf[0] = 0xAA; buf[1] = type; buf[2] = len;
+    uint8_t buf[12];
+    buf[0] = 0xAA;
+    buf[1] = type;
+    buf[2] = len;
     uint16_t sum = buf[0] + buf[1] + buf[2];
-    for (int i = 0; i < len; i++) { buf[3 + i] = data[i]; sum += data[i]; }
+    for (int i = 0; i < len; i++) {
+        buf[3 + i] = data[i];
+        sum += data[i];
+    }
     buf[3 + len] = (uint8_t)(sum & 0xFF);
     uart_write_blocking(JQ8900_UART, buf, len + 4);
 }
@@ -89,6 +96,7 @@ void JinglePlayerAddon::setVolume(uint8_t volume) {
 }
 
 void JinglePlayerAddon::play(uint16_t trackId) {
+    // 0x07 コマンド: 高位バイト, 低位バイトの順で指定
     uint8_t d[2] = { (uint8_t)(trackId >> 8), (uint8_t)(trackId & 0xFF) };
     sendCommand(0x07, d, 2);
 }
