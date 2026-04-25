@@ -15,10 +15,10 @@ public:
     virtual void setup() override;
     virtual void preprocess() override;
     virtual void process() override;
-    virtual void postprocess(bool) override; // 必須：引数boolが必要
-    virtual void reinit() override;          // 必須
+    virtual void postprocess(bool) override;
+    virtual void reinit() override;
     virtual bool available() override;
-    virtual std::string name() override;      // constなしが正解
+    virtual std::string name() override;
 
     void setVolume(uint8_t volume); 
     void play(uint16_t trackId);    
@@ -26,8 +26,13 @@ public:
     
 private:
     void sendCommand(uint8_t type, uint8_t* data, uint8_t len);
+    void playSelectedModeJingle(); // 機種に応じた再生を共通化する関数
+
     bool enabled;
     uint8_t volume;
+    
+    // 状態変化を監視するための変数
+    bool _wasConfigMode;     // 前回が設定モードだったか
 };
 
 #endif
