@@ -4,11 +4,11 @@ import * as yup from 'yup';
 import FormSelect from '../Components/FormSelect';
 
 export const jinglePlayerScheme = {
-	jinglePlayerOptions: yup.object().shape({
-		enabled: yup.boolean().label('Enabled'),
-		volume: yup.number().label('Volume').min(0).max(30).required(),
-		selectedId: yup.number().label('Selected Jingle ID').min(1).max(21).required(),
-	}),
+  jinglePlayerOptions: yup.object().shape({
+    enabled: yup.boolean(),
+    volume: yup.number().min(0).max(30),
+    selectedId: yup.number(), // 制限を外して確実にセーブを通す
+  }),
 };
 
 export const jinglePlayerState = {
