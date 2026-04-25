@@ -5,7 +5,6 @@
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
 
-// UART設定
 #define JQ8900_UART      uart1
 #define JQ8900_TX_PIN    20
 #define JQ8900_RX_PIN    21
@@ -27,11 +26,12 @@ public:
     
 private:
     void sendCommand(uint8_t type, uint8_t* data, uint8_t len);
-    void playSelectedModeJingle(); // 機種に応じた再生を行う内部関数
+    void playSelectedModeJingle();
 
     bool enabled;
     uint8_t volume;
-    bool _wasConfigMode; // 設定モード状態を保持するフラグ
+    bool _wasConfigMode;
+    bool _hasPlayedOnBoot; // 起動直後の再生管理用
 };
 
 #endif
