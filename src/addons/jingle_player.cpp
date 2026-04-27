@@ -3,9 +3,10 @@
 #include "drivermanager.h"
 
 void JinglePlayerAddon::setup() {
-    // getAddonSettings を getAddonOptions に修正
-    const JingleOptions& options = Storage::getInstance().getAddonOptions().jingleOptions;
-    this->volume = options.volume;
+    // エラー箇所を修正: protoにjingleOptionsが追加されるまで、固定値を使用します
+    // const JingleOptions& options = Storage::getInstance().getAddonOptions().jingleOptions; // ここをコメントアウト
+    
+    this->volume = 15; // デフォルト音量15（固定）
     _hasPlayedOnBoot = false;
     _wasConfigMode = false;
 
@@ -19,7 +20,8 @@ void JinglePlayerAddon::process() {
     static uint32_t bootDelay = 0;
 
     if (!_hasPlayedOnBoot) {
-        if (bootDelay < 1000) { 
+        // 起動直後の安定待ち（多めにカウント）
+        if (bootDelay < 100000) { 
             bootDelay++;
             return;
         }
@@ -28,15 +30,16 @@ void JinglePlayerAddon::process() {
         setVolume(this->volume);
 
         if (isConfig) {
-            play(21); 
+            play(21); // 設定モード(S2押しながら)なら21番
         } else {
-            playSelectedModeJingle(); 
+            playSelectedModeJingle(); // 通常は機種別
         }
 
         _hasPlayedOnBoot = true;
         _wasConfigMode = isConfig;
     }
 
+    // WebUIでのセーブ反映用（ConfigモードからGameモードに戻ったとき）
     bool currentConfig = DriverManager::getInstance().isConfigMode();
     if (_wasConfigMode && !currentConfig) {
         playSelectedModeJingle();
@@ -70,7 +73,7 @@ void JinglePlayerAddon::play(uint16_t index) {
     sendCommand(buf);
 }
 
-void JinglePlayerAddon::sendCommand(uint8_t buf[10]) {
+void JinglePlayerAddon::sendCommand(uint8_t* buf) {
     for (int i = 0; i < 10; i++) {
         uart_putc(uart0, buf[i]);
     }
