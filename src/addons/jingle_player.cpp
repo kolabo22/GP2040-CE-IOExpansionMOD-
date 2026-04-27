@@ -3,50 +3,49 @@
 #include "drivermanager.h"
 
 void JinglePlayerAddon::setup() {
-    this->volume = 20; 
+    this->volume = 15; 
     _hasPlayedOnBoot = false;
     _wasConfigMode = false;
 
-    // UART初期化 (UART0, 9600bps)
+    // UART初期化（ブロッキングを防ぐため設定のみ確実に）
     uart_init(uart0, 9600);
     gpio_set_function(0, GPIO_FUNC_UART); // TX: GP0
     gpio_set_function(1, GPIO_FUNC_UART); // RX: GP1
 }
 
 void JinglePlayerAddon::process() {
-    static uint32_t bootCounter = 0;
+    // 起動時の待機をカウントアップのみで制御（sleep_msは絶対に使わない）
+    static uint32_t bootDelayCounter = 0;
 
-    // 1. 起動時の再生（ここが一番大事）
     if (!_hasPlayedOnBoot) {
-        bootCounter++;
-        // 起動直後、少し余裕を持ってから1回だけ実行
-        if (bootCounter == 20000) { 
+        bootDelayCounter++;
+        // 50000回ほどループを回してから実行（フリーズ回避のための時間稼ぎ）
+        if (bootDelayCounter >= 50000) {
             bool isConfig = DriverManager::getInstance().isConfigMode();
+            
+            // 直接コマンド送信（sleepなし）
             setVolume(this->volume);
-            sleep_ms(10); // JQ8900の準備待ち
-
+            
             if (isConfig) {
-                play(21); // 設定モード
+                play(21); 
             } else {
-                playSelectedModeJingle(); // 機種別
+                playSelectedModeJingle();
             }
+            
             _hasPlayedOnBoot = true;
             _wasConfigMode = isConfig;
         }
         return; 
     }
 
-    // 2. モード切り替え検知（毎秒10回程度に抑制して負荷軽減）
-    static uint32_t lastCheck = 0;
-    uint32_t now = to_ms_since_boot(get_absolute_time());
-    if (now - lastCheck > 100) {
+    // 2. モード移行監視（非常に軽く実行）
+    static uint32_t checkCounter = 0;
+    if (checkCounter++ % 10000 == 0) { // 頻度を下げる
         bool currentConfig = DriverManager::getInstance().isConfigMode();
         if (_wasConfigMode && !currentConfig) {
-            // WebUIでSaveを押して再起動がかかった直後の鳴らし直し
             playSelectedModeJingle();
         }
         _wasConfigMode = currentConfig;
-        lastCheck = now;
     }
 }
 
@@ -80,8 +79,9 @@ void JinglePlayerAddon::play(uint16_t index) {
 
 void JinglePlayerAddon::sendCommand(uint8_t* buf) {
     for (int i = 0; i < 10; i++) {
-        uart_putc(uart0, buf[i]);
+        // uart_putc の代わりに uart_is_writable を確認してブロッキングを回避
+        if (uart_is_writable(uart0)) {
+            uart_putc_raw(uart0, buf[i]);
+        }
     }
-    // 送信後に一瞬だけ待つ（連続送信時の衝突防止）
-    sleep_ms(2);
 }
