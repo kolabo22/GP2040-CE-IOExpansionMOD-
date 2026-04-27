@@ -5,11 +5,17 @@ import * as yup from 'yup';
 import FormSelect from '../Components/FormSelect';
 import Section from '../Components/Section';
 
-// バリデーションを緩和してセーブを通るようにする
+// バリデーション：セーブを通すために緩和
 export const jinglePlayerScheme = yup.object().shape({
     enabled: yup.boolean().label('Enabled'),
     volume: yup.number().label('Volume'),
 });
+
+// 他のファイル（AddonsConfigPage.tsx）から参照される初期状態の定義
+export const jinglePlayerState = {
+    enabled: false,
+    volume: 15,
+};
 
 const JinglePlayer = () => {
     const { t } = useTranslation();
