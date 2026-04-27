@@ -5,8 +5,15 @@
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
 
+// 設定構造体の定義（AddonOptionsと一致させる）
+struct JingleOptions {
+    bool enabled;
+    uint8_t volume;
+};
+
 class JinglePlayerAddon : public GPAddon {
 public:
+    // ビルドとテストのため、常に有効化する
     virtual bool available() { return true; }
     virtual void setup();
     virtual void process();
