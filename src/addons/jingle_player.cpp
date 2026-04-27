@@ -2,27 +2,26 @@
 #include "storagemanager.h"
 #include "drivermanager.h"
 
-// スタック破壊防止のため、静的領域にバッファを確保
-static uint8_t g_uart_buf[10] = {0x7E, 0xFF, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEF};
+static uint8_t g_uart_buf = {0x7E, 0xFF, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEF};
 
 void JinglePlayerAddon::setup() {
-    // 保存が効くまではデフォルト音量15をセット
-    this->volume = 15; 
+    // Proto定義に合わせて jinglePlayerOptions を取得
+    const auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
+    this->volume = (uint8_t)options.volume;
     _hasPlayedOnBoot = false;
     _wasConfigMode = false;
 
-    // 重要：GP20/21はUART1を使用
+    // JQ8900は GP20/21 (UART1)
     uart_init(uart1, 9600);
-    gpio_set_function(20, GPIO_FUNC_UART); // TX: GP20
-    gpio_set_function(21, GPIO_FUNC_UART); // RX: GP21
+    gpio_set_function(20, GPIO_FUNC_UART);
+    gpio_set_function(21, GPIO_FUNC_UART);
 }
 
 void JinglePlayerAddon::process() {
     static uint32_t bootDelay = 0;
 
     if (!_hasPlayedOnBoot) {
-        // 起動時の待機（S2判定を確実にするため）
-        if (bootDelay < 60000) { 
+        if (bootDelay < 80000) { // S2判定のために少し長めに待機
             bootDelay++;
             return;
         }
@@ -40,7 +39,7 @@ void JinglePlayerAddon::process() {
         _wasConfigMode = isConfig;
     }
 
-    // WebUIセーブ後のモード移行（Config -> Game）検知
+    // WebUIセーブ後のモード移行検知
     static uint32_t checkCounter = 0;
     if (checkCounter++ % 10000 == 0) {
         bool currentConfig = DriverManager::getInstance().isConfigMode();
@@ -66,7 +65,6 @@ void JinglePlayerAddon::playSelectedModeJingle() {
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
     g_uart_buf[3] = 0x06;
-    g_uart_buf[5] = 0x00;
     g_uart_buf[6] = volume;
     sendCommand(g_uart_buf);
 }
