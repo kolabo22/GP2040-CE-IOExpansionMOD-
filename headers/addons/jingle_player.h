@@ -2,6 +2,7 @@
 #define _JINGLE_PLAYER_H_
 
 #include "gpaddon.h"
+#include "storagemanager.h" // Storageクラスのために追加
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
 
@@ -14,7 +15,8 @@ struct JingleOptions {
 class JinglePlayerAddon : public GPAddon {
 public:
     virtual bool available() { 
-        return Storage::getInstance().getAddonSettings().jingleOptions.enabled; 
+        // getAddonSettings を getAddonOptions に修正
+        return Storage::getInstance().getAddonOptions().jingleOptions.enabled; 
     }
     virtual void setup();
     virtual void process();
@@ -25,7 +27,7 @@ private:
     void playSelectedModeJingle();
     void setVolume(uint8_t volume);
     void play(uint16_t index);
-    void sendCommand(uint8_t buf[10]); // 引数を10バイト配列に変更
+    void sendCommand(uint8_t buf[10]); // 配列であることを明示
 
     uint8_t volume;
     bool _hasPlayedOnBoot;
