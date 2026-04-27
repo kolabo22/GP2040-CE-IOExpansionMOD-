@@ -5,13 +5,13 @@ import * as yup from 'yup';
 import FormSelect from '../Components/FormSelect';
 import Section from '../Components/Section';
 
-// C++側の定義に合わせて、jinglePlayerOptions 経由でデータを扱うようにする
-export const jinglePlayerScheme = yup.object().shape({
+// yupの定義を「型指定のみ」の最もシンプルな形にしてエラーを回避
+export const jinglePlayerScheme = {
     enabled: yup.boolean().label('Enabled'),
     volume: yup.number().label('Volume'),
-});
+};
 
-// AddonsConfigPage.tsx が探している名前に合わせる
+// 初期値の定義
 export const jinglePlayerState = {
     enabled: false,
     volume: 15,
