@@ -2,15 +2,16 @@
 #include "storagemanager.h"
 #include "drivermanager.h"
 
-// 静的バッファでメモリを安定化
+// スタック破壊防止のため、静的領域にバッファを確保
 static uint8_t g_uart_buf[10] = {0x7E, 0xFF, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEF};
 
 void JinglePlayerAddon::setup() {
+    // 保存が効くまではデフォルト音量15をセット
     this->volume = 15; 
     _hasPlayedOnBoot = false;
     _wasConfigMode = false;
 
-    // GP20/21は「UART1」です。ここを間違えるとフリーズします。
+    // 重要：GP20/21はUART1を使用
     uart_init(uart1, 9600);
     gpio_set_function(20, GPIO_FUNC_UART); // TX: GP20
     gpio_set_function(21, GPIO_FUNC_UART); // RX: GP21
@@ -20,7 +21,8 @@ void JinglePlayerAddon::process() {
     static uint32_t bootDelay = 0;
 
     if (!_hasPlayedOnBoot) {
-        if (bootDelay < 50000) { 
+        // 起動時の待機（S2判定を確実にするため）
+        if (bootDelay < 60000) { 
             bootDelay++;
             return;
         }
@@ -29,13 +31,23 @@ void JinglePlayerAddon::process() {
         setVolume(this->volume);
 
         if (isConfig) {
-            play(21); // 設定モード
+            play(21); // 設定モード：21番
         } else {
-            playSelectedModeJingle(); // 通常モード
+            playSelectedModeJingle(); // 通常起動：機種別
         }
         
         _hasPlayedOnBoot = true;
         _wasConfigMode = isConfig;
+    }
+
+    // WebUIセーブ後のモード移行（Config -> Game）検知
+    static uint32_t checkCounter = 0;
+    if (checkCounter++ % 10000 == 0) {
+        bool currentConfig = DriverManager::getInstance().isConfigMode();
+        if (_wasConfigMode && !currentConfig) {
+            playSelectedModeJingle();
+        }
+        _wasConfigMode = currentConfig;
     }
 }
 
@@ -68,7 +80,7 @@ void JinglePlayerAddon::play(uint16_t index) {
 
 void JinglePlayerAddon::sendCommand(uint8_t* buf) {
     for (int i = 0; i < 10; i++) {
-        uart_putc_raw(uart1, buf[i]); // UART1を使用
+        uart_putc_raw(uart1, buf[i]);
     }
 }
 
