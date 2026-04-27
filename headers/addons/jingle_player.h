@@ -4,17 +4,14 @@
 #include "gpaddon.h"
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
-
-// 設定構造体の定義（AddonOptionsと一致させる）
-struct JingleOptions {
-    bool enabled;
-    uint8_t volume;
-};
+#include "storagemanager.h"
 
 class JinglePlayerAddon : public GPAddon {
 public:
-    // ビルドとテストのため、常に有効化する
-    virtual bool available() { return true; }
+    // Proto定義の jinglePlayerOptions.enabled を参照するように修正
+    virtual bool available() { 
+        return Storage::getInstance().getAddonOptions().jinglePlayerOptions.enabled; 
+    }
     virtual void setup();
     virtual void process();
     virtual void preprocess() {}
