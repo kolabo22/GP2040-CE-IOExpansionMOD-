@@ -1,37 +1,35 @@
-#ifndef JINGLE_PLAYER_H
-#define JINGLE_PLAYER_H
+#ifndef _JINGLE_PLAYER_H_
+#define _JINGLE_PLAYER_H_
 
 #include "gpaddon.h"
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
 
-#define JQ8900_UART      uart1
-#define JQ8900_TX_PIN    20
-#define JQ8900_RX_PIN    21
-#define JQ8900_BAUD      9600
+// 設定構造体の定義
+struct JingleOptions {
+    bool enabled;
+    uint8_t volume;
+};
 
 class JinglePlayerAddon : public GPAddon {
 public:
-    virtual void setup() override;
-    virtual void preprocess() override;
-    virtual void process() override;
-    virtual void postprocess(bool) override;
-    virtual void reinit() override;
-    virtual bool available() override;
-    virtual std::string name() override;
+    virtual bool available() { 
+        return Storage::getInstance().getAddonSettings().jingleOptions.enabled; 
+    }
+    virtual void setup();
+    virtual void process();
+    virtual void preprocess() {}
+    virtual std::string name() { return "JinglePlayer"; }
 
-    void setVolume(uint8_t volume); 
-    void play(uint16_t trackId);    
-    void stop();
-    
 private:
-    void sendCommand(uint8_t type, uint8_t* data, uint8_t len);
     void playSelectedModeJingle();
+    void setVolume(uint8_t volume);
+    void play(uint16_t index);
+    void sendCommand(uint8_t buf[10]); // 引数を10バイト配列に変更
 
-    bool enabled;
     uint8_t volume;
+    bool _hasPlayedOnBoot;
     bool _wasConfigMode;
-    bool _hasPlayedOnBoot; // 起動直後の再生管理用
 };
 
 #endif
