@@ -2,7 +2,8 @@
 #include "storagemanager.h"
 #include "drivermanager.h"
 
-static uint8_t g_uart_buf = {0x7E, 0xFF, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEF};
+// 修正：g_uart_buf の後に [] を追加して配列として定義
+static uint8_t g_uart_buf[] = {0x7E, 0xFF, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xEF};
 
 void JinglePlayerAddon::setup() {
     // Proto定義に合わせて jinglePlayerOptions を取得
@@ -13,8 +14,8 @@ void JinglePlayerAddon::setup() {
 
     // JQ8900は GP20/21 (UART1)
     uart_init(uart1, 9600);
-    gpio_set_function(20, GPIO_FUNC_UART);
-    gpio_set_function(21, GPIO_FUNC_UART);
+    gpio_set_function(20, GPIO_FUNC_UART); // TX: GP20
+    gpio_set_function(21, GPIO_FUNC_UART); // RX: GP21
 }
 
 void JinglePlayerAddon::process() {
@@ -65,6 +66,7 @@ void JinglePlayerAddon::playSelectedModeJingle() {
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
     g_uart_buf[3] = 0x06;
+    g_uart_buf[5] = 0x00;
     g_uart_buf[6] = volume;
     sendCommand(g_uart_buf);
 }
