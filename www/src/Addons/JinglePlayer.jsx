@@ -1,13 +1,11 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { useFormContext } from 'react-hook-form';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 
-import { AppContext } from '../../Contexts/AppContext';
-import FormSelect from '../FormSelect';
-import Section from '../Section';
+import FormSelect from '../Components/FormSelect';
+import Section from '../Components/Section';
 
-// バリデーションから .required() を削除し、セーブを可能にする
+// バリデーションを緩和してセーブを通るようにする
 export const jinglePlayerScheme = yup.object().shape({
     enabled: yup.boolean().label('Enabled'),
     volume: yup.number().label('Volume'),
