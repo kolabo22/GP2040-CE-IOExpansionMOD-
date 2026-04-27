@@ -5,13 +5,13 @@ import * as yup from 'yup';
 import FormSelect from '../Components/FormSelect';
 import Section from '../Components/Section';
 
-// yupの定義を「型指定のみ」の最もシンプルな形にしてエラーを回避
+// バリデーション：階層を持たせないフラットな定義にする
 export const jinglePlayerScheme = {
     enabled: yup.boolean().label('Enabled'),
     volume: yup.number().label('Volume'),
 };
 
-// 初期値の定義
+// 初期状態
 export const jinglePlayerState = {
     enabled: false,
     volume: 15,
@@ -24,7 +24,7 @@ const JinglePlayer = () => {
             <div className="row mb-3">
                 <FormSelect
                     label={t('Enabled')}
-                    name="jinglePlayerOptions.enabled"
+                    name="enabled" // 修正：schemeと一致させる
                     className="form-select-sm"
                     options={[
                         { label: t('Disabled'), value: false },
@@ -35,7 +35,7 @@ const JinglePlayer = () => {
             <div className="row mb-3">
                 <FormSelect
                     label={t('Volume (0-30)')}
-                    name="jinglePlayerOptions.volume"
+                    name="volume" // 修正：schemeと一致させる
                     className="form-select-sm"
                     options={Array.from({ length: 31 }, (_, i) => ({
                         label: i.toString(),
