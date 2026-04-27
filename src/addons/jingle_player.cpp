@@ -3,7 +3,8 @@
 #include "drivermanager.h"
 
 void JinglePlayerAddon::setup() {
-    const JingleOptions& options = Storage::getInstance().getAddonSettings().jingleOptions;
+    // getAddonSettings を getAddonOptions に修正
+    const JingleOptions& options = Storage::getInstance().getAddonOptions().jingleOptions;
     this->volume = options.volume;
     _hasPlayedOnBoot = false;
     _wasConfigMode = false;
@@ -18,7 +19,7 @@ void JinglePlayerAddon::process() {
     static uint32_t bootDelay = 0;
 
     if (!_hasPlayedOnBoot) {
-        if (bootDelay < 1000) { // 起動直後の安定待ち
+        if (bootDelay < 1000) { 
             bootDelay++;
             return;
         }
@@ -27,16 +28,15 @@ void JinglePlayerAddon::process() {
         setVolume(this->volume);
 
         if (isConfig) {
-            play(21); // 設定モード(S2押しながら)なら21番
+            play(21); 
         } else {
-            playSelectedModeJingle(); // 通常は機種別
+            playSelectedModeJingle(); 
         }
 
         _hasPlayedOnBoot = true;
         _wasConfigMode = isConfig;
     }
 
-    // WebUIでのセーブ反映用
     bool currentConfig = DriverManager::getInstance().isConfigMode();
     if (_wasConfigMode && !currentConfig) {
         playSelectedModeJingle();
