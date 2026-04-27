@@ -4,7 +4,7 @@ import * as yup from 'yup';
 
 import Section from '../Components/Section';
 
-// AddonsConfigPage.tsx の schema に統合される定義
+// バリデーション定義
 export const jinglePlayerScheme = {
     jinglePlayerOptions: yup.object().shape({
         enabled: yup.number().label('Enabled'),
@@ -12,16 +12,21 @@ export const jinglePlayerScheme = {
     }),
 };
 
-// AddonsConfigPage.tsx の DEFAULT_VALUES に統合される初期値
+// 初期状態の定義
 export const jinglePlayerState = {
     jinglePlayerOptions: {
-        enabled: 0, // Formik管理下では bool ではなく 0/1 で扱うのが標準
+        enabled: 0,
         volume: 15,
     },
 };
 
 const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
     const { t } = useTranslation();
+
+    // 安全策：values.jinglePlayerOptions が存在しない場合に備える
+    // これを入れないと画面が真っ白（クラッシュ）になります
+    const options = values?.jinglePlayerOptions || { enabled: 0, volume: 15 };
+
     return (
         <Section title={t('Jingle Player Addon')}>
             <div className="row mb-3">
@@ -31,7 +36,8 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
                         className="form-check-input ms-2"
                         type="checkbox"
                         name="jinglePlayerOptions.enabled"
-                        checked={Boolean(values.jinglePlayerOptions.enabled)}
+                        // options を使うことで undefined エラーを防ぐ
+                        checked={Boolean(options.enabled)}
                         onChange={() => handleCheckbox('jinglePlayerOptions.enabled')}
                     />
                 </div>
@@ -42,7 +48,7 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
                     <select
                         className="form-select form-select-sm"
                         name="jinglePlayerOptions.volume"
-                        value={values.jinglePlayerOptions.volume}
+                        value={options.volume}
                         onChange={handleChange}
                     >
                         {Array.from({ length: 31 }, (_, i) => (
