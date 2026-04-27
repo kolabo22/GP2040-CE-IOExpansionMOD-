@@ -2,46 +2,56 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 
-import FormSelect from '../Components/FormSelect';
 import Section from '../Components/Section';
 
-// バリデーション：階層を持たせないフラットな定義にする
+// AddonsConfigPage.tsx の schema に統合される定義
 export const jinglePlayerScheme = {
-    enabled: yup.boolean().label('Enabled'),
-    volume: yup.number().label('Volume'),
+    jinglePlayerOptions: yup.object().shape({
+        enabled: yup.number().label('Enabled'),
+        volume: yup.number().label('Volume'),
+    }),
 };
 
-// 初期状態
+// AddonsConfigPage.tsx の DEFAULT_VALUES に統合される初期値
 export const jinglePlayerState = {
-    enabled: false,
-    volume: 15,
+    jinglePlayerOptions: {
+        enabled: 0, // Formik管理下では bool ではなく 0/1 で扱うのが標準
+        volume: 15,
+    },
 };
 
-const JinglePlayer = () => {
+const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
     const { t } = useTranslation();
     return (
         <Section title={t('Jingle Player Addon')}>
             <div className="row mb-3">
-                <FormSelect
-                    label={t('Enabled')}
-                    name="enabled" // 修正：schemeと一致させる
-                    className="form-select-sm"
-                    options={[
-                        { label: t('Disabled'), value: false },
-                        { label: t('Enabled'), value: true },
-                    ]}
-                />
+                <div className="col-sm-3">
+                    <label className="form-label">{t('Enabled')}</label>
+                    <input
+                        className="form-check-input ms-2"
+                        type="checkbox"
+                        name="jinglePlayerOptions.enabled"
+                        checked={Boolean(values.jinglePlayerOptions.enabled)}
+                        onChange={() => handleCheckbox('jinglePlayerOptions.enabled')}
+                    />
+                </div>
             </div>
             <div className="row mb-3">
-                <FormSelect
-                    label={t('Volume (0-30)')}
-                    name="volume" // 修正：schemeと一致させる
-                    className="form-select-sm"
-                    options={Array.from({ length: 31 }, (_, i) => ({
-                        label: i.toString(),
-                        value: i,
-                    }))}
-                />
+                <div className="col-sm-3">
+                    <label className="form-label">{t('Volume (0-30)')}</label>
+                    <select
+                        className="form-select form-select-sm"
+                        name="jinglePlayerOptions.volume"
+                        value={values.jinglePlayerOptions.volume}
+                        onChange={handleChange}
+                    >
+                        {Array.from({ length: 31 }, (_, i) => (
+                            <option key={i} value={i}>
+                                {i}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
         </Section>
     );
