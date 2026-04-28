@@ -898,9 +898,8 @@ message JinglePlayerOptions
 {
     optional bool enabled = 1;
     optional uint32 volume = 2;
-		optional uint32 selectedId = 3; // ← これを追加
+    optional uint32 selectedId = 3;
 }
-
 message AddonOptions
 {
     optional BootselButtonOptions bootselButtonOptions = 1;
