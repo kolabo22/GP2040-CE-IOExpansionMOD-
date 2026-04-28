@@ -31,7 +31,6 @@ import DRV8833Rumble, { drv8833RumbleScheme, drv8833RumbleState } from '../Addon
 import ReactiveLED, { reactiveLEDScheme, reactiveLEDState } from '../Addons/ReactiveLED';
 import TG16, { tg16State } from '../Addons/TG16';
 import HETrigger, { HETriggerScheme, HETriggerState } from '../Addons/HETrigger';
-// PDF 2ページ目のインポート
 import JinglePlayer, { jinglePlayerScheme, jinglePlayerState } from '../Addons/JinglePlayer';
 
 export type AddonPropTypes = {
@@ -63,7 +62,7 @@ const schema = yup.object().shape({
 	...reactiveLEDScheme,
 	...gamepadUSBHostScheme,
 	...HETriggerScheme,
-	...jinglePlayerScheme, // 追加
+	...jinglePlayerScheme,
 });
 
 export const DEFAULT_VALUES = {
@@ -89,33 +88,14 @@ export const DEFAULT_VALUES = {
 	...reactiveLEDState,
 	...gamepadUSBHostState,
 	...HETriggerState,
-	...jinglePlayerState, // 追加
+	...jinglePlayerState,
 } as const;
 
 const ADDONS = [
-	Bootsel,
-	OnBoardLed,
-	Analog,
-	Turbo,
-	Reverse,
-	I2CAnalog1219,
-	Analog1256,
-	DualDirection,
-	Tilt,
-	Buzzer,
-	SOCD,
-	Wii,
-	SNES,
-	TG16,
-	FocusMode,
-	Keyboard,
-	GamepadUSBHost,
-	Rotary,
-	PCF8575,
-	DRV8833Rumble,
-	ReactiveLED,
-	HETrigger,
-	JinglePlayer, // 追加
+	Bootsel, OnBoardLed, Analog, Turbo, Reverse, I2CAnalog1219, Analog1256,
+	DualDirection, Tilt, Buzzer, SOCD, Wii, SNES, TG16, FocusMode,
+	Keyboard, GamepadUSBHost, Rotary, PCF8575, DRV8833Rumble, ReactiveLED,
+	HETrigger, JinglePlayer,
 ];
 
 const FormContext = ({ setStoredData }) => {
@@ -125,8 +105,10 @@ const FormContext = ({ setStoredData }) => {
 	useEffect(() => {
 		async function fetchData() {
 			const data = await WebApi.getAddonsOptions(setLoading);
-			setValues(data);
-			setStoredData(JSON.parse(JSON.stringify(data)));
+			// 重要：本体からのデータに、デフォルト値（JinglePlayerを含む）をマージする
+			const mergedData = { ...DEFAULT_VALUES, ...data };
+			setValues(mergedData);
+			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
 		fetchData();
 	}, [setValues]);
@@ -141,7 +123,6 @@ const FormContext = ({ setStoredData }) => {
 const sanitizeData = (values) => {
 	Object.keys(values).forEach((key) => {
 		if (key.includes('keyboardHostMap')) return;
-
 		if (typeof values[key] === 'object' && values[key] !== null) {
 			Object.keys(values[key]).forEach((subKey) => {
 				if (typeof values[key][subKey] === 'number' || (typeof values[key][subKey] === 'string' && !isNaN(values[key][subKey]))) {
@@ -198,9 +179,11 @@ export default function AddonsConfigPage() {
 
 		sanitizeData(resultObject);
 		const success = await WebApi.setAddonsOptions(resultObject);
-		setStoredData(JSON.parse(JSON.stringify(values)));
+		if (success) {
+			setStoredData(JSON.parse(JSON.stringify(values)));
+			updateUsedPins();
+		}
 		setSaveMessage(success ? t('Common:saved-success-message') : t('Common:saved-error-message'));
-		if (success) updateUsedPins();
 	};
 
 	return (
