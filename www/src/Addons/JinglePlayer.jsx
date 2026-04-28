@@ -3,13 +3,7 @@ import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 import Section from '../Components/Section';
 
-export const jinglePlayerScheme = {
-	jinglePlayerOptions: yup.object().shape({
-		enabled: yup.number().label('Enabled'),
-		volume: yup.number().label('Volume'),
-	}),
-};
-
+// DEFAULT_VALUESに展開される初期状態
 export const jinglePlayerState = {
 	jinglePlayerOptions: {
 		enabled: 0,
@@ -17,10 +11,18 @@ export const jinglePlayerState = {
 	},
 };
 
-const JinglePlayer = ({ values, setFieldValue, handleCheckbox }) => {
+// schemaに展開されるバリデーション
+export const jinglePlayerScheme = {
+	jinglePlayerOptions: yup.object().shape({
+		enabled: yup.number().label('Enabled'),
+		volume: yup.number().label('Volume'),
+	}),
+};
+
+const JinglePlayer = ({ values, handleChange, handleCheckbox, setFieldValue }) => {
 	const { t } = useTranslation();
 	
-	// 安全な値の取得
+	// valuesの中に jinglePlayerOptions がない場合に備える安全策
 	const options = values?.jinglePlayerOptions || jinglePlayerState.jinglePlayerOptions;
 
 	return (
@@ -44,11 +46,12 @@ const JinglePlayer = ({ values, setFieldValue, handleCheckbox }) => {
 						className="form-select form-select-sm"
 						name="jinglePlayerOptions.volume"
 						value={options.volume}
-						// 直接数値として値をセットすることで AddonsConfigPage の変更検知を確実に通す
-						onChange={(e) => setFieldValue('jinglePlayerOptions.volume', parseInt(e.target.value, 10))}
+						onChange={handleChange}
 					>
 						{Array.from({ length: 31 }, (_, i) => (
-							<option key={i} value={i}>{i}</option>
+							<option key={i} value={i}>
+								{i}
+							</option>
 						))}
 					</select>
 				</div>
