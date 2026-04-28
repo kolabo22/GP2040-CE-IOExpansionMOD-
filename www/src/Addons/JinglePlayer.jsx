@@ -4,15 +4,15 @@ import * as yup from 'yup';
 
 import Section from '../Components/Section';
 
-// バリデーション定義
+// バリデーション：複雑な shape を避け、トップレベルで定義
 export const jinglePlayerScheme = {
-    jinglePlayerOptions: yup.object().shape({
-        enabled: yup.number().label('Enabled'),
-        volume: yup.number().label('Volume'),
+    jinglePlayerOptions: yup.object({
+        enabled: yup.number().default(0),
+        volume: yup.number().default(15),
     }),
 };
 
-// 初期状態の定義
+// 初期値
 export const jinglePlayerState = {
     jinglePlayerOptions: {
         enabled: 0,
@@ -23,9 +23,8 @@ export const jinglePlayerState = {
 const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
     const { t } = useTranslation();
 
-    // 安全策：values.jinglePlayerOptions が存在しない場合に備える
-    // これを入れないと画面が真っ白（クラッシュ）になります
-    const options = values?.jinglePlayerOptions || { enabled: 0, volume: 15 };
+    // データの安全な取得（データが壊れている場合に備える）
+    const options = values?.jinglePlayerOptions || jinglePlayerState.jinglePlayerOptions;
 
     return (
         <Section title={t('Jingle Player Addon')}>
@@ -36,8 +35,8 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
                         className="form-check-input ms-2"
                         type="checkbox"
                         name="jinglePlayerOptions.enabled"
-                        // options を使うことで undefined エラーを防ぐ
-                        checked={Boolean(options.enabled)}
+                        // 0/1 を bool に変換してチェック状態を維持
+                        checked={!!options.enabled}
                         onChange={() => handleCheckbox('jinglePlayerOptions.enabled')}
                     />
                 </div>
@@ -48,7 +47,7 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
                     <select
                         className="form-select form-select-sm"
                         name="jinglePlayerOptions.volume"
-                        value={options.volume}
+                        value={options.volume ?? 15}
                         onChange={handleChange}
                     >
                         {Array.from({ length: 31 }, (_, i) => (
