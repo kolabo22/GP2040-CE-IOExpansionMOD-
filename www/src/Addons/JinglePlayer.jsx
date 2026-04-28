@@ -3,31 +3,27 @@ import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 import Section from '../Components/Section';
 
+// schema定義
 export const jinglePlayerScheme = {
     jinglePlayerOptions: yup.object().shape({
         enabled: yup.number().label('Enabled'),
         volume: yup.number().label('Volume'),
-        selectedId: yup.number().label('Selected ID'),
     }),
 };
 
+// 初期値定義
 export const jinglePlayerState = {
     jinglePlayerOptions: {
         enabled: 0,
         volume: 15,
-        selectedId: 0,
     },
 };
 
 const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
     const { t } = useTranslation();
+    
+    // values から安全に jinglePlayerOptions を取り出す
     const options = values?.jinglePlayerOptions || jinglePlayerState.jinglePlayerOptions;
-
-    // 数値として確実に反映させるためのラッパー
-    const handleNumberChange = (e) => {
-        e.target.value = parseInt(e.target.value, 10);
-        handleChange(e);
-    };
 
     return (
         <Section title={t('Jingle Player Addon')}>
@@ -38,8 +34,8 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
                         className="form-check-input ms-2"
                         type="checkbox"
                         name="jinglePlayerOptions.enabled"
-                        checked={Boolean(options.enabled)}
-                        // handleCheckboxは内部で数値を扱うのでそのまま
+                        // Formikの数値管理(0/1)に合わせてチェック状態を制御
+                        checked={options.enabled === 1}
                         onChange={() => handleCheckbox('jinglePlayerOptions.enabled')}
                     />
                 </div>
@@ -51,8 +47,7 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
                         className="form-select form-select-sm"
                         name="jinglePlayerOptions.volume"
                         value={options.volume}
-                        // 文字列ではなく数値として送る
-                        onChange={handleNumberChange}
+                        onChange={handleChange}
                     >
                         {Array.from({ length: 31 }, (_, i) => (
                             <option key={i} value={i}>{i}</option>
