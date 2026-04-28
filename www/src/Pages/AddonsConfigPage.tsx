@@ -6,10 +6,10 @@ import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
 import WebApi from '../Services/WebApi';
 
-// 標準的なパスと大文字小文字の指定に修正
+// インポートパスとファイル名を標準的な大文字・小文字の組み合わせに修正
 import Analog from '../Addons/Analog';
 import BoardLed from '../Addons/BoardLed';
-import BootselButton from '../Addons/BootselButton';
+import BOOTSELButton from '../Addons/BOOTSELButton'; // Bootsel -> BOOTSEL に修正
 import BuzzerSpeaker from '../Addons/BuzzerSpeaker';
 import DualInput from '../Addons/DualInput';
 import ExtraButtonConfiguration from '../Addons/ExtraButtonConfiguration';
@@ -49,7 +49,7 @@ const DEFAULT_VALUES = {
 	touchpadDataOptions: { enabled: 0 },
 	turboOptions: { enabled: 0, buttonPin: -1, ledPin: -1, shotCount: 20, shmupMode: 0, shmupMixMode: 0, shmupAlwaysOn1: 0, shmupAlwaysOn2: 0, shmupAlwaysOn3: 0, shmupAlwaysOn4: 0, shmupBtn1Pin: -1, shmupBtn2Pin: -1, shmupBtn3Pin: -1, shmupBtn4Pin: -1, shmupBtnMask1: 0, shmupBtnMask2: 0, shmupBtnMask3: 0, shmupBtnMask4: 0 },
 	wiiextOptions: { enabled: 0, i2cBlock: 0 },
-	jinglePlayerOptions: { enabled: 0, volume: 15 }, // 追加
+	jinglePlayerOptions: { enabled: 0, volume: 15 },
 };
 
 const schema = yup.object().shape({
@@ -72,7 +72,7 @@ const schema = yup.object().shape({
 	touchpadDataOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
 	turboOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), buttonPin: yup.number().label('Button Pin'), ledPin: yup.number().label('LED Pin'), shotCount: yup.number().label('Shot Count'), shmupMode: yup.number().label('Shmup Mode'), shmupMixMode: yup.number().label('Shmup Mix Mode'), shmupAlwaysOn1: yup.number().label('Shmup Always On 1'), shmupAlwaysOn2: yup.number().label('Shmup Always On 2'), shmupAlwaysOn3: yup.number().label('Shmup Always On 3'), shmupAlwaysOn4: yup.number().label('Shmup Always On 4'), shmupBtn1Pin: yup.number().label('Shmup Button 1 Pin'), shmupBtn2Pin: yup.number().label('Shmup Button 2 Pin'), shmupBtn3Pin: yup.number().label('Shmup Button 3 Pin'), shmupBtn4Pin: yup.number().label('Shmup Button 4 Pin'), shmupBtnMask1: yup.number().label('Shmup Button 1 Mask'), shmupBtnMask2: yup.number().label('Shmup Button 2 Mask'), shmupBtnMask3: yup.number().label('Shmup Button 3 Mask'), shmupBtnMask4: yup.number().label('Shmup Button 4 Mask') }),
 	wiiextOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), i2cBlock: yup.number().label('I2C Block') }),
-	jinglePlayerOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), volume: yup.number().label('Volume') }), // 追加
+	jinglePlayerOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), volume: yup.number().label('Volume') }),
 });
 
 const sanitizeData = (values) => {
@@ -112,12 +112,7 @@ export default function AddonsConfigPage() {
 	};
 
 	return (
-		<Formik
-			enableReinitialize={true}
-			initialValues={initialValues}
-			validationSchema={schema}
-			onSubmit={onSuccess}
-		>
+		<Formik enableReinitialize={true} initialValues={initialValues} validationSchema={schema} onSubmit={onSuccess}>
 			{({ values, handleChange, handleCheckbox, setFieldValue, handleSubmit }) => (
 				<Form noValidate onSubmit={handleSubmit}>
 					<Analog values={values} handleChange={handleChange} />
@@ -137,12 +132,10 @@ export default function AddonsConfigPage() {
 					<ExtraButtonConfiguration values={values} handleChange={handleChange} />
 					<Tilt values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} />
 					<BoardLed values={values} handleChange={handleChange} />
-					<BootselButton values={values} handleChange={handleChange} />
+					<BOOTSELButton values={values} handleChange={handleChange} /> 
 					<KeyboardHost values={values} handleChange={handleChange} setFieldValue={setFieldValue} />
 					<HETrigger values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
-					{/* JinglePlayerを追加 */}
 					<JinglePlayer values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
-					
 					<div className="mt-3">
 						<Button type="submit">{t('Common:button-save-label')}</Button>
 						{saveMessage && <span className="ms-3">{saveMessage}</span>}
