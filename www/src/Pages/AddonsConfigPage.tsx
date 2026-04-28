@@ -6,10 +6,10 @@ import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
 import WebApi from '../Services/WebApi';
 
-// ファイル名の大文字小文字を、エラーが出ない正確な名称に修正
+// ファイル名の大文字小文字を、ビルドが通る正確な名称に修正
 import Analog from '../Addons/Analog';
-import BoardLed from '../Addons/BoardLed'; // LED -> Led に修正
-import BootselButton from '../Addons/BootselButton'; // BOOTSEL -> Bootsel に修正
+import BoardLed from '../Addons/BoardLED'; // Led -> LED に修正
+import BootselButton from '../Addons/BootselButton';
 import BuzzerSpeaker from '../Addons/BuzzerSpeaker';
 import DualInput from '../Addons/DualInput';
 import ExtraButtonConfiguration from '../Addons/ExtraButtonConfiguration';
