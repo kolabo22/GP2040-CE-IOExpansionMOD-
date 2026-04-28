@@ -6,28 +6,28 @@ import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
 import WebApi from '../Services/WebApi';
 
-// インポートパスを実際のフォルダ構成（componentsが小文字）に合わせて修正
-import Analog from '../components/Addons/Analog';
-import BoardLed from '../components/Addons/BoardLed';
-import BootselButton from '../components/Addons/BootselButton';
-import BuzzerSpeaker from '../components/Addons/BuzzerSpeaker';
-import DualInput from '../components/Addons/DualInput';
-import ExtraButtonConfiguration from '../components/Addons/ExtraButtonConfiguration';
-import I2CAnalog1219 from '../components/Addons/I2CAnalog1219';
-import I2CDisplay from '../components/Addons/I2CDisplay';
-import KeyboardHost from '../components/Addons/KeyboardHost';
-import PlayerNumber from '../components/Addons/PlayerNumber';
-import PS4Mode from '../components/Addons/PS4Mode';
-import ReverseInput from '../components/Addons/ReverseInput';
-import SliderInput from '../components/Addons/SliderInput';
-import SNESInput from '../components/Addons/SNESInput';
-import SOCDSelectionSlider from '../components/Addons/SOCDSelectionSlider';
-import Tilt from '../components/Addons/Tilt';
-import TouchpadDataConfiguration from '../components/Addons/TouchpadDataConfiguration';
-import TurboInput from '../components/Addons/TurboInput';
-import WiiExtension from '../components/Addons/WiiExtension';
-import HETrigger from '../components/Addons/HETrigger';
-import JinglePlayer, { jinglePlayerScheme, jinglePlayerState } from '../components/Addons/JinglePlayer';
+// PDFの元コードに合わせ、余計な components/ を排除しました
+import Analog from '../Addons/Analog';
+import BoardLed from '../Addons/BoardLed';
+import BootselButton from '../Addons/BootselButton';
+import BuzzerSpeaker from '../Addons/BuzzerSpeaker';
+import DualInput from '../Addons/DualInput';
+import ExtraButtonConfiguration from '../Addons/ExtraButtonConfiguration';
+import I2CAnalog1219 from '../Addons/I2CAnalog1219';
+import I2CDisplay from '../Addons/I2CDisplay';
+import KeyboardHost from '../Addons/KeyboardHost';
+import PlayerNumber from '../Addons/PlayerNumber';
+import PS4Mode from '../Addons/PS4Mode';
+import ReverseInput from '../Addons/ReverseInput';
+import SliderInput from '../Addons/SliderInput';
+import SNESInput from '../Addons/SNESInput';
+import SOCDSelectionSlider from '../Addons/SOCDSelectionSlider';
+import Tilt from '../Addons/Tilt';
+import TouchpadDataConfiguration from '../Addons/TouchpadDataConfiguration';
+import TurboInput from '../Addons/TurboInput';
+import WiiExtension from '../Addons/WiiExtension';
+import HETrigger from '../Addons/HETrigger';
+import JinglePlayer, { jinglePlayerScheme, jinglePlayerState } from '../Addons/JinglePlayer';
 
 const DEFAULT_VALUES = {
 	analogOptions: { enabled: 0 },
