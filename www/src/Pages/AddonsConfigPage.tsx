@@ -6,7 +6,7 @@ import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
 import WebApi from '../Services/WebApi';
 
-// PDFの元コードに合わせ、余計な components/ を排除しました
+// パスをsrc内の実際のディレクトリ構成に合わせて修正
 import Analog from '../Addons/Analog';
 import BoardLed from '../Addons/BoardLed';
 import BootselButton from '../Addons/BootselButton';
@@ -135,6 +135,7 @@ export default function AddonsConfigPage() {
 					<BootselButton values={values} handleChange={handleChange} />
 					<KeyboardHost values={values} handleChange={handleChange} setFieldValue={setFieldValue} />
 					<HETrigger values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
+					{/* JinglePlayerを追加 */}
 					<JinglePlayer values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
 					<div className="mt-3">
 						<Button type="submit">{t('Common:button-save-label')}</Button>
