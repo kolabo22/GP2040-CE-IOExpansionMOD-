@@ -6,10 +6,10 @@ import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
 import WebApi from '../Services/WebApi';
 
-// ファイル名の大文字小文字を GP2040-CE の標準（BoardLED, BOOTSELButton 等）に修正
+// ファイル名の大文字小文字を、エラーが出ない正確な名称に修正
 import Analog from '../Addons/Analog';
-import BoardLed from '../Addons/BoardLED'; // Led -> LED に修正
-import BOOTSELButton from '../Addons/BOOTSELButton'; // Bootsel -> BOOTSEL に修正
+import BoardLed from '../Addons/BoardLed'; // LED -> Led に修正
+import BootselButton from '../Addons/BootselButton'; // BOOTSEL -> Bootsel に修正
 import BuzzerSpeaker from '../Addons/BuzzerSpeaker';
 import DualInput from '../Addons/DualInput';
 import ExtraButtonConfiguration from '../Addons/ExtraButtonConfiguration';
@@ -132,7 +132,7 @@ export default function AddonsConfigPage() {
 					<ExtraButtonConfiguration values={values} handleChange={handleChange} />
 					<Tilt values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} />
 					<BoardLed values={values} handleChange={handleChange} />
-					<BOOTSELButton values={values} handleChange={handleChange} />
+					<BootselButton values={values} handleChange={handleChange} />
 					<KeyboardHost values={values} handleChange={handleChange} setFieldValue={setFieldValue} />
 					<HETrigger values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
 					<JinglePlayer values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
