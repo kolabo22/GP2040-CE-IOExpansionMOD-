@@ -6,29 +6,28 @@ import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
 import WebApi from '../Services/WebApi';
 
-// PDFの記述と完全に一致させました
-import Analog from '../Addons/Analog';
-import BoardLed from '../Addons/BoardLed';
-import BootselButton from '../Addons/BootselButton';
-import BuzzerSpeaker from '../Addons/BuzzerSpeaker';
-import DualInput from '../Addons/DualInput';
-import ExtraButtonConfiguration from '../Addons/ExtraButtonConfiguration';
-import I2CAnalog1219 from '../Addons/I2CAnalog1219';
-import I2CDisplay from '../Addons/I2CDisplay';
-import KeyboardHost from '../Addons/KeyboardHost';
-import PlayerNumber from '../Addons/PlayerNumber';
-import PS4Mode from '../Addons/PS4Mode';
-import ReverseInput from '../Addons/ReverseInput';
-import SliderInput from '../Addons/SliderInput';
-import SNESInput from '../Addons/SNESInput';
-import SOCDSelectionSlider from '../Addons/SOCDSelectionSlider';
-import Tilt from '../Addons/Tilt';
-import TouchpadDataConfiguration from '../Addons/TouchpadDataConfiguration';
-import TurboInput from '../Addons/TurboInput';
-import WiiExtension from '../Addons/WiiExtension';
-import HETrigger from '../Addons/HETrigger';
-// JinglePlayerを追加
-import JinglePlayer, { jinglePlayerScheme, jinglePlayerState } from '../Addons/JinglePlayer';
+// インポートパスを実際のフォルダ構成（componentsが小文字）に合わせて修正
+import Analog from '../components/Addons/Analog';
+import BoardLed from '../components/Addons/BoardLed';
+import BootselButton from '../components/Addons/BootselButton';
+import BuzzerSpeaker from '../components/Addons/BuzzerSpeaker';
+import DualInput from '../components/Addons/DualInput';
+import ExtraButtonConfiguration from '../components/Addons/ExtraButtonConfiguration';
+import I2CAnalog1219 from '../components/Addons/I2CAnalog1219';
+import I2CDisplay from '../components/Addons/I2CDisplay';
+import KeyboardHost from '../components/Addons/KeyboardHost';
+import PlayerNumber from '../components/Addons/PlayerNumber';
+import PS4Mode from '../components/Addons/PS4Mode';
+import ReverseInput from '../components/Addons/ReverseInput';
+import SliderInput from '../components/Addons/SliderInput';
+import SNESInput from '../components/Addons/SNESInput';
+import SOCDSelectionSlider from '../components/Addons/SOCDSelectionSlider';
+import Tilt from '../components/Addons/Tilt';
+import TouchpadDataConfiguration from '../components/Addons/TouchpadDataConfiguration';
+import TurboInput from '../components/Addons/TurboInput';
+import WiiExtension from '../components/Addons/WiiExtension';
+import HETrigger from '../components/Addons/HETrigger';
+import JinglePlayer, { jinglePlayerScheme, jinglePlayerState } from '../components/Addons/JinglePlayer';
 
 const DEFAULT_VALUES = {
 	analogOptions: { enabled: 0 },
@@ -50,7 +49,7 @@ const DEFAULT_VALUES = {
 	touchpadDataOptions: { enabled: 0 },
 	turboOptions: { enabled: 0, buttonPin: -1, ledPin: -1, shotCount: 20, shmupMode: 0, shmupMixMode: 0, shmupAlwaysOn1: 0, shmupAlwaysOn2: 0, shmupAlwaysOn3: 0, shmupAlwaysOn4: 0, shmupBtn1Pin: -1, shmupBtn2Pin: -1, shmupBtn3Pin: -1, shmupBtn4Pin: -1, shmupBtnMask1: 0, shmupBtnMask2: 0, shmupBtnMask3: 0, shmupBtnMask4: 0 },
 	wiiextOptions: { enabled: 0, i2cBlock: 0 },
-	jinglePlayerOptions: { enabled: 0, volume: 15 }, // 追加
+	jinglePlayerOptions: { enabled: 0, volume: 15 },
 };
 
 const schema = yup.object().shape({
@@ -73,7 +72,7 @@ const schema = yup.object().shape({
 	touchpadDataOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
 	turboOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), buttonPin: yup.number().label('Button Pin'), ledPin: yup.number().label('LED Pin'), shotCount: yup.number().label('Shot Count'), shmupMode: yup.number().label('Shmup Mode'), shmupMixMode: yup.number().label('Shmup Mix Mode'), shmupAlwaysOn1: yup.number().label('Shmup Always On 1'), shmupAlwaysOn2: yup.number().label('Shmup Always On 2'), shmupAlwaysOn3: yup.number().label('Shmup Always On 3'), shmupAlwaysOn4: yup.number().label('Shmup Always On 4'), shmupBtn1Pin: yup.number().label('Shmup Button 1 Pin'), shmupBtn2Pin: yup.number().label('Shmup Button 2 Pin'), shmupBtn3Pin: yup.number().label('Shmup Button 3 Pin'), shmupBtn4Pin: yup.number().label('Shmup Button 4 Pin'), shmupBtnMask1: yup.number().label('Shmup Button 1 Mask'), shmupBtnMask2: yup.number().label('Shmup Button 2 Mask'), shmupBtnMask3: yup.number().label('Shmup Button 3 Mask'), shmupBtnMask4: yup.number().label('Shmup Button 4 Mask') }),
 	wiiextOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), i2cBlock: yup.number().label('I2C Block') }),
-	jinglePlayerOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), volume: yup.number().label('Volume') }), // 追加
+	jinglePlayerOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), volume: yup.number().label('Volume') }),
 });
 
 const sanitizeData = (values) => {
@@ -136,7 +135,6 @@ export default function AddonsConfigPage() {
 					<BootselButton values={values} handleChange={handleChange} />
 					<KeyboardHost values={values} handleChange={handleChange} setFieldValue={setFieldValue} />
 					<HETrigger values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
-					{/* JinglePlayerを設置 */}
 					<JinglePlayer values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
 					<div className="mt-3">
 						<Button type="submit">{t('Common:button-save-label')}</Button>
