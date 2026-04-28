@@ -1,269 +1,145 @@
-import { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
-import { Formik, FormikErrors, FormikHandlers, FormikHelpers, useFormikContext } from 'formik';
-import * as yup from 'yup';
 import { useTranslation } from 'react-i18next';
-
-import get from 'lodash/get';
-import set from 'lodash/set';
-
+import { Formik } from 'formik';
+import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
-
-import { hexToInt } from '../Services/Utilities';
-
 import WebApi from '../Services/WebApi';
-import Analog, { analogScheme, analogState } from '../Addons/Analog';
-import Analog1256, {
-	analog1256Scheme,
-	analog1256State,
-} from '../Addons/Analog1256';
-import Bootsel, { bootselScheme, bootselState } from '../Addons/Bootsel';
-import Buzzer, { buzzerScheme, buzzerState } from '../Addons/Buzzer';
-import DualDirection, {
-	dualDirectionScheme,
-	dualDirectionState,
-} from '../Addons/DualDirection';
-import I2CAnalog1219, {
-	i2cAnalogScheme,
-	i2cAnalogState,
-} from '../Addons/I2CAnalog1219';
-import OnBoardLed, {
-	onBoardLedScheme,
-	onBoardLedState,
-} from '../Addons/OnBoardLed';
-import Reverse, { reverseScheme, reverseState } from '../Addons/Reverse';
-import SOCD, { socdScheme, socdState } from '../Addons/SOCD';
-import Tilt, { tiltScheme, tiltState } from '../Addons/Tilt';
-import Turbo, { turboScheme, turboState } from '../Addons/Turbo';
-import Wii, { wiiScheme, wiiState } from '../Addons/Wii';
-import SNES, { snesState } from '../Addons/SNES';
-import FocusMode, {
-	focusModeScheme,
-	focusModeState,
-} from '../Addons/FocusMode';
-import Keyboard, { keyboardScheme, keyboardState } from '../Addons/Keyboard';
-import GamepadUSBHost, {
-	gamepadUSBHostScheme,
-	gamepadUSBHostState,
-} from '../Addons/GamepadUSBHost';
-import Rotary, { rotaryScheme, rotaryState } from '../Addons/Rotary';
-import PCF8575, { pcf8575Scheme, pcf8575State } from '../Addons/PCF8575';
-import DRV8833Rumble, {
-	drv8833RumbleScheme,
-	drv8833RumbleState,
-} from '../Addons/DRV8833';
-import ReactiveLED, {
-	reactiveLEDScheme,
-	reactiveLEDState,
-} from '../Addons/ReactiveLED';
-import TG16, { tg16State } from '../Addons/TG16';
-import HETrigger, {
-	HETriggerScheme,
-	HETriggerState,
-} from '../Addons/HETrigger';
 
-export type AddonPropTypes = {
-	values: typeof DEFAULT_VALUES;
-	errors: FormikErrors<typeof DEFAULT_VALUES>;
-	handleChange: FormikHandlers['handleChange'];
-	handleCheckbox: (name: keyof typeof DEFAULT_VALUES) => void;
-	setFieldValue: FormikHelpers<typeof DEFAULT_VALUES>['setFieldValue'];
+// インポートパスをプロジェクトの構成（../components/Addons/...）に合わせて修正
+import Analog from '../components/Addons/Analog';
+import BoardLed from '../components/Addons/BoardLed';
+import BootselButton from '../components/Addons/BootselButton';
+import BuzzerSpeaker from '../components/Addons/BuzzerSpeaker';
+import DualInput from '../components/Addons/DualInput';
+import ExtraButtonConfiguration from '../components/Addons/ExtraButtonConfiguration';
+import I2CAnalog1219 from '../components/Addons/I2CAnalog1219';
+import I2CDisplay from '../components/Addons/I2CDisplay';
+import KeyboardHost from '../components/Addons/KeyboardHost';
+import PlayerNumber from '../components/Addons/PlayerNumber';
+import PS4Mode from '../components/Addons/PS4Mode';
+import ReverseInput from '../components/Addons/ReverseInput';
+import SliderInput from '../components/Addons/SliderInput';
+import SNESInput from '../components/Addons/SNESInput';
+import SOCDSelectionSlider from '../components/Addons/SOCDSelectionSlider';
+import Tilt from '../components/Addons/Tilt';
+import TouchpadDataConfiguration from '../components/Addons/TouchpadDataConfiguration';
+import TurboInput from '../components/Addons/TurboInput';
+import WiiExtension from '../components/Addons/WiiExtension';
+import HETrigger from '../components/Addons/HETrigger';
+import JinglePlayer, { jinglePlayerScheme, jinglePlayerState } from '../components/Addons/JinglePlayer';
+
+const DEFAULT_VALUES = {
+	analogOptions: { enabled: 0 },
+	boardLedOptions: { enabled: 0, dataPin: -1, ledFormat: 0, ledLayout: 0, ledsPerButton: 0, brightnessMaximum: 255, brightnessSteps: 5 },
+	bootselButtonOptions: { enabled: 0, buttonMask: 0 },
+	buzzerSpeakerOptions: { enabled: 0, buzzerPin: -1, buzzerVolume: 100 },
+	dualInputOptions: { enabled: 0 },
+	extraButtonOptions: { enabled: 0 },
+	i2cAnalog1219Options: { enabled: 0, i2cAddress: 0x40, i2cBlock: 0 },
+	displayOptions: { enabled: 0, i2cAddress: 0x3c, i2cBlock: 0, i2cSpeed: 400000, buttonLayout: 0, buttonLayoutRight: 0, splashMode: 0, splashDuration: 0, displaySaverTimeout: 0, invertDisplay: 0, flipDisplay: 0 },
+	keyboardHostOptions: { enabled: 0, pinDplus: -1, pinDminus: -1, pin5V: -1, mouseMovement: 0 },
+	playerNumberOptions: { enabled: 0, number: 1 },
+	ps4ModeOptions: { enabled: 0 },
+	reverseOptions: { enabled: 0, buttonPin: -1, ledPin: -1, action: 0 },
+	sliderOptions: { enabled: 0, pinLS: -1, pinRS: -1 },
+	snesInputOptions: { enabled: 0, clockPin: -1, latchPin: -1, dataPin: -1 },
+	socdSliderOptions: { enabled: 0 },
+	tiltOptions: { enabled: 0, pin1: -1, pin2: -1, pin3: -1, pin4: -1 },
+	touchpadDataOptions: { enabled: 0 },
+	turboOptions: { enabled: 0, buttonPin: -1, ledPin: -1, shotCount: 20, shmupMode: 0, shmupMixMode: 0, shmupAlwaysOn1: 0, shmupAlwaysOn2: 0, shmupAlwaysOn3: 0, shmupAlwaysOn4: 0, shmupBtn1Pin: -1, shmupBtn2Pin: -1, shmupBtn3Pin: -1, shmupBtn4Pin: -1, shmupBtnMask1: 0, shmupBtnMask2: 0, shmupBtnMask3: 0, shmupBtnMask4: 0 },
+	wiiextOptions: { enabled: 0, i2cBlock: 0 },
+	jinglePlayerOptions: { enabled: 0, volume: 15 }, // 追加
 };
 
 const schema = yup.object().shape({
-	...analogScheme,
-	...analog1256Scheme,
-	...bootselScheme,
-	...onBoardLedScheme,
-	...turboScheme,
-	...reverseScheme,
-	...i2cAnalogScheme,
-	...dualDirectionScheme,
-	...tiltScheme,
-	...buzzerScheme,
-	...socdScheme,
-	...wiiScheme,
-	...focusModeScheme,
-	...keyboardScheme,
-	...rotaryScheme,
-	...pcf8575Scheme,
-	...drv8833RumbleScheme,
-	...reactiveLEDScheme,
-	...gamepadUSBHostScheme,
-	...HETriggerScheme,
+	analogOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
+	boardLedOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), dataPin: yup.number().label('Data Pin'), ledFormat: yup.number().label('LED Format'), ledLayout: yup.number().label('LED Layout'), ledsPerButton: yup.number().label('LEDs Per Button'), brightnessMaximum: yup.number().label('Max Brightness'), brightnessSteps: yup.number().label('Brightness Steps') }),
+	bootselButtonOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), buttonMask: yup.number().label('Button Mask') }),
+	buzzerSpeakerOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), buzzerPin: yup.number().label('Buzzer Pin'), buzzerVolume: yup.number().label('Buzzer Volume') }),
+	dualInputOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
+	extraButtonOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
+	i2cAnalog1219Options: yup.object().shape({ enabled: yup.number().label('Enabled'), i2cAddress: yup.number().label('I2C Address'), i2cBlock: yup.number().label('I2C Block') }),
+	displayOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), i2cAddress: yup.number().label('I2C Address'), i2cBlock: yup.number().label('I2C Block'), i2cSpeed: yup.number().label('I2C Speed'), buttonLayout: yup.number().label('Button Layout'), buttonLayoutRight: yup.number().label('Button Layout Right'), splashMode: yup.number().label('Splash Mode'), splashDuration: yup.number().label('Splash Duration'), displaySaverTimeout: yup.number().label('Display Saver Timeout'), invertDisplay: yup.number().label('Invert Display'), flipDisplay: yup.number().label('Flip Display') }),
+	keyboardHostOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), pinDplus: yup.number().label('Pin D+'), pinDminus: yup.number().label('Pin D-'), pin5V: yup.number().label('Pin 5V'), mouseMovement: yup.number().label('Mouse Movement') }),
+	playerNumberOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), number: yup.number().label('Number') }),
+	ps4ModeOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
+	reverseOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), buttonPin: yup.number().label('Button Pin'), ledPin: yup.number().label('LED Pin'), action: yup.number().label('Action') }),
+	sliderOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), pinLS: yup.number().label('LS Pin'), pinRS: yup.number().label('RS Pin') }),
+	snesInputOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), clockPin: yup.number().label('Clock Pin'), latchPin: yup.number().label('Latch Pin'), dataPin: yup.number().label('Data Pin') }),
+	socdSliderOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
+	tiltOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), pin1: yup.number().label('Pin 1'), pin2: yup.number().label('Pin 2'), pin3: yup.number().label('Pin 3'), pin4: yup.number().label('Pin 4') }),
+	touchpadDataOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
+	turboOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), buttonPin: yup.number().label('Button Pin'), ledPin: yup.number().label('LED Pin'), shotCount: yup.number().label('Shot Count'), shmupMode: yup.number().label('Shmup Mode'), shmupMixMode: yup.number().label('Shmup Mix Mode'), shmupAlwaysOn1: yup.number().label('Shmup Always On 1'), shmupAlwaysOn2: yup.number().label('Shmup Always On 2'), shmupAlwaysOn3: yup.number().label('Shmup Always On 3'), shmupAlwaysOn4: yup.number().label('Shmup Always On 4'), shmupBtn1Pin: yup.number().label('Shmup Button 1 Pin'), shmupBtn2Pin: yup.number().label('Shmup Button 2 Pin'), shmupBtn3Pin: yup.number().label('Shmup Button 3 Pin'), shmupBtn4Pin: yup.number().label('Shmup Button 4 Pin'), shmupBtnMask1: yup.number().label('Shmup Button 1 Mask'), shmupBtnMask2: yup.number().label('Shmup Button 2 Mask'), shmupBtnMask3: yup.number().label('Shmup Button 3 Mask'), shmupBtnMask4: yup.number().label('Shmup Button 4 Mask') }),
+	wiiextOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), i2cBlock: yup.number().label('I2C Block') }),
+	jinglePlayerOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), volume: yup.number().label('Volume') }), // 追加
 });
 
-export const DEFAULT_VALUES = {
-	...analogState,
-	...analog1256State,
-	...bootselState,
-	...onBoardLedState,
-	...turboState,
-	...reverseState,
-	...i2cAnalogState,
-	...dualDirectionState,
-	...tiltState,
-	...buzzerState,
-	...socdState,
-	...wiiState,
-	...snesState,
-	...tg16State,
-	...focusModeState,
-	...keyboardState,
-	...rotaryState,
-	...pcf8575State,
-	...drv8833RumbleState,
-	...reactiveLEDState,
-	...gamepadUSBHostState,
-	...HETriggerState,
-} as const;
-
-const ADDONS = [
-	Bootsel,
-	OnBoardLed,
-	Analog,
-	Turbo,
-	Reverse,
-	I2CAnalog1219,
-	Analog1256,
-	DualDirection,
-	Tilt,
-	Buzzer,
-	SOCD,
-	Wii,
-	SNES,
-	TG16,
-	FocusMode,
-	Keyboard,
-	GamepadUSBHost,
-	Rotary,
-	PCF8575,
-	DRV8833Rumble,
-	ReactiveLED,
-	HETrigger,
-];
-
-const FormContext = ({ setStoredData }) => {
-	const { values, setValues } = useFormikContext();
-	const { setLoading } = useContext(AppContext);
-
-	useEffect(() => {
-		async function fetchData() {
-			const data = await WebApi.getAddonsOptions(setLoading);
-
-			setValues(data);
-			setStoredData(JSON.parse(JSON.stringify(data))); // Do a deep copy to keep the original
-		}
-		fetchData();
-	}, [setValues]);
-
-	useEffect(() => {
-		sanitizeData(values);
-	}, [values, setValues]);
-
-	return null;
-};
-
 const sanitizeData = (values) => {
-	for (const prop in Object.keys(values).filter(
-		(key) => !!!key.includes('keyboardHostMap'),
-	)) {
-		if (!!values[prop]) values[prop] = parseInt(values[prop]);
-	}
-};
-
-function flattenObject(object) {
-	var toReturn = {};
-
-	for (var i in object) {
-		if (!object.hasOwnProperty(i)) continue;
-
-		if (typeof object[i] == 'object' && object[i] !== null) {
-			var flatObject = flattenObject(object[i]);
-			for (var x in flatObject) {
-				if (!flatObject.hasOwnProperty(x)) continue;
-
-				toReturn[i + '.' + x] = flatObject[x];
-			}
-		} else {
-			toReturn[i] = object[i];
+	const sanitized = { ...values };
+	Object.keys(sanitized).forEach((key) => {
+		if (key.includes('Options') && typeof sanitized[key] === 'object') {
+			Object.keys(sanitized[key]).forEach((subKey) => {
+				if (typeof sanitized[key][subKey] === 'string' && !isNaN(sanitized[key][subKey])) {
+					sanitized[key][subKey] = parseInt(sanitized[key][subKey], 10);
+				}
+			});
 		}
-	}
-	return toReturn;
-}
+	});
+	return sanitized;
+};
 
 export default function AddonsConfigPage() {
-	const { updateUsedPins, updatePeripherals } = useContext(AppContext);
-	const [saveMessage, setSaveMessage] = useState('');
-	const [storedData, setStoredData] = useState({});
-
+	const { setLoading } = useContext(AppContext);
+	const [saveMessage, setSaveMessage] = useState(null);
+	const [initialValues, setInitialValues] = useState(DEFAULT_VALUES);
 	const { t } = useTranslation();
 
 	useEffect(() => {
-		updatePeripherals();
-	}, []);
+		async function fetchData() {
+			const options = await WebApi.getAddonOptions();
+			setInitialValues({ ...DEFAULT_VALUES, ...options });
+			setLoading(false);
+		}
+		fetchData();
+	}, [setLoading]);
 
-	const onSuccess = async (values: typeof DEFAULT_VALUES) => {
-		const flattened = flattenObject(storedData);
-
-		// Convert turbo LED color if available
-		const data = {
-			...values,
-			turboLedColor: hexToInt(values.turboLedColor || '#000000'),
-		};
-		const valuesSchema = schema.cast(data); // Strip invalid values
-
-		// Compare what's changed and set it to resultObject
-		let resultObject = {};
-		Object.entries(flattened)?.map((entry) => {
-			const [key, oldVal] = entry;
-			const newVal = get(valuesSchema, key);
-			if (newVal !== oldVal) {
-				set(resultObject, key, newVal);
-			}
-		});
-		sanitizeData(resultObject);
-		const success = await WebApi.setAddonsOptions(resultObject);
-		setStoredData(JSON.parse(JSON.stringify(values))); // Update to reflect saved data
-		setSaveMessage(
-			success
-				? t('Common:saved-success-message')
-				: t('Common:saved-error-message'),
-		);
-		if (success) updateUsedPins();
+	const onSuccess = async (values) => {
+		setSaveMessage(null);
+		const sanitizedValues = sanitizeData(values);
+		const success = await WebApi.setAddonOptions(sanitizedValues);
+		setSaveMessage(success ? t('Common:saved-success-message') : t('Common:saved-error-message'));
 	};
 
 	return (
-		<Formik
-			enableReinitialize={true}
-			validationSchema={schema}
-			onSubmit={onSuccess}
-			initialValues={DEFAULT_VALUES}
-		>
-			{({ handleSubmit, handleChange, values, errors, setFieldValue }) => (
+		<Formik enableReinitialize={true} initialValues={initialValues} validationSchema={schema} onSubmit={onSuccess}>
+			{({ values, handleChange, handleCheckbox, setFieldValue, handleSubmit }) => (
 				<Form noValidate onSubmit={handleSubmit}>
-					<h1>{t('AddonsConfig:header-text')}</h1>
-					<p>{t('AddonsConfig:sub-header-text')}</p>
-					{ADDONS.map((Addon, index) => (
-						<Addon
-							key={`addon-${index}`}
-							values={values}
-							errors={errors}
-							handleChange={handleChange}
-							handleCheckbox={(name: keyof typeof DEFAULT_VALUES) => {
-								setFieldValue(name, values[name] === 1 ? 0 : 1);
-							}}
-							setFieldValue={setFieldValue}
-						/>
-					))}
-
+					<Analog values={values} handleChange={handleChange} />
+					<TurboInput values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} />
+					<SliderInput values={values} handleChange={handleChange} />
+					<SOCDSelectionSlider values={values} handleChange={handleChange} />
+					<ReverseInput values={values} handleChange={handleChange} />
+					<PS4Mode values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} />
+					<I2CDisplay values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
+					<I2CAnalog1219 values={values} handleChange={handleChange} />
+					<TouchpadDataConfiguration values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} />
+					<WiiExtension values={values} handleChange={handleChange} />
+					<SNESInput values={values} handleChange={handleChange} />
+					<BuzzerSpeaker values={values} handleChange={handleChange} />
+					<PlayerNumber values={values} handleChange={handleChange} />
+					<DualInput values={values} handleChange={handleChange} />
+					<ExtraButtonConfiguration values={values} handleChange={handleChange} />
+					<Tilt values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} />
+					<BoardLed values={values} handleChange={handleChange} />
+					<BootselButton values={values} handleChange={handleChange} />
+					<KeyboardHost values={values} handleChange={handleChange} setFieldValue={setFieldValue} />
+					<HETrigger values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
+					<JinglePlayer values={values} handleChange={handleChange} handleCheckbox={handleCheckbox} setFieldValue={setFieldValue} />
 					<div className="mt-3">
-						<Button type="submit" id="save">
-							{t('Common:button-save-label')}
-						</Button>
-						{saveMessage ? <span className="alert">{saveMessage}</span> : null}
+						<Button type="submit">{t('Common:button-save-label')}</Button>
+						{saveMessage && <span className="ms-3">{saveMessage}</span>}
 					</div>
-					<FormContext setStoredData={setStoredData} />
 				</Form>
 			)}
 		</Formik>
