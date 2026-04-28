@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 import Section from '../Components/Section';
 
-// Protoの構造 (jinglePlayerOptions) に完全に一致させる
 export const jinglePlayerScheme = {
     jinglePlayerOptions: yup.object().shape({
         enabled: yup.number().label('Enabled'),
@@ -22,9 +21,13 @@ export const jinglePlayerState = {
 
 const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
     const { t } = useTranslation();
-    
-    // データが undefined の場合に備えた安全策
     const options = values?.jinglePlayerOptions || jinglePlayerState.jinglePlayerOptions;
+
+    // 数値として確実に反映させるためのラッパー
+    const handleNumberChange = (e) => {
+        e.target.value = parseInt(e.target.value, 10);
+        handleChange(e);
+    };
 
     return (
         <Section title={t('Jingle Player Addon')}>
@@ -36,6 +39,7 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
                         type="checkbox"
                         name="jinglePlayerOptions.enabled"
                         checked={Boolean(options.enabled)}
+                        // handleCheckboxは内部で数値を扱うのでそのまま
                         onChange={() => handleCheckbox('jinglePlayerOptions.enabled')}
                     />
                 </div>
@@ -46,8 +50,9 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
                     <select
                         className="form-select form-select-sm"
                         name="jinglePlayerOptions.volume"
-                        value={options.volume ?? 15}
-                        onChange={handleChange}
+                        value={options.volume}
+                        // 文字列ではなく数値として送る
+                        onChange={handleNumberChange}
                     >
                         {Array.from({ length: 31 }, (_, i) => (
                             <option key={i} value={i}>{i}</option>
