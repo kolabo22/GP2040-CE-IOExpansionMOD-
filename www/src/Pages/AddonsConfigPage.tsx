@@ -9,6 +9,7 @@ import { AppContext } from '../Contexts/AppContext';
 import { hexToInt } from '../Services/Utilities';
 import WebApi from '../Services/WebApi';
 
+// 各アドオンのインポート（パスを実体に合わせました）
 import Analog, { analogScheme, analogState } from '../Addons/Analog';
 import Analog1256, { analog1256Scheme, analog1256State } from '../Addons/Analog1256';
 import Bootsel, { bootselScheme, bootselState } from '../Addons/Bootsel';
@@ -32,14 +33,6 @@ import ReactiveLED, { reactiveLEDScheme, reactiveLEDState } from '../Addons/Reac
 import TG16, { tg16State } from '../Addons/TG16';
 import HETrigger, { HETriggerScheme, HETriggerState } from '../Addons/HETrigger';
 import JinglePlayer, { jinglePlayerScheme, jinglePlayerState } from '../Addons/JinglePlayer';
-
-export type AddonPropTypes = {
-	values: typeof DEFAULT_VALUES;
-	errors: FormikErrors<typeof DEFAULT_VALUES>;
-	handleChange: FormikHandlers['handleChange'];
-	handleCheckbox: (name: keyof typeof DEFAULT_VALUES) => void;
-	setFieldValue: FormikHelpers<typeof DEFAULT_VALUES>['setFieldValue'];
-};
 
 const schema = yup.object().shape({
 	...analogScheme,
@@ -105,7 +98,6 @@ const FormContext = ({ setStoredData }) => {
 	useEffect(() => {
 		async function fetchData() {
 			const data = await WebApi.getAddonsOptions(setLoading);
-			// 重要：本体からのデータに、デフォルト値（JinglePlayerを含む）をマージする
 			const mergedData = { ...DEFAULT_VALUES, ...data };
 			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
