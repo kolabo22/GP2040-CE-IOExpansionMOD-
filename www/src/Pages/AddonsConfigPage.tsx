@@ -6,9 +6,9 @@ import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
 import WebApi from '../Services/WebApi';
 
-// インポートパスの大文字・小文字を修正（BoardLed -> BoardLED）
+// PDFの元コードに合わせ、パスを ../Addons/BoardLed （Ledは小文字混じり）に戻しました
 import Analog from '../Addons/Analog';
-import BoardLed from '../Addons/BoardLED'; 
+import BoardLed from '../Addons/BoardLed'; 
 import BootselButton from '../Addons/BootselButton';
 import BuzzerSpeaker from '../Addons/BuzzerSpeaker';
 import DualInput from '../Addons/DualInput';
