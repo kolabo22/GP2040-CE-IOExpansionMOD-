@@ -6,9 +6,9 @@ import * as yup from 'yup';
 import { AppContext } from '../Contexts/AppContext';
 import WebApi from '../Services/WebApi';
 
-// PDFの元コードに合わせ、パスを ../Addons/BoardLed （Ledは小文字混じり）に戻しました
+// ファイル名を実際の実体（OnBoardLed 等）に合わせて厳密に修正
 import Analog from '../Addons/Analog';
-import BoardLed from '../Addons/BoardLed'; 
+import BoardLed from '../Addons/OnBoardLed'; // BoardLed -> OnBoardLed に修正
 import BootselButton from '../Addons/BootselButton';
 import BuzzerSpeaker from '../Addons/BuzzerSpeaker';
 import DualInput from '../Addons/DualInput';
@@ -58,7 +58,7 @@ const schema = yup.object().shape({
 	bootselButtonOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), buttonMask: yup.number().label('Button Mask') }),
 	buzzerSpeakerOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), buzzerPin: yup.number().label('Buzzer Pin'), buzzerVolume: yup.number().label('Buzzer Volume') }),
 	dualInputOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
-	extraButtonOptions: yup.object().shape({ enabled: yup.number().label('Enabled') }),
+	extraButtonOptions: yup.number().label('Enabled'),
 	i2cAnalog1219Options: yup.object().shape({ enabled: yup.number().label('Enabled'), i2cAddress: yup.number().label('I2C Address'), i2cBlock: yup.number().label('I2C Block') }),
 	displayOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), i2cAddress: yup.number().label('I2C Address'), i2cBlock: yup.number().label('I2C Block'), i2cSpeed: yup.number().label('I2C Speed'), buttonLayout: yup.number().label('Button Layout'), buttonLayoutRight: yup.number().label('Button Layout Right'), splashMode: yup.number().label('Splash Mode'), splashDuration: yup.number().label('Splash Duration'), displaySaverTimeout: yup.number().label('Display Saver Timeout'), invertDisplay: yup.number().label('Invert Display'), flipDisplay: yup.number().label('Flip Display') }),
 	keyboardHostOptions: yup.object().shape({ enabled: yup.number().label('Enabled'), pinDplus: yup.number().label('Pin D+'), pinDminus: yup.number().label('Pin D-'), pin5V: yup.number().label('Pin 5V'), mouseMovement: yup.number().label('Mouse Movement') }),
