@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 import Section from '../Components/Section';
 
-// DEFAULT_VALUESに展開される初期状態
+// AddonsConfigPageのDEFAULT_VALUESに展開される初期値
 export const jinglePlayerState = {
 	jinglePlayerOptions: {
 		enabled: 0,
@@ -11,7 +11,7 @@ export const jinglePlayerState = {
 	},
 };
 
-// schemaに展開されるバリデーション
+// AddonsConfigPageのschemaに展開されるバリデーション
 export const jinglePlayerScheme = {
 	jinglePlayerOptions: yup.object().shape({
 		enabled: yup.number().label('Enabled'),
@@ -19,10 +19,10 @@ export const jinglePlayerScheme = {
 	}),
 };
 
-const JinglePlayer = ({ values, handleChange, handleCheckbox, setFieldValue }) => {
+const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
 	const { t } = useTranslation();
 	
-	// valuesの中に jinglePlayerOptions がない場合に備える安全策
+	// valuesの中にデータがない場合の安全策
 	const options = values?.jinglePlayerOptions || jinglePlayerState.jinglePlayerOptions;
 
 	return (
