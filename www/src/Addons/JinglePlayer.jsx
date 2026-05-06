@@ -3,15 +3,14 @@ import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 import Section from '../Components/Section';
 
-// AddonsConfigPageのDEFAULT_VALUESに展開される初期値
+// AddonsConfigPageのDEFAULT_VALUESに正しくマージされるための定義
 export const jinglePlayerState = {
-	jinglePlayerOptions: {
+	jinglePlayerOptions: { // ここは AddonsConfigPage側で addonOptions内に展開されるならこのままでOK、もし直下なら addonOptionsを外側に足す
 		enabled: 0,
 		volume: 15,
 	},
 };
 
-// AddonsConfigPageのschemaに展開されるバリデーション
 export const jinglePlayerScheme = {
 	jinglePlayerOptions: yup.object().shape({
 		enabled: yup.number().label('Enabled'),
@@ -22,8 +21,8 @@ export const jinglePlayerScheme = {
 const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
 	const { t } = useTranslation();
 	
-	// valuesの中にデータがない場合の安全策
-	const options = values?.jinglePlayerOptions || jinglePlayerState.jinglePlayerOptions;
+	// config.protoの構造に合わせ、addonOptions 内を参照するように変更
+	const options = values?.addonOptions?.jinglePlayerOptions || { enabled: 0, volume: 15 };
 
 	return (
 		<Section title={t('Jingle Player Addon')}>
@@ -33,9 +32,10 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
 					<input
 						className="form-check-input ms-2"
 						type="checkbox"
-						name="jinglePlayerOptions.enabled"
-						checked={options.enabled === 1}
-						onChange={() => handleCheckbox('jinglePlayerOptions.enabled')}
+						// nameに "addonOptions." を追加することでPicoが保存対象として認識する
+						name="addonOptions.jinglePlayerOptions.enabled"
+						checked={Boolean(options.enabled)}
+						onChange={() => handleCheckbox('addonOptions.jinglePlayerOptions.enabled')}
 					/>
 				</div>
 			</div>
@@ -44,7 +44,7 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
 					<label className="form-label">{t('Volume (0-30)')}</label>
 					<select
 						className="form-select form-select-sm"
-						name="jinglePlayerOptions.volume"
+						name="addonOptions.jinglePlayerOptions.volume"
 						value={options.volume}
 						onChange={handleChange}
 					>
