@@ -14,31 +14,44 @@ void JinglePlayerAddon::setup() {
     gpio_set_function(20, GPIO_FUNC_UART);
     gpio_set_function(21, GPIO_FUNC_UART);
 
-    // S2起動（ConfigMode）の判定
-    bool isConfig = DriverManager::getInstance().isConfigMode();
+    // 起動時のモードを保存
+    this->_isConfigAtBoot = DriverManager::getInstance().isConfigMode();
+}
 
-    if (isConfig) {
-        // 設定モード：システム安定化を待って21番を再生
-        sleep_ms(1500); 
-        setVolume(this->volume);
-        sleep_ms(50);
-        play(21);
+// 通常モード用
+void JinglePlayerAddon::process() {
+    checkAndPlayJingle();
+}
+
+// WebUIモードでも呼ばれる可能性を確保
+void JinglePlayerAddon::postprocess(bool reportSent) {
+    checkAndPlayJingle();
+}
+
+void JinglePlayerAddon::checkAndPlayJingle() {
+    if (this->_hasPlayedOnBoot) return;
+
+    uint32_t elapsed = to_ms_since_boot(get_absolute_time());
+    uint32_t waitThreshold = this->_isConfigAtBoot ? 1500 : 800;
+
+    // 判定が安定するまで待機
+    if (elapsed < waitThreshold) return;
+
+    // 音量設定
+    setVolume(this->volume);
+    sleep_ms(50);
+
+    if (this->_isConfigAtBoot) {
+        play(21); // 設定モード：0021.mp3
     } else {
-        // 通常起動：0.8秒待機して機種別音を再生
-        sleep_ms(800);
-        setVolume(this->volume);
-        sleep_ms(50);
-        playSelectedModeJingle();
+        playSelectedModeJingle(); // 通常モード：機種別（ここで現在のモードを再取得）
     }
 
     this->_hasPlayedOnBoot = true;
 }
 
-void JinglePlayerAddon::process() {
-    // 再生はsetupで完結しているため空でOK
-}
-
 void JinglePlayerAddon::playSelectedModeJingle() {
+    // 再生直前に最新のモードを取得
     InputMode mode = DriverManager::getInstance().getInputMode();
     uint16_t track = 1;
 
@@ -89,5 +102,3 @@ void JinglePlayerAddon::reinit() {
     this->_hasPlayedOnBoot = false;
     setup();
 }
-
-void JinglePlayerAddon::postprocess(bool reportSent) {}
