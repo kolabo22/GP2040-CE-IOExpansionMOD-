@@ -194,7 +194,7 @@ export default function AddonsConfigPage() {
 							values={values}
 							errors={errors}
 							handleChange={handleChange}
-							// 重要：深い階層（addonOptions.xxx.enabled）に対応
+							// ★重要：深い階層（addonOptions.xxx.enabled）を確実に反転させる修正
 							handleCheckbox={(name: string) => {
 								const currentValue = get(values, name);
 								setFieldValue(name, currentValue === 1 ? 0 : 1);
