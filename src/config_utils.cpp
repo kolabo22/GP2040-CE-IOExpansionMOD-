@@ -1078,7 +1078,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 
     // addonOptions.jinglePlayerOptions
     INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, enabled, false);
-    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, 15u);
+    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, (uint32_t)15);
 	
     // reminder that this must be set or else nanopb won't retain anything
     config.addonOptions.heTriggerOptions.triggers_count = HETRIGGER_COUNT;
