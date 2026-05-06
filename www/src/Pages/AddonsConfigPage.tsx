@@ -100,6 +100,10 @@ const FormContext = ({ setStoredData }) => {
 	useEffect(() => {
 		async function fetchData() {
 			const data = await WebApi.getAddonsOptions(setLoading);
+   	  
+			// ★この一行を追加して、ブラウザのコンソールで「data」の中身を見てください
+   	  console.log("Picoから届いた生データ:", data); 			
+			
 			const mergedData = { ...DEFAULT_VALUES, ...data };
 			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
