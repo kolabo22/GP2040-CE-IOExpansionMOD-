@@ -1076,12 +1076,12 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.heTriggerOptions.triggers[31], noise, HETRIGGER_HE31_NOISE);
     INIT_UNSET_PROPERTY(config.addonOptions.heTriggerOptions.triggers[31], rapidTrigger, HETRIGGER_HE31_RAPID);
 
-    // reminder that this must be set or else nanopb won't retain anything
-    config.addonOptions.heTriggerOptions.triggers_count = HETRIGGER_COUNT;
-
     // addonOptions.jinglePlayerOptions
     INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, enabled, false);
     INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, 15u);
+	
+    // reminder that this must be set or else nanopb won't retain anything
+    config.addonOptions.heTriggerOptions.triggers_count = HETRIGGER_COUNT;
 	
     // keyboardMapping
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, enabled, KEYBOARD_HOST_ENABLED);
