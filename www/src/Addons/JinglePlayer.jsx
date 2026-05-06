@@ -3,25 +3,30 @@ import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 import Section from '../Components/Section';
 
-// AddonsConfigPageのDEFAULT_VALUESに正しくマージされるための定義
+// 階層を一段深くして、config.protoの構造(AddonOptions)に合わせる
 export const jinglePlayerState = {
-	jinglePlayerOptions: { // ここは AddonsConfigPage側で addonOptions内に展開されるならこのままでOK、もし直下なら addonOptionsを外側に足す
-		enabled: 0,
-		volume: 15,
+	addonOptions: {
+		jinglePlayerOptions: {
+			enabled: 0,
+			volume: 15,
+		},
 	},
 };
 
+// バリデーションも同様の階層構造にする
 export const jinglePlayerScheme = {
-	jinglePlayerOptions: yup.object().shape({
-		enabled: yup.number().label('Enabled'),
-		volume: yup.number().label('Volume'),
+	addonOptions: yup.object().shape({
+		jinglePlayerOptions: yup.object().shape({
+			enabled: yup.number().label('Enabled'),
+			volume: yup.number().label('Volume'),
+		}),
 	}),
 };
 
 const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
 	const { t } = useTranslation();
 	
-	// config.protoの構造に合わせ、addonOptions 内を参照するように変更
+	// valuesの参照先も addonOptions 経由にする
 	const options = values?.addonOptions?.jinglePlayerOptions || { enabled: 0, volume: 15 };
 
 	return (
@@ -32,9 +37,9 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
 					<input
 						className="form-check-input ms-2"
 						type="checkbox"
-						// nameに "addonOptions." を追加することでPicoが保存対象として認識する
+						// name属性を完全なパスにする
 						name="addonOptions.jinglePlayerOptions.enabled"
-						checked={Boolean(options.enabled)}
+						checked={options.enabled === 1}
 						onChange={() => handleCheckbox('addonOptions.jinglePlayerOptions.enabled')}
 					/>
 				</div>
