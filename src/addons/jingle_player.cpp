@@ -1,57 +1,53 @@
 #include "addons/jingle_player.h"
-#include "storagemanager.h"
 #include "drivermanager.h"
+#include "storagemanager.h"
 
 void JinglePlayerAddon::setup() {
     const auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     if (!options.enabled) return;
 
     this->volume = (uint8_t)options.volume;
-    _hasPlayedOnBoot = false;
+    this->_hasPlayedOnBoot = false;
 
     // JQ8900 UART通信初期化 (GP20:TX / GP21:RX)
     uart_init(uart1, 9600);
     gpio_set_function(20, GPIO_FUNC_UART);
     gpio_set_function(21, GPIO_FUNC_UART);
+
+    // 起動直後の判定を安定させるため微小待機してからConfigModeか判定し保持
+    sleep_ms(10);
+    this->_wasConfigMode = DriverManager::getInstance().isConfigMode();
 }
 
 void JinglePlayerAddon::process() {
     const auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    
-    // アドオン無効、または既に再生済みの場合は何もしない
-    if (!options.enabled || _hasPlayedOnBoot) return;
+    if (!options.enabled || this->_hasPlayedOnBoot) return;
 
-    // 現在の起動からの経過時間を確認
+    // 起動からの経過時間を取得
     uint32_t elapsed = to_ms_since_boot(get_absolute_time());
 
-    // 1. まずは設定モード（WebUI）かどうかを判定
-    bool isConfig = DriverManager::getInstance().isConfigMode();
+    // 設定モードなら1.5秒、通常なら0.8秒待機してシステム安定化を待つ
+    uint32_t waitThreshold = this->_wasConfigMode ? 1500 : 800;
 
-    // 2. モードに応じた待機時間を設定（設定モードは長めに待つ）
-    uint32_t waitThreshold = isConfig ? 1500 : 800;
-
-    // 待機時間に達していない場合は処理を抜ける
     if (elapsed < waitThreshold) return;
 
-    // --- ここから再生実行（一度だけ通過） ---
-
-    // 音量設定
+    // --- 再生実行（一度だけ通過） ---
     setVolume(this->volume);
-    sleep_ms(50);
+    sleep_ms(50); // パケット間の安定用ウェイト
 
-    if (isConfig) {
-        // 設定モード（S2起動）：21番を再生
+    if (this->_wasConfigMode) {
+        // 設定モード（S2起動）：0021.mp3 を再生
         play(21);
     } else {
         // 通常起動：現在の確定済みモードをリアルタイム取得して再生
         playSelectedModeJingle();
     }
     
-    _hasPlayedOnBoot = true; // 起動時の一回のみ再生を保証
+    this->_hasPlayedOnBoot = true; 
 }
 
 void JinglePlayerAddon::playSelectedModeJingle() {
-    // 保存設定（options.inputMode）ではなく、現在の動作モードを直接取得
+    // DriverManagerから現在動作中の入力を取得（ミニメニューの変更を反映）
     InputMode mode = DriverManager::getInstance().getInputMode();
     uint16_t track = 1;
 
@@ -66,11 +62,13 @@ void JinglePlayerAddon::playSelectedModeJingle() {
         case INPUT_MODE_MDMINI:       track = 8;  break;
         case INPUT_MODE_NEOGEO:       track = 10; break;
         case INPUT_MODE_PCEMINI:      track = 11; break;
+        case INPUT_MODE_SWITCH_PRO:   track = 13; break; // 0013.mp3
         case INPUT_MODE_ASTRO:        track = 15; break;
         case INPUT_MODE_PSCLASSIC:    track = 16; break;
         case INPUT_MODE_XBOXORIGINAL: track = 17; break;
         case INPUT_MODE_EGRET:        track = 18; break;
         case INPUT_MODE_GENERIC:      track = 19; break;
+        case INPUT_MODE_P5GENERAL:   track = 20; break; // 0020.mp3
         default:                      track = 1;  break;
     }
     play(track);
@@ -78,7 +76,7 @@ void JinglePlayerAddon::playSelectedModeJingle() {
 
 // JQ8900専用：音量設定（0x13）
 void JinglePlayerAddon::setVolume(uint8_t volume) {
-    if (volume > 30) volume = 30;
+    if (volume > 30) volume = 30; // 最大値制限
     
     uint8_t cmd = 0x13;
     uint8_t len = 0x01;
@@ -88,13 +86,13 @@ void JinglePlayerAddon::setVolume(uint8_t volume) {
     for (int i = 0; i < 5; i++) uart_putc_raw(uart1, packet[i]);
 }
 
-// JQ8900専用：内蔵Flash指定の曲再生（0x16）
+// JQ8900専用：内蔵Flash(0x02)指定の曲再生（0x16）
 void JinglePlayerAddon::play(uint16_t index) {
     uint8_t h = (uint8_t)((index >> 8) & 0xFF);
     uint8_t l = (uint8_t)(index & 0xFF);
     uint8_t cmd = 0x16;
     uint8_t len = 0x03;
-    uint8_t device = 0x02; // 内蔵Flash
+    uint8_t device = 0x02; // 内蔵Flashメモリ
 
     uint8_t sm = (uint8_t)(0xAA + cmd + len + device + h + l);
     
