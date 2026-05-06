@@ -2363,7 +2363,8 @@ std::string getAddonOptions()
         addonObj = doc["addonOptions"];
     }
 
-    const JinglePlayerOptions& jingleOptions = configManager.getAddonOptions().jinglePlayerOptions;
+    // Storageクラスから直接アドオン設定を取得
+    const JinglePlayerOptions& jingleOptions = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     JsonObject jingleObj = addonObj.createNestedObject("jinglePlayerOptions");
     jingleObj["enabled"] = jingleOptions.enabled ? 1 : 0;
     jingleObj["volume"] = jingleOptions.volume;
