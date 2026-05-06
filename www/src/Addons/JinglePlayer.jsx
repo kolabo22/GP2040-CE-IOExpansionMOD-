@@ -3,26 +3,31 @@ import { useTranslation } from 'react-i18next';
 import * as yup from 'yup';
 import Section from '../Components/Section';
 
-// AddonsConfigPageのDEFAULT_VALUESに正しくマージされるための定義
+// AddonsConfigPageのDEFAULT_VALUESにマージされる初期値
 export const jinglePlayerState = {
-	jinglePlayerOptions: { // ここは AddonsConfigPage側で addonOptions内に展開されるならこのままでOK、もし直下なら addonOptionsを外側に足す
-		enabled: 0,
-		volume: 15,
+	addonOptions: {
+		jinglePlayerOptions: {
+			enabled: 0,
+			volume: 15,
+		},
 	},
 };
 
+// バリデーションスキーマも階層を合わせる
 export const jinglePlayerScheme = {
-	jinglePlayerOptions: yup.object().shape({
-		enabled: yup.number().label('Enabled'),
-		volume: yup.number().label('Volume'),
+	addonOptions: yup.object().shape({
+		jinglePlayerOptions: yup.object().shape({
+			enabled: yup.number().label('Enabled'),
+			volume: yup.number().label('Volume'),
+		}),
 	}),
 };
 
 const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
 	const { t } = useTranslation();
 	
-	// config.protoの構造に合わせ、addonOptions 内を参照するように変更
-	const options = values?.addonOptions?.jinglePlayerOptions || { enabled: 0, volume: 15 };
+	// values内の深い階層を参照
+	const options = values?.addonOptions?.jinglePlayerOptions || jinglePlayerState.addonOptions.jinglePlayerOptions;
 
 	return (
 		<Section title={t('Jingle Player Addon')}>
@@ -32,7 +37,7 @@ const JinglePlayer = ({ values, handleChange, handleCheckbox }) => {
 					<input
 						className="form-check-input ms-2"
 						type="checkbox"
-						// nameに "addonOptions." を追加することでPicoが保存対象として認識する
+						// name属性を完全なパスで指定
 						name="addonOptions.jinglePlayerOptions.enabled"
 						checked={Boolean(options.enabled)}
 						onChange={() => handleCheckbox('addonOptions.jinglePlayerOptions.enabled')}
