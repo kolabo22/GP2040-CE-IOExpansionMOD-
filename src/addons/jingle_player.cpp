@@ -9,45 +9,37 @@ void JinglePlayerAddon::setup() {
     this->volume = (uint8_t)options.volume;
     this->_hasPlayedOnBoot = false;
 
-    // JQ8900 UART通信初期化 (GP20:TX / GP21:RX)
+    // UART初期化
     uart_init(uart1, 9600);
     gpio_set_function(20, GPIO_FUNC_UART);
     gpio_set_function(21, GPIO_FUNC_UART);
 
-    // 起動直後の判定を安定させるため微小待機してからConfigModeか判定し保持
-    sleep_ms(10);
-    this->_wasConfigMode = DriverManager::getInstance().isConfigMode();
+    // 【重要】S2起動（ConfigMode）の判定
+    // WebUIモードでは通常のループが回らないことがあるため、ここで判定と再生を行う
+    bool isConfig = DriverManager::getInstance().isConfigMode();
+
+    if (isConfig) {
+        // 設定モード：システムとJQ8900が安定するまでしっかり待つ
+        sleep_ms(1500); 
+        setVolume(this->volume);
+        sleep_ms(50);
+        play(21); // 0021.mp3
+    } else {
+        // 通常起動：0.8秒待機
+        sleep_ms(800);
+        setVolume(this->volume);
+        sleep_ms(50);
+        playSelectedModeJingle(); // Switch Pro / P5 General 等の鳴らし分け
+    }
+
+    this->_hasPlayedOnBoot = true;
 }
 
 void JinglePlayerAddon::process() {
-    const auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    if (!options.enabled || this->_hasPlayedOnBoot) return;
-
-    // 起動からの経過時間を取得
-    uint32_t elapsed = to_ms_since_boot(get_absolute_time());
-
-    // 設定モードなら1.5秒、通常なら0.8秒待機してシステム安定化を待つ
-    uint32_t waitThreshold = this->_wasConfigMode ? 1500 : 800;
-
-    if (elapsed < waitThreshold) return;
-
-    // --- 再生実行（一度だけ通過） ---
-    setVolume(this->volume);
-    sleep_ms(50); // パケット間の安定用ウェイト
-
-    if (this->_wasConfigMode) {
-        // 設定モード（S2起動）：0021.mp3 を再生
-        play(21);
-    } else {
-        // 通常起動：現在の確定済みモードをリアルタイム取得して再生
-        playSelectedModeJingle();
-    }
-    
-    this->_hasPlayedOnBoot = true; 
+    // setupで再生済みのため、ここは空でOK
 }
 
 void JinglePlayerAddon::playSelectedModeJingle() {
-    // DriverManagerから現在動作中の入力を取得（ミニメニューの変更を反映）
     InputMode mode = DriverManager::getInstance().getInputMode();
     uint16_t track = 1;
 
@@ -74,31 +66,28 @@ void JinglePlayerAddon::playSelectedModeJingle() {
     play(track);
 }
 
-// JQ8900専用：音量設定（0x13）
 void JinglePlayerAddon::setVolume(uint8_t volume) {
-    if (volume > 30) volume = 30; // 最大値制限
-    
+    if (volume > 30) volume = 30;
     uint8_t cmd = 0x13;
     uint8_t len = 0x01;
     uint8_t sm = (uint8_t)(0xAA + cmd + len + volume);
-    
     uint8_t packet[] = { 0xAA, cmd, len, volume, sm };
     for (int i = 0; i < 5; i++) uart_putc_raw(uart1, packet[i]);
 }
 
-// JQ8900専用：内蔵Flash(0x02)指定の曲再生（0x16）
 void JinglePlayerAddon::play(uint16_t index) {
     uint8_t h = (uint8_t)((index >> 8) & 0xFF);
     uint8_t l = (uint8_t)(index & 0xFF);
     uint8_t cmd = 0x16;
     uint8_t len = 0x03;
-    uint8_t device = 0x02; // 内蔵Flashメモリ
-
+    uint8_t device = 0x02; 
     uint8_t sm = (uint8_t)(0xAA + cmd + len + device + h + l);
-    
     uint8_t packet[] = { 0xAA, cmd, len, device, h, l, sm };
     for (int i = 0; i < 7; i++) uart_putc_raw(uart1, packet[i]);
 }
 
+void JinglePlayerAddon::reinit() {
+    this->_hasPlayedOnBoot = false;
+    setup();
+}
 void JinglePlayerAddon::postprocess(bool reportSent) {}
-void JinglePlayerAddon::reinit() {}
