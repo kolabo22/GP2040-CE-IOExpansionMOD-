@@ -12,9 +12,9 @@ public:
         return Storage::getInstance().getAddonOptions().jinglePlayerOptions.enabled; 
     }
     virtual void setup();
-    virtual void process() {} // 再生はsetupで完結させるため空に
+    virtual void process();
     virtual void preprocess() {}
-    virtual void postprocess(bool reportSent) {}
+    virtual void postprocess(bool reportSent);
     virtual void reinit();
     virtual std::string name() { return "JinglePlayer"; }
 
