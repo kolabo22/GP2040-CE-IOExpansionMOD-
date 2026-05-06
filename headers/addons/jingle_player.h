@@ -22,9 +22,11 @@ private:
     void playSelectedModeJingle();
     void setVolume(uint8_t volume);
     void play(uint16_t index);
+    void checkAndPlayJingle(); // 共通の再生チェック処理
 
     uint8_t volume;
     bool _hasPlayedOnBoot;
+    bool _isConfigAtBoot;
 };
 
 #endif
