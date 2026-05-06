@@ -14,29 +14,28 @@ void JinglePlayerAddon::setup() {
     gpio_set_function(20, GPIO_FUNC_UART);
     gpio_set_function(21, GPIO_FUNC_UART);
 
-    // 【重要】S2起動（ConfigMode）の判定
-    // WebUIモードでは通常のループが回らないことがあるため、ここで判定と再生を行う
+    // S2起動（ConfigMode）の判定
     bool isConfig = DriverManager::getInstance().isConfigMode();
 
     if (isConfig) {
-        // 設定モード：システムとJQ8900が安定するまでしっかり待つ
+        // 設定モード：システム安定化を待って21番を再生
         sleep_ms(1500); 
         setVolume(this->volume);
         sleep_ms(50);
-        play(21); // 0021.mp3
+        play(21);
     } else {
-        // 通常起動：0.8秒待機
+        // 通常起動：0.8秒待機して機種別音を再生
         sleep_ms(800);
         setVolume(this->volume);
         sleep_ms(50);
-        playSelectedModeJingle(); // Switch Pro / P5 General 等の鳴らし分け
+        playSelectedModeJingle();
     }
 
     this->_hasPlayedOnBoot = true;
 }
 
 void JinglePlayerAddon::process() {
-    // setupで再生済みのため、ここは空でOK
+    // 再生はsetupで完結しているため空でOK
 }
 
 void JinglePlayerAddon::playSelectedModeJingle() {
@@ -54,13 +53,13 @@ void JinglePlayerAddon::playSelectedModeJingle() {
         case INPUT_MODE_MDMINI:       track = 8;  break;
         case INPUT_MODE_NEOGEO:       track = 10; break;
         case INPUT_MODE_PCEMINI:      track = 11; break;
-        case INPUT_MODE_SWITCH_PRO:   track = 13; break; // 0013.mp3
+        case INPUT_MODE_SWITCH_PRO:   track = 13; break; 
         case INPUT_MODE_ASTRO:        track = 15; break;
         case INPUT_MODE_PSCLASSIC:    track = 16; break;
         case INPUT_MODE_XBOXORIGINAL: track = 17; break;
         case INPUT_MODE_EGRET:        track = 18; break;
         case INPUT_MODE_GENERIC:      track = 19; break;
-        case INPUT_MODE_P5GENERAL:   track = 20; break; // 0020.mp3
+        case INPUT_MODE_P5GENERAL:   track = 20; break;
         default:                      track = 1;  break;
     }
     play(track);
@@ -90,4 +89,5 @@ void JinglePlayerAddon::reinit() {
     this->_hasPlayedOnBoot = false;
     setup();
 }
+
 void JinglePlayerAddon::postprocess(bool reportSent) {}
