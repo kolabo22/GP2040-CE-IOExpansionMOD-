@@ -23,7 +23,7 @@ void ButtonLayoutScreen::init() {
     historyString = "";
     inputHistory.clear();
 
-    setViewport((isInputHistoryEnabled ? 0 : 0), 0, (isInputHistoryEnabled ? 64 : getRenderer()->getDriver()->getMetrics()->height), getRenderer()->getDriver()->getMetrics()->width);
+    setViewport((isInputHistoryEnabled ? 0 : 0), 0, (isInputHistoryEnabled ? 56 : getRenderer()->getDriver()->getMetrics()->height), getRenderer()->getDriver()->getMetrics()->width);
 
 	// load layout (drawElement pushes element to the display list)
     uint16_t elementCtr = 0;
@@ -331,7 +331,7 @@ GPWidget* ButtonLayoutScreen::pushElement(GPButtonLayout element) {
     element.parameters.x2 = (element.parameters.x2 * 8) / 10;
     element.parameters.y2 = (element.parameters.y2 * 8) / 10;
 	  // Y座標（y1）を 4ピクセル上にずらす
-		element.parameters.y1 -= 4;
+		element.parameters.y1 -= 2;
 		// --- ここまで追加 ---
 			
         GPButton* button = addButton(element.parameters.x1, element.parameters.y1, element.parameters.x2, element.parameters.y2, element.parameters.stroke, element.parameters.fill, element.parameters.value);
