@@ -1889,10 +1889,13 @@ std::string setAddonOptions()
 
 		// --- JQ8900Addon設定の保存 ---
 		JinglePlayerOptions& jingleOptions = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-		docToValue(jingleOptions.enabled, doc, "JinglePlayerEnabled"); // WebUIのname属性と一致している必要あり
-		docToValue(jingleOptions.volume, doc, "jingleVolume");
-
-    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+		if (doc.containsKey("jinglePlayerOptions")) {
+    JsonObject jingleObj = doc["jinglePlayerOptions"];
+    docToValue(jingleOptions.enabled, jingleObj, "enabled");
+    docToValue(jingleOptions.volume, jingleObj, "volume");
+		}
+    
+		EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
 
     return serialize_json(doc);
 }
@@ -2351,10 +2354,11 @@ std::string getAddonOptions()
     writeDoc(doc, "heTriggerSmoothingFactor", heTriggerOptions.smoothingFactor);
 
 		// --- JQ8900Addon設定の読み出し ---
-    // ★ここから追記：PicoからWebUIへ設定を返す処理
+    // WebUI側の addonOptions.jinglePlayerOptions 階層と完全に一致させます
     const JinglePlayerOptions& jingleOptions = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    writeDoc(doc, "JinglePlayerEnabled", jingleOptions.enabled ? 1 : 0);
-    writeDoc(doc, "jingleVolume", jingleOptions.volume);
+    JsonObject jingleObj = doc.createNestedObject("jinglePlayerOptions");
+    jingleObj["enabled"] = jingleOptions.enabled ? 1 : 0;
+    jingleObj["volume"] = jingleOptions.volume;
 	
     return serialize_json(doc);
 }
