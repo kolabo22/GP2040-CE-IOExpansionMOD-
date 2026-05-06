@@ -14,7 +14,7 @@ public:
     virtual void setup();
     virtual void process();
     virtual void preprocess() {}
-    virtual void postprocess(bool reportSent);
+    virtual void postprocess(bool reportSent) {}
     virtual void reinit();
     virtual std::string name() { return "JinglePlayer"; }
 
@@ -22,10 +22,11 @@ private:
     void playSelectedModeJingle();
     void setVolume(uint8_t volume);
     void play(uint16_t index);
-    void checkAndPlayJingle(); // 共通の再生チェック処理
 
+    enum class PlayState { IDLE, WAIT_FOR_BOOT, SET_VOLUME, WAIT_FOR_VOLUME, PLAY_JINGLE, FINISHED };
+    PlayState _state;
+    uint32_t _stateTimer;
     uint8_t volume;
-    bool _hasPlayedOnBoot;
     bool _isConfigAtBoot;
 };
 
