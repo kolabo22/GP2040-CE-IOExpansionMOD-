@@ -1079,6 +1079,10 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     // reminder that this must be set or else nanopb won't retain anything
     config.addonOptions.heTriggerOptions.triggers_count = HETRIGGER_COUNT;
 
+    // addonOptions.jinglePlayerOptions
+    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, enabled, false);
+    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, 20);
+	
     // keyboardMapping
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, enabled, KEYBOARD_HOST_ENABLED);
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, deprecatedPinDplus, KEYBOARD_HOST_PIN_DPLUS);
