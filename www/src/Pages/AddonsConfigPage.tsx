@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
-import { Formik, FormikErrors, FormikHandlers, FormikHelpers, useFormikContext } from 'formik';
+import { Formik, useFormikContext } from 'formik';
 import * as yup from 'yup';
 import { useTranslation } from 'react-i18next';
 import get from 'lodash/get';
@@ -9,7 +9,7 @@ import { AppContext } from '../Contexts/AppContext';
 import { hexToInt } from '../Services/Utilities';
 import WebApi from '../Services/WebApi';
 
-// 各アドオンのインポート（パスを実体に合わせました）
+// 各アドオンのインポート
 import Analog, { analogScheme, analogState } from '../Addons/Analog';
 import Analog1256, { analog1256Scheme, analog1256State } from '../Addons/Analog1256';
 import Bootsel, { bootselScheme, bootselState } from '../Addons/Bootsel';
@@ -34,6 +34,7 @@ import TG16, { tg16State } from '../Addons/TG16';
 import HETrigger, { HETriggerScheme, HETriggerState } from '../Addons/HETrigger';
 import JinglePlayer, { jinglePlayerScheme, jinglePlayerState } from '../Addons/JinglePlayer';
 
+// 全アドオンのバリデーションを統合
 const schema = yup.object().shape({
 	...analogScheme,
 	...analog1256Scheme,
@@ -58,6 +59,7 @@ const schema = yup.object().shape({
 	...jinglePlayerScheme,
 });
 
+// 全アドオンの初期値を統合
 export const DEFAULT_VALUES = {
 	...analogState,
 	...analog1256State,
@@ -112,6 +114,7 @@ const FormContext = ({ setStoredData }) => {
 	return null;
 };
 
+// データの数値変換処理
 const sanitizeData = (values) => {
 	Object.keys(values).forEach((key) => {
 		if (key.includes('keyboardHostMap')) return;
@@ -125,6 +128,7 @@ const sanitizeData = (values) => {
 	});
 };
 
+// オブジェクトの平坦化（比較用）
 function flattenObject(object) {
 	var toReturn = {};
 	for (var i in object) {
@@ -159,8 +163,8 @@ export default function AddonsConfigPage() {
 			turboLedColor: hexToInt(values.turboLedColor || '#000000'),
 		};
 		const valuesSchema = schema.cast(data);
-
 		let resultObject = {};
+
 		Object.entries(flattened)?.map((entry) => {
 			const [key, oldVal] = entry;
 			const newVal = get(valuesSchema, key);
@@ -190,8 +194,10 @@ export default function AddonsConfigPage() {
 							values={values}
 							errors={errors}
 							handleChange={handleChange}
-							handleCheckbox={(name: keyof typeof DEFAULT_VALUES) => {
-								setFieldValue(name, values[name] === 1 ? 0 : 1);
+							// 重要：深い階層（addonOptions.xxx.enabled）に対応
+							handleCheckbox={(name: string) => {
+								const currentValue = get(values, name);
+								setFieldValue(name, currentValue === 1 ? 0 : 1);
 							}}
 							setFieldValue={setFieldValue}
 						/>
