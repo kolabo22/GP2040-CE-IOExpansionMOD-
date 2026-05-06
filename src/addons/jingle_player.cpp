@@ -46,27 +46,24 @@ void JinglePlayerAddon::process() {
 void JinglePlayerAddon::playSelectedModeJingle() {
     InputMode mode = DriverManager::getInstance().getInputMode();
     uint16_t track = 1; // デフォルト 0001.mp3
-	
-    // 提示されたSDカード配置リストに準拠
-switch (mode) {
+
+    // enums.proto の定義名に完全に一致させました
+    switch (mode) {
         case INPUT_MODE_XINPUT:      track = 1;  break;
         case INPUT_MODE_SWITCH:      track = 2;  break;
-        case INPUT_MODE_PS3:         track = 3;  break; // DirectInput/PS3
+        case INPUT_MODE_PS3:         track = 3;  break;
+        case INPUT_MODE_KEYBOARD:    track = 5;  break; // リストに基づき5番
         case INPUT_MODE_PS4:         track = 4;  break;
-        case INPUT_MODE_KEYBOARD:    track = 5;  break;
         case INPUT_MODE_XBONE:       track = 6;  break;
-        case INPUT_MODE_PS5:         track = 7;  break;
-        
-        // エラー修正箇所：定義名をプロジェクトの基準に合わせる
-        case INPUT_MODE_GENESIS:     track = 8;  break; // MDからGENESISへ
+        case INPUT_MODE_MDMINI:      track = 8;  break; // 修正：MDMINI
         case INPUT_MODE_NEOGEO:      track = 10; break;
-        case INPUT_MODE_PCEMINI:     track = 11; break; // PCEからPCEMINIへ
-        
-        // もし以下のモードがまだエラーになる場合は、一旦コメントアウトするか default に逃がします
-        case INPUT_MODE_ASTRO:    track = 15; break; 
-        case INPUT_MODE_PSCLASSIC:   track = 16; break; // CLASSICから修正
-        case INPUT_MODE_XBOXORIGINAL: track = 17; break;
-        case INPUT_MODE_EGRET:       track = 18; break;
+        case INPUT_MODE_PCEMINI:     track = 11; break; // 修正：PCEMINI
+        case INPUT_MODE_EGRET:       track = 18; break; // 修正：EGRET
+        case INPUT_MODE_ASTRO:       track = 15; break; // 修正：ASTRO
+        case INPUT_MODE_PSCLASSIC:   track = 16; break; // 修正：PSCLASSIC
+        case INPUT_MODE_XBOXORIGINAL: track = 17; break; // 修正：XBOXORIGINAL
+        case INPUT_MODE_PS5:         track = 7;  break; // リストに基づき7番
+        case INPUT_MODE_GENERIC:     track = 19; break; // 修正：GENERIC (19番)
         
         default:                     track = 1;  break;
     }
