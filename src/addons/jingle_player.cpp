@@ -46,26 +46,28 @@ void JinglePlayerAddon::process() {
 void JinglePlayerAddon::playSelectedModeJingle() {
     InputMode mode = DriverManager::getInstance().getInputMode();
     uint16_t track = 1; // デフォルト 0001.mp3
-
+	
     // 提示されたSDカード配置リストに準拠
-    switch (mode) {
+switch (mode) {
         case INPUT_MODE_XINPUT:      track = 1;  break;
         case INPUT_MODE_SWITCH:      track = 2;  break;
-        case INPUT_MODE_PS3:         track = 3;  break;
+        case INPUT_MODE_PS3:         track = 3;  break; // DirectInput/PS3
         case INPUT_MODE_PS4:         track = 4;  break;
         case INPUT_MODE_KEYBOARD:    track = 5;  break;
         case INPUT_MODE_XBONE:       track = 6;  break;
         case INPUT_MODE_PS5:         track = 7;  break;
-        case INPUT_MODE_MD:          track = 8;  break; // Mega Drive
+        
+        // エラー修正箇所：定義名をプロジェクトの基準に合わせる
+        case INPUT_MODE_GENESIS:     track = 8;  break; // MDからGENESISへ
         case INPUT_MODE_NEOGEO:      track = 10; break;
-        case INPUT_MODE_PCE:         track = 11; break; // PC Engine
-        case INPUT_MODE_APPLE:       track = 12; break;
-        case INPUT_MODE_STEAMDECK:   track = 13; break;
-        case INPUT_MODE_ASTRO:       track = 15; break; // Astro City
-        case INPUT_MODE_CLASSIC:     track = 16; break; // PS Classic
+        case INPUT_MODE_PCEMINI:     track = 11; break; // PCEからPCEMINIへ
+        
+        // もし以下のモードがまだエラーになる場合は、一旦コメントアウトするか default に逃がします
+        case INPUT_MODE_ASTRO:    track = 15; break; 
+        case INPUT_MODE_PSCLASSIC:   track = 16; break; // CLASSICから修正
         case INPUT_MODE_XBOXORIGINAL: track = 17; break;
-        case INPUT_MODE_EGRET:       track = 18; break; // Egret II Mini
-        case INPUT_MODE_HID:         track = 19; break; // Generic HID
+        case INPUT_MODE_EGRET:       track = 18; break;
+        
         default:                     track = 1;  break;
     }
     play(track);
