@@ -1889,7 +1889,7 @@ std::string setAddonOptions()
 
 		// --- JQ8900Addon設定の保存 ---
 		JinglePlayerOptions& jingleOptions = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-		docToValue(jingleOptions.enabled, doc, "JinglePlayerEnabled");
+		docToValue(jingleOptions.enabled, doc, "JinglePlayerEnabled"); // WebUIのname属性と一致している必要あり
 		docToValue(jingleOptions.volume, doc, "jingleVolume");
 
     EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
