@@ -2350,10 +2350,11 @@ std::string getAddonOptions()
     writeDoc(doc, "heTriggerSmoothing", heTriggerOptions.emaSmoothing);
     writeDoc(doc, "heTriggerSmoothingFactor", heTriggerOptions.smoothingFactor);
 
-	// --- JQ8900Addon設定の読み出し ---
-	const JinglePlayerOptions& jingleOptionsLoad = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-	writeDoc(doc, "JinglePlayerEnabled", jingleOptionsLoad.enabled);
-	writeDoc(doc, "jingleVolume", jingleOptionsLoad.volume);	
+		// --- JQ8900Addon設定の読み出し ---
+    // ★ここから追記：PicoからWebUIへ設定を返す処理
+    const JinglePlayerOptions& jingleOptions = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
+    writeDoc(doc, "JinglePlayerEnabled", jingleOptions.enabled ? 1 : 0);
+    writeDoc(doc, "jingleVolume", jingleOptions.volume);
 	
     return serialize_json(doc);
 }
