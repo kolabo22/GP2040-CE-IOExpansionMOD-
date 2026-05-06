@@ -1081,7 +1081,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 
     // addonOptions.jinglePlayerOptions
     INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, enabled, false);
-    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, 20);
+    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, 15u);
 	
     // keyboardMapping
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, enabled, KEYBOARD_HOST_ENABLED);
