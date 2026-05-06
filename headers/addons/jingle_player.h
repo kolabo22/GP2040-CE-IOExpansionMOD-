@@ -8,7 +8,6 @@
 
 class JinglePlayerAddon : public GPAddon {
 public:
-    // Proto定義の jinglePlayerOptions.enabled を参照するように修正
     virtual bool available() { 
         return Storage::getInstance().getAddonOptions().jinglePlayerOptions.enabled; 
     }
@@ -23,11 +22,10 @@ private:
     void playSelectedModeJingle();
     void setVolume(uint8_t volume);
     void play(uint16_t index);
-    void sendCommand(uint8_t* buf);
 
     uint8_t volume;
     bool _hasPlayedOnBoot;
-    bool _wasConfigMode;
+    bool _wasConfigMode; // これを判定保持に使用します
 };
 
 #endif
