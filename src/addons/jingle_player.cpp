@@ -8,12 +8,11 @@ void JinglePlayerAddon::setup() {
 
     this->volume = (uint8_t)options.volume;
     _hasPlayedOnBoot = false;
-    _wasConfigMode = false;
 
-    // UART1 (GP20:TX / GP21:RX)
+    // JQ8900仕様: 9600bps, 8bit, 1 Stop, No Parity (データシート11P)
     uart_init(uart1, 9600);
-    gpio_set_function(20, GPIO_FUNC_UART);
-    gpio_set_function(21, GPIO_FUNC_UART);
+    gpio_set_function(20, GPIO_FUNC_UART); // TX
+    gpio_set_function(21, GPIO_FUNC_UART); // RX
 }
 
 void JinglePlayerAddon::process() {
@@ -22,24 +21,23 @@ void JinglePlayerAddon::process() {
 
     static uint32_t bootDelay = 0;
     if (!_hasPlayedOnBoot) {
-        // JQ8900の起動完了を待つ (約1.5秒〜2秒)
-        if (bootDelay < 200000) { 
+        // JQ8900の起動完了待ち (約2秒)
+        if (bootDelay < 250000) { 
             bootDelay++;
             return;
         }
 
         bool isConfig = DriverManager::getInstance().isConfigMode();
         setVolume(this->volume);
-        sleep_ms(20);
+        sleep_ms(50); // コマンド間の安定待ち
 
         if (isConfig) {
-            play(21); // 0021.mp3: WebConfigモード
+            play(21); // WebConfigモード：0021.mp3
         } else {
             playSelectedModeJingle();
         }
         
         _hasPlayedOnBoot = true;
-        _wasConfigMode = isConfig;
     }
 }
 
@@ -70,21 +68,32 @@ void JinglePlayerAddon::playSelectedModeJingle() {
     play(track);
 }
 
-// 最もシンプルな再生コマンド（開始-長さ-コマンド-データH-データL-終了）
+// JQ8900専用：音量設定 (データシート15P 0x13)
+void JinglePlayerAddon::setVolume(uint8_t volume) {
+    if (volume > 30) volume = 30;
+    
+    uint8_t cmd = 0x13;
+    uint8_t len = 0x01;
+    // チェックサム(SM): 全バイトの合計の下位8ビット
+    uint8_t sm = (uint8_t)(0xAA + cmd + len + volume);
+    
+    uint8_t packet[] = { 0xAA, cmd, len, volume, sm };
+    for (int i = 0; i < 5; i++) uart_putc_raw(uart1, packet[i]);
+}
+
+// JQ8900専用：内蔵Flash(0x02)の指定曲再生 (データシート15P 0x16準拠)
 void JinglePlayerAddon::play(uint16_t index) {
     uint8_t h = (uint8_t)((index >> 8) & 0xFF);
     uint8_t l = (uint8_t)(index & 0xFF);
-    
-    // チェックサムを計算せず、固定のパケットを送る（JQ8900のサブセット仕様）
-    uint8_t packet[] = { 0x7E, 0x04, 0x03, h, l, 0xEF }; 
-    for (int i = 0; i < 6; i++) uart_putc_raw(uart1, packet[i]);
-}
+    uint8_t cmd = 0x16;    // 指定デバイス・指定曲再生コマンド
+    uint8_t len = 0x03;    // データ長 (device + h + l)
+    uint8_t device = 0x02; // ★重要：0x02 = 内蔵Flashメモリ
 
-// 音量設定も同様にシンプル化
-void JinglePlayerAddon::setVolume(uint8_t volume) {
-    if (volume > 30) volume = 30;
-    uint8_t packet[] = { 0x7E, 0x03, 0x06, volume, 0xEF }; 
-    for (int i = 0; i < 5; i++) uart_putc_raw(uart1, packet[i]);
+    // チェックサム(SM): AA + 16 + 03 + 02 + High + Low
+    uint8_t sm = (uint8_t)(0xAA + cmd + len + device + h + l);
+    
+    uint8_t packet[] = { 0xAA, cmd, len, device, h, l, sm };
+    for (int i = 0; i < 7; i++) uart_putc_raw(uart1, packet[i]);
 }
 
 void JinglePlayerAddon::postprocess(bool reportSent) {}
