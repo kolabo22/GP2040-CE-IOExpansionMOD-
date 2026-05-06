@@ -1,57 +1,67 @@
 #include "addons/jingle_player.h"
 #include "drivermanager.h"
-#include "storagemanager.h"
 
 void JinglePlayerAddon::setup() {
     const auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    if (!options.enabled) return;
-
     this->volume = (uint8_t)options.volume;
-    this->_hasPlayedOnBoot = false;
 
     // UART初期化
     uart_init(uart1, 9600);
     gpio_set_function(20, GPIO_FUNC_UART);
     gpio_set_function(21, GPIO_FUNC_UART);
 
-    // 起動時のモードを保存
     this->_isConfigAtBoot = DriverManager::getInstance().isConfigMode();
-}
-
-// 通常モード用
-void JinglePlayerAddon::process() {
-    checkAndPlayJingle();
-}
-
-// WebUIモードでも呼ばれる可能性を確保
-void JinglePlayerAddon::postprocess(bool reportSent) {
-    checkAndPlayJingle();
-}
-
-void JinglePlayerAddon::checkAndPlayJingle() {
-    if (this->_hasPlayedOnBoot) return;
-
-    uint32_t elapsed = to_ms_since_boot(get_absolute_time());
-    uint32_t waitThreshold = this->_isConfigAtBoot ? 1500 : 800;
-
-    // 判定が安定するまで待機
-    if (elapsed < waitThreshold) return;
-
-    // 音量設定
-    setVolume(this->volume);
-    sleep_ms(50);
 
     if (this->_isConfigAtBoot) {
-        play(21); // 設定モード：0021.mp3
+        // 【Configモード専用】setup内で完結させる（processが回らないため）
+        // WebUI起動時はOLEDの干渉が少ないため、ここだけsleep_msを許容
+        sleep_ms(1500); 
+        setVolume(this->volume);
+        sleep_ms(50);
+        play(21);
+        this->_state = PlayState::FINISHED;
     } else {
-        playSelectedModeJingle(); // 通常モード：機種別（ここで現在のモードを再取得）
+        // 【通常モード専用】非同期でprocessに任せる（OLEDフリーズ防止）
+        this->_state = PlayState::WAIT_FOR_BOOT;
+        this->_stateTimer = to_ms_since_boot(get_absolute_time());
     }
+}
 
-    this->_hasPlayedOnBoot = true;
+void JinglePlayerAddon::process() {
+    if (this->_state == PlayState::FINISHED || this->_isConfigAtBoot) return;
+
+    uint32_t now = to_ms_since_boot(get_absolute_time());
+
+    switch (_state) {
+        case PlayState::WAIT_FOR_BOOT:
+            if (now - _stateTimer >= 800) {
+                _state = PlayState::SET_VOLUME;
+            }
+            break;
+
+        case PlayState::SET_VOLUME:
+            setVolume(this->volume);
+            _stateTimer = now;
+            _state = PlayState::WAIT_FOR_VOLUME;
+            break;
+
+        case PlayState::WAIT_FOR_VOLUME:
+            if (now - _stateTimer >= 50) {
+                _state = PlayState::PLAY_JINGLE;
+            }
+            break;
+
+        case PlayState::PLAY_JINGLE:
+            playSelectedModeJingle();
+            _state = PlayState::FINISHED;
+            break;
+
+        default:
+            break;
+    }
 }
 
 void JinglePlayerAddon::playSelectedModeJingle() {
-    // 再生直前に最新のモードを取得
     InputMode mode = DriverManager::getInstance().getInputMode();
     uint16_t track = 1;
 
@@ -80,25 +90,19 @@ void JinglePlayerAddon::playSelectedModeJingle() {
 
 void JinglePlayerAddon::setVolume(uint8_t volume) {
     if (volume > 30) volume = 30;
-    uint8_t cmd = 0x13;
-    uint8_t len = 0x01;
-    uint8_t sm = (uint8_t)(0xAA + cmd + len + volume);
-    uint8_t packet[] = { 0xAA, cmd, len, volume, sm };
+    uint8_t packet[] = { 0xAA, 0x13, 0x01, volume, (uint8_t)(0xAA + 0x13 + 0x01 + volume) };
     for (int i = 0; i < 5; i++) uart_putc_raw(uart1, packet[i]);
 }
 
 void JinglePlayerAddon::play(uint16_t index) {
     uint8_t h = (uint8_t)((index >> 8) & 0xFF);
     uint8_t l = (uint8_t)(index & 0xFF);
-    uint8_t cmd = 0x16;
-    uint8_t len = 0x03;
-    uint8_t device = 0x02; 
-    uint8_t sm = (uint8_t)(0xAA + cmd + len + device + h + l);
-    uint8_t packet[] = { 0xAA, cmd, len, device, h, l, sm };
+    uint8_t device = 0x02;
+    uint8_t sm = (uint8_t)(0xAA + 0x16 + 0x03 + device + h + l);
+    uint8_t packet[] = { 0xAA, 0x16, 0x03, device, h, l, sm };
     for (int i = 0; i < 7; i++) uart_putc_raw(uart1, packet[i]);
 }
 
 void JinglePlayerAddon::reinit() {
-    this->_hasPlayedOnBoot = false;
     setup();
 }
