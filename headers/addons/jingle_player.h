@@ -14,7 +14,7 @@ public:
     virtual void setup();
     virtual void process();
     virtual void preprocess() {}
-    virtual void postprocess(bool reportSent) {}
+    virtual void postprocess(bool reportSent); // ここでS2再生を拾う
     virtual void reinit();
     virtual std::string name() { return "JinglePlayer"; }
 
@@ -22,6 +22,7 @@ private:
     void playSelectedModeJingle();
     void setVolume(uint8_t volume);
     void play(uint16_t index);
+    void runStateMachine(); // 共通の再生処理ロジック
 
     enum class PlayState { IDLE, WAIT_BOOT, SET_VOL, WAIT_VOL, PLAY, FINISHED };
     PlayState _state;
