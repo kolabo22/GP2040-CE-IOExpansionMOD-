@@ -4,6 +4,7 @@
  */
 
 #include "addons/display.h"
+#include "logos.h"  // ← これを追加！
 #include "GamepadState.h"
 #include "enums.h"
 #include "storagemanager.h"
