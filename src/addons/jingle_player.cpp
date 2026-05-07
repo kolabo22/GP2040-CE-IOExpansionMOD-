@@ -17,7 +17,7 @@ void JinglePlayerAddon::setup() {
         // 【S2起動専用：超強硬手段】
         // Configモードではループが止まるため、setup内で最小限の待機後に再生
         // 1.5秒はJQ8900が通電安定し、WebUIのWiFi初期化が一段落する目安
-        sleep_ms(1500); 
+        sleep_ms(2000); 
         setVolume(this->_volume);
         sleep_ms(60); // JQ8900がコマンドを処理する時間
         play(21);
