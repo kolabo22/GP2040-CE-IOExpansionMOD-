@@ -1031,7 +1031,7 @@ static const uint8_t L_EGRET2[] = {
 	0x00, 0x00, 0x06, 0x0c, 0xcd, 0x98, 0x07, 0xf2, 0x03, 0x02, 0x3f, 0x36, 0x7e, 0x00, 0x00, 0x00
  };
 
-// ID 0020: PS5 / P5 General
+// ID 0020: PS5 / PS5
 static const uint8_t L_PS5[] = { 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -1124,26 +1124,24 @@ void SplashScreen::drawScreen() {
     const uint8_t* selectedLogo = nullptr;
 
     // InputMode（機種）に応じて表示するロゴを切り替え
+    // PDFの定義に基づいた正確な分岐
     switch (mode) {
-        case INPUT_MODE_XINPUT:      selectedLogo = L_XINPUT; break;         // ID 0001
-        case INPUT_MODE_SWITCH:      selectedLogo = L_SWITCH; break;         // ID 0002
-        case INPUT_MODE_HID:         selectedLogo = L_PS3; break;            // ID 0003 (D-Input)
-        case INPUT_MODE_PS4:         selectedLogo = L_PS4; break;            // ID 0004
-        case INPUT_MODE_XBOX360:     selectedLogo = L_XBOX360; break;        // ID 0005
-        case INPUT_MODE_XBUI:        selectedLogo = L_XBOXONE; break;        // ID 0006
-        case INPUT_MODE_KEYBOARD:    selectedLogo = L_KEYBOARD; break;       // ID 0007
-        case INPUT_MODE_NEOGEO:      selectedLogo = L_NEOGEO; break;         // ID 0008
-        case INPUT_MODE_SFC:         selectedLogo = L_CLASSIC_MINI; break;   // ID 0009
-        case INPUT_MODE_PCEngine:    selectedLogo = L_PCENGINE; break;       // ID 0010
-        case INPUT_MODE_MD:          selectedLogo = L_MEGADRIVE; break;      // ID 0011
-        case INPUT_MODE_XBOXORIGINAL: selectedLogo = L_XBOX_OG; break;       // ID 0012
-        case INPUT_MODE_SWITCH_PRO:  selectedLogo = L_SWITCH_PRO; break;     // ID 0013
-        case INPUT_MODE_SATURN:      selectedLogo = L_SATURN; break;         // ID 0014
-        case INPUT_MODE_DREAMCAST:   selectedLogo = L_DREAMCAST; break;      // ID 0015
-        case INPUT_MODE_PSCLASSIC:   selectedLogo = L_PS_CLASSIC; break;      // ID 0016
-        case INPUT_MODE_ASTRO:       selectedLogo = L_ASTRO_CITY; break;     // ID 0017
-        case INPUT_MODE_EGRET:       selectedLogo = L_EGRET2; break;         // ID 0018
-        case INPUT_MODE_PS5:         selectedLogo = L_PS5; break;            // ID 0020
+        case INPUT_MODE_XINPUT:       selectedLogo = L_XINPUT; break;         // 0001
+        case INPUT_MODE_SWITCH:       selectedLogo = L_SWITCH; break;         // 0002
+        case INPUT_MODE_PS3:          selectedLogo = L_PS3; break;            // 0003
+        case INPUT_MODE_PS4:          selectedLogo = L_PS4; break;            // 0004
+        case INPUT_MODE_XBONE:        selectedLogo = L_XBOXONE; break;        // 0006
+        case INPUT_MODE_KEYBOARD:     selectedLogo = L_KEYBOARD; break;       // 0007
+        case INPUT_MODE_NEOGEO:       selectedLogo = L_NEOGEO; break;         // 0008
+        case INPUT_MODE_PCEMINI:      selectedLogo = L_PCENGINE; break;       // 0010
+        case INPUT_MODE_MDMINI:       selectedLogo = L_MEGADRIVE; break;      // 0011
+        case INPUT_MODE_XBOXORIGINAL: selectedLogo = L_XBOX_OG; break;       // 0012
+        case INPUT_MODE_SWITCH_PRO:   selectedLogo = L_SWITCH_PRO; break;     // 0013
+        case INPUT_MODE_PSCLASSIC:    selectedLogo = L_PS_CLASSIC; break;      // 0016
+        case INPUT_MODE_ASTRO:        selectedLogo = L_ASTRO_CITY; break;     // 0017
+        case INPUT_MODE_EGRET:        selectedLogo = L_EGRET2; break;         // 0018
+        case INPUT_MODE_PS5:          selectedLogo = L_PS5; break;            // 0020
+        case INPUT_MODE_P5GENERAL:    selectedLogo = L_P5GENERAL; break;            // 0020 (同等のロゴを使用)
         
         default:
             // 該当がない場合はWebConfigで設定されたデフォルト画像を表示
