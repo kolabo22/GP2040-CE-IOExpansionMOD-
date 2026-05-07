@@ -1289,7 +1289,7 @@ void SplashScreen::drawScreen() {
     if (selectedLogo != nullptr) {
         // 全画面(128x64)でロゴを描画
         // 引数: データ, 幅, 高さ, 1ラインあたりのバイト数(128/8=16), X, Y, カラー
-        getRenderer()->drawSprite((uint8_t*)selectedLogo, 128, 64, 16, 0, 0, 1);
+        getRenderer()->drawSprite((uint8_t*)selectedLogo, 128, 64, 16, -2, 0, 1);
     }
 }
 
