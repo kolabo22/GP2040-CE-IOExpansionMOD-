@@ -1,7 +1,6 @@
 #include "SplashScreen.h"
 #include "pico/stdlib.h"
 #include "drivermanager.h"
-#include "./logos.h"  // 作成したロゴデータを読み込み
 
 void SplashScreen::init() {
     getRenderer()->clearScreen();
