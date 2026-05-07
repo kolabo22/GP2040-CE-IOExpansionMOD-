@@ -10,23 +10,30 @@ void JinglePlayerAddon::setup() {
     gpio_set_function(20, GPIO_FUNC_UART);
     gpio_set_function(21, GPIO_FUNC_UART);
 
-    // 起動時の状態を記録
     this->_isConfig = DriverManager::getInstance().isConfigMode();
     this->_state = PlayState::WAIT_BOOT;
     this->_timer = to_ms_since_boot(get_absolute_time());
 }
 
+// 通常モード用ループ
 void JinglePlayerAddon::process() {
-    // 再生完了済みなら即座に抜けて負荷をゼロにする
+    runStateMachine();
+}
+
+// WebConfig（S2）モード用ループ
+void JinglePlayerAddon::postprocess(bool reportSent) {
+    runStateMachine();
+}
+
+void JinglePlayerAddon::runStateMachine() {
     if (this->_state == PlayState::FINISHED) return;
 
     uint32_t now = to_ms_since_boot(get_absolute_time());
 
     switch (this->_state) {
         case PlayState::WAIT_BOOT:
-            // S2起動時は2.0秒、通常時は1.0秒まで「何もせず」待つ
-            // これによりOLEDの初期描画やJQ8900の通電安定を待つ
-            if (now - this->_timer >= (uint32_t)(this->_isConfig ? 2000 : 1000)) {
+            // S2時は長めに、通常時はOLEDを止めない最短(800ms)で待つ
+            if (now - this->_timer >= (uint32_t)(this->_isConfig ? 2500 : 800)) {
                 this->_state = PlayState::SET_VOL;
             }
             break;
@@ -38,7 +45,6 @@ void JinglePlayerAddon::process() {
             break;
 
         case PlayState::WAIT_VOL:
-            // パケット間隔を50ms確保
             if (now - this->_timer >= 50) {
                 this->_state = PlayState::PLAY;
             }
@@ -101,6 +107,5 @@ void JinglePlayerAddon::play(uint16_t index) {
 }
 
 void JinglePlayerAddon::reinit() {
-    this->_state = PlayState::IDLE;
     setup();
 }
