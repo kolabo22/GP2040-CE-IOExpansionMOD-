@@ -5,12 +5,17 @@ void JinglePlayerAddon::setup() {
     const auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     this->_volume = (uint8_t)options.volume;
 
-    // 初期化時はピン設定のみ。sleepは一切置かない（OLEDフリーズ防止）
+    // S2起動時は再生プロセスへ移行させない
+    if (DriverManager::getInstance().isConfigMode()) {
+        this->_state = PlayState::FINISHED;
+        return;
+    }
+
+    // UART初期化
     uart_init(uart1, 9600);
     gpio_set_function(20, GPIO_FUNC_UART);
     gpio_set_function(21, GPIO_FUNC_UART);
 
-    this->_isConfig = DriverManager::getInstance().isConfigMode();
     this->_state = PlayState::WAIT_BOOT;
     this->_timer = to_ms_since_boot(get_absolute_time());
 }
@@ -20,16 +25,10 @@ void JinglePlayerAddon::process() {
 
     uint32_t now = to_ms_since_boot(get_absolute_time());
 
-    // S2モード（WebConfig）の時は、非常に長い待機時間を設ける（システム安定のため）
-    // WiFiなしPicoでもWebUIの起動処理は重いため、3秒確保
-    uint32_t waitTime = this->_isConfig ? 3000 : 1200;
-
     switch (this->_state) {
         case PlayState::WAIT_BOOT:
-            if (now - this->_timer >= waitTime) {
-                // 再生直前にピン設定を「念押し」で再実行（他アドオンによる上書き対策）
-                gpio_set_function(20, GPIO_FUNC_UART);
-                gpio_set_function(21, GPIO_FUNC_UART);
+            // 機種判定が安定するまで1.0秒待機（フリーズ防止のため非同期）
+            if (now - this->_timer >= 1000) {
                 this->_state = PlayState::SET_VOL;
             }
             break;
@@ -41,17 +40,13 @@ void JinglePlayerAddon::process() {
             break;
 
         case PlayState::WAIT_VOL:
-            if (now - this->_timer >= 100) {
+            if (now - this->_timer >= 60) {
                 this->_state = PlayState::PLAY;
             }
             break;
 
         case PlayState::PLAY:
-            if (this->_isConfig) {
-                play(21);
-            } else {
-                playSelectedModeJingle();
-            }
+            playSelectedModeJingle();
             this->_state = PlayState::FINISHED;
             break;
 
@@ -60,14 +55,10 @@ void JinglePlayerAddon::process() {
     }
 }
 
-// 予備として postprocess でも同じステートマシンを回す（S2対策）
-void JinglePlayerAddon::postprocess(bool reportSent) {
-    process();
-}
-
 void JinglePlayerAddon::playSelectedModeJingle() {
     InputMode mode = DriverManager::getInstance().getInputMode();
     uint16_t track = 1;
+
     switch (mode) {
         case INPUT_MODE_XINPUT:       track = 1;  break;
         case INPUT_MODE_SWITCH:       track = 2;  break;
