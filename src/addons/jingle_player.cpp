@@ -3,57 +3,54 @@
 
 void JinglePlayerAddon::setup() {
     const auto& options = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
-    this->volume = (uint8_t)options.volume;
+    this->_volume = (uint8_t)options.volume;
 
     // UART初期化
     uart_init(uart1, 9600);
     gpio_set_function(20, GPIO_FUNC_UART);
     gpio_set_function(21, GPIO_FUNC_UART);
 
-    this->_isConfigAtBoot = DriverManager::getInstance().isConfigMode();
-
-    if (this->_isConfigAtBoot) {
-        // 【Configモード専用】setup内で完結させる（processが回らないため）
-        // WebUI起動時はOLEDの干渉が少ないため、ここだけsleep_msを許容
-        sleep_ms(1500); 
-        setVolume(this->volume);
-        sleep_ms(50);
-        play(21);
-        this->_state = PlayState::FINISHED;
-    } else {
-        // 【通常モード専用】非同期でprocessに任せる（OLEDフリーズ防止）
-        this->_state = PlayState::WAIT_FOR_BOOT;
-        this->_stateTimer = to_ms_since_boot(get_absolute_time());
-    }
+    // 起動時の状態を記録
+    this->_isConfig = DriverManager::getInstance().isConfigMode();
+    this->_state = PlayState::WAIT_BOOT;
+    this->_timer = to_ms_since_boot(get_absolute_time());
 }
 
 void JinglePlayerAddon::process() {
-    if (this->_state == PlayState::FINISHED || this->_isConfigAtBoot) return;
+    // 再生完了済みなら即座に抜けて負荷をゼロにする
+    if (this->_state == PlayState::FINISHED) return;
 
     uint32_t now = to_ms_since_boot(get_absolute_time());
 
-    switch (_state) {
-        case PlayState::WAIT_FOR_BOOT:
-            if (now - _stateTimer >= 800) {
-                _state = PlayState::SET_VOLUME;
+    switch (this->_state) {
+        case PlayState::WAIT_BOOT:
+            // S2起動時は2.0秒、通常時は1.0秒まで「何もせず」待つ
+            // これによりOLEDの初期描画やJQ8900の通電安定を待つ
+            if (now - this->_timer >= (uint32_t)(this->_isConfig ? 2000 : 1000)) {
+                this->_state = PlayState::SET_VOL;
             }
             break;
 
-        case PlayState::SET_VOLUME:
-            setVolume(this->volume);
-            _stateTimer = now;
-            _state = PlayState::WAIT_FOR_VOLUME;
+        case PlayState::SET_VOL:
+            setVolume(this->_volume);
+            this->_timer = now;
+            this->_state = PlayState::WAIT_VOL;
             break;
 
-        case PlayState::WAIT_FOR_VOLUME:
-            if (now - _stateTimer >= 50) {
-                _state = PlayState::PLAY_JINGLE;
+        case PlayState::WAIT_VOL:
+            // パケット間隔を50ms確保
+            if (now - this->_timer >= 50) {
+                this->_state = PlayState::PLAY;
             }
             break;
 
-        case PlayState::PLAY_JINGLE:
-            playSelectedModeJingle();
-            _state = PlayState::FINISHED;
+        case PlayState::PLAY:
+            if (this->_isConfig) {
+                play(21); // 設定モード：0021.mp3
+            } else {
+                playSelectedModeJingle(); // 機種別：ミニメニュー反映
+            }
+            this->_state = PlayState::FINISHED;
             break;
 
         default:
@@ -104,5 +101,6 @@ void JinglePlayerAddon::play(uint16_t index) {
 }
 
 void JinglePlayerAddon::reinit() {
+    this->_state = PlayState::IDLE;
     setup();
 }
