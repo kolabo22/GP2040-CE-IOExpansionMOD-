@@ -11,18 +11,35 @@ void JinglePlayerAddon::setup() {
     gpio_set_function(21, GPIO_FUNC_UART);
 
     this->_isConfig = DriverManager::getInstance().isConfigMode();
-    this->_state = PlayState::WAIT_BOOT;
     this->_timer = to_ms_since_boot(get_absolute_time());
+
+    if (this->_isConfig) {
+        // 【S2起動専用：超強硬手段】
+        // Configモードではループが止まるため、setup内で最小限の待機後に再生
+        // 1.5秒はJQ8900が通電安定し、WebUIのWiFi初期化が一段落する目安
+        sleep_ms(1500); 
+        setVolume(this->_volume);
+        sleep_ms(60); // JQ8900がコマンドを処理する時間
+        play(21);
+        this->_state = PlayState::FINISHED;
+    } else {
+        // 【通常起動：安全優先】
+        // process() に任せて非同期で再生（OLEDフリーズを防止）
+        this->_state = PlayState::WAIT_BOOT;
+    }
 }
 
-// 通常モード用ループ
 void JinglePlayerAddon::process() {
-    runStateMachine();
+    // S2モード時は呼ばれないことが多いため、通常時のみ機能する
+    if (!this->_isConfig) {
+        runStateMachine();
+    }
 }
 
-// WebConfig（S2）モード用ループ
 void JinglePlayerAddon::postprocess(bool reportSent) {
-    runStateMachine();
+    if (!this->_isConfig) {
+        runStateMachine();
+    }
 }
 
 void JinglePlayerAddon::runStateMachine() {
@@ -32,8 +49,7 @@ void JinglePlayerAddon::runStateMachine() {
 
     switch (this->_state) {
         case PlayState::WAIT_BOOT:
-            // S2時は長めに、通常時はOLEDを止めない最短(800ms)で待つ
-            if (now - this->_timer >= (uint32_t)(this->_isConfig ? 2500 : 800)) {
+            if (now - this->_timer >= 800) { // 通常起動は0.8秒待つ
                 this->_state = PlayState::SET_VOL;
             }
             break;
@@ -45,17 +61,13 @@ void JinglePlayerAddon::runStateMachine() {
             break;
 
         case PlayState::WAIT_VOL:
-            if (now - this->_timer >= 50) {
+            if (now - this->_timer >= 60) {
                 this->_state = PlayState::PLAY;
             }
             break;
 
         case PlayState::PLAY:
-            if (this->_isConfig) {
-                play(21); // 設定モード：0021.mp3
-            } else {
-                playSelectedModeJingle(); // 機種別：ミニメニュー反映
-            }
+            playSelectedModeJingle();
             this->_state = PlayState::FINISHED;
             break;
 
