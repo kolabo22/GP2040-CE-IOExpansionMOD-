@@ -23,11 +23,11 @@ private:
     void setVolume(uint8_t volume);
     void play(uint16_t index);
 
-    enum class PlayState { IDLE, WAIT_FOR_BOOT, SET_VOLUME, WAIT_FOR_VOLUME, PLAY_JINGLE, FINISHED };
+    enum class PlayState { IDLE, WAIT_BOOT, SET_VOL, WAIT_VOL, PLAY, FINISHED };
     PlayState _state;
-    uint32_t _stateTimer;
-    uint8_t volume;
-    bool _isConfigAtBoot;
+    uint32_t _timer;
+    uint8_t _volume;
+    bool _isConfig;
 };
 
 #endif
