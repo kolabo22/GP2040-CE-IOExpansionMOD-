@@ -19,9 +19,9 @@
 #define BOARD_CONFIG_LABEL "Fighting Stick MINI Super"
 
 // ==========================================
-// 2. コントローラー根幹動作設定 (定数エラー解消版)
+// 2. コントローラー根幹動作設定 (ご指定のINPUT_MODE_GENERIC固定版)
 // ==========================================
-#define DEFAULT_INPUT_MODE         InputMode::INPUT_MODE_HID // C++名前空間規則に適合
+#define DEFAULT_INPUT_MODE         INPUT_MODE_GENERIC    // 初期入力モード: 汎用USBHID (DInput) に完全固定
 #define DEFAULT_SOCD_MODE          SOCD_MODE_NEUTRAL     
 #define DEFAULT_DPAD_MODE          DPAD_MODE_DIGITAL     
 
@@ -196,9 +196,9 @@
 #define DISPLAY_SCREENSAVER_TIMEOUT  10                 
 
 // ==========================================
-// 11. ホットキー初期設定の強制上書き (C++型安全定数へ修正)
+// 11. ホットキー初期設定の強制上書き (リポジトリ仕様に完全適合)
 // ==========================================
-#define HOTKEY_01_ACTION             HotkeyAction::HOTKEY_ACTION_OLED_SCREEN_TOGGLE
+#define HOTKEY_01_ACTION             HOTKEY_ACTION_OLED_SCREEN_TOGGLE // 古いブランチの標準定数形式に修正
 #define HOTKEY_01_BUTTON_01          GAMEPAD_MASK_S2
 #define HOTKEY_01_BUTTON_02          GAMEPAD_MASK_A2
 #define HOTKEY_01_BUTTON_03          0 
