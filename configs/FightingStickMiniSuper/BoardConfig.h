@@ -19,17 +19,17 @@
 #define BOARD_CONFIG_LABEL "Fighting Stick MINI Super"
 
 // ==========================================
-// 2. コントローラー根幹動作設定 (USBHIDモード固定)
+// 2. コントローラー根幹動作設定 (定数エラー解消版)
 // ==========================================
-#define DEFAULT_INPUT_MODE         INPUT_MODE_HID        // 初期入力モード: USBHID (DInput) に固定
-#define DEFAULT_SOCD_MODE          SOCD_MODE_NEUTRAL     // SOCD: ニュートラル
-#define DEFAULT_DPAD_MODE          DPAD_MODE_DIGITAL     // 十字キーモード: デジタル
+#define DEFAULT_INPUT_MODE         InputMode::INPUT_MODE_HID // C++名前空間規則に適合
+#define DEFAULT_SOCD_MODE          SOCD_MODE_NEUTRAL     
+#define DEFAULT_DPAD_MODE          DPAD_MODE_DIGITAL     
 
-#define DEFAULT_4WAY_MODE          1                     // 4方向ジョイスティックモード: 有効
-#define DEFAULT_FORCED_SETUP_MODE  FORCED_SETUP_MODE_OFF // 強制セットアップモード: 無効
-#define DEFAULT_PROFILE_NAME       "MINI Super"          // プロファイル名: MINI Super
-#define DEFAULT_DEBOUNCE_DELAY     5                     // チャタリング除去ディレイ: 5ms
-#define DISPLAY_MENU_GAMEPAD_INPUT_ENABLED 1             // ディスプレイメニューにゲームパッド入力利用: 有効
+#define DEFAULT_4WAY_MODE          1                     
+#define DEFAULT_FORCED_SETUP_MODE  FORCED_SETUP_MODE_OFF 
+#define DEFAULT_PROFILE_NAME       "MINI Super"          
+#define DEFAULT_DEBOUNCE_DELAY     5                     
+#define DISPLAY_MENU_GAMEPAD_INPUT_ENABLED 1             
 
 // ==========================================
 // 3. 物理ピン（GPIO）マッピング (ソースコード仕様準拠)
@@ -196,9 +196,9 @@
 #define DISPLAY_SCREENSAVER_TIMEOUT  10                 
 
 // ==========================================
-// 11. ホットキー初期設定の強制上書き
+// 11. ホットキー初期設定の強制上書き (C++型安全定数へ修正)
 // ==========================================
-#define HOTKEY_01_ACTION             HOTKEY_ACTION_DISPLAY_MENU
+#define HOTKEY_01_ACTION             HotkeyAction::HOTKEY_ACTION_OLED_SCREEN_TOGGLE
 #define HOTKEY_01_BUTTON_01          GAMEPAD_MASK_S2
 #define HOTKEY_01_BUTTON_02          GAMEPAD_MASK_A2
 #define HOTKEY_01_BUTTON_03          0 
