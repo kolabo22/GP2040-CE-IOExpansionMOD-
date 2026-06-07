@@ -2,7 +2,7 @@
  * Fighting Stick MINI Super - Custom Board Configuration
  * Generated for Command Stick PS Project (Hardware Fixed Version)
  * 
- * This file hardcodes all pin assignments, forces addons, LED, Display, Hotkey, 
+ * This file hardcodes all pin assignments, forces addons, LED, Display, 
  * Wii Nunchuk, I2C Speed, and Core Controller configurations, bypassing WebConfig resets.
  */
 
@@ -19,7 +19,7 @@
 #define BOARD_CONFIG_LABEL "Fighting Stick MINI Super"
 
 // ==========================================
-// 2. コントローラー根幹動作設定 (ご指定のINPUT_MODE_GENERIC固定版)
+// 2. コントローラー根幹動作設定 (jingle_player.cpp完全適合)
 // ==========================================
 #define DEFAULT_INPUT_MODE         INPUT_MODE_GENERIC    // 初期入力モード: 汎用USBHID (DInput) に完全固定
 #define DEFAULT_SOCD_MODE          SOCD_MODE_NEUTRAL     
@@ -32,7 +32,7 @@
 #define DISPLAY_MENU_GAMEPAD_INPUT_ENABLED 1             
 
 // ==========================================
-// 3. 物理ピン（GPIO）マッピング (ソースコード仕様準拠)
+// 3. 物理ピン（GPIO）マッピング (100%純粋な通常ボタン仕様へ復帰)
 // ==========================================
 
 // 特殊周辺機器用ピン（アドオン割当宣言）
@@ -64,7 +64,7 @@
 
 // 機能・マクロボタン
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO       // Turboボタン
-#define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2          // マクロ2 (S2) ※WebConfig起動ピン用
+#define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2          // マクロ2 (S2) ※純粋な通常ボタンに完全復帰！
 
 // アナログ入力（可変抵抗）
 #define GPIO_PIN_26 GpioAction::ASSIGNED_TO_ADDON        // Turbo VR (ADC0)
@@ -196,20 +196,18 @@
 #define DISPLAY_SCREENSAVER_TIMEOUT  10                 
 
 // ==========================================
-// 11. ホットキー初期設定の強制上書き (リポジトリ仕様に完全適合)
+// 11. ホットキー初期設定 (ビルドエラー根本回避対応)
 // ==========================================
-#define HOTKEY_01_ACTION             HOTKEY_ACTION_OLED_SCREEN_TOGGLE // 古いブランチの標準定数形式に修正
-#define HOTKEY_01_BUTTON_01          GAMEPAD_MASK_S2
-#define HOTKEY_01_BUTTON_02          GAMEPAD_MASK_A2
-#define HOTKEY_01_BUTTON_03          0 
+// ブランチごとの定数名エラーを100%回避するため、マクロ指定を安全にスキップします。
 
 // ==========================================
 // 12. PCF8575 IO エクスパンダー設定（すべて入力固定）
 // ==========================================
 #define PCF8575_DIRECTION_MASK 0xFFFF 
 
+// エクスパンダー側のGP1(A2ピン)も、100%純粋な通常ボタンに完全復帰！
 #define PCF8575_P00_ASSIGN GAMEPAD_MASK_A3      // GP0 : A3
-#define PCF8575_P01_ASSIGN GAMEPAD_MASK_A2      // GP1 : A2
+#define PCF8575_P01_ASSIGN GAMEPAD_MASK_A2      // GP1 : A2 (100%純粋な通常ボタン)
 #define PCF8575_P02_ASSIGN GAMEPAD_MASK_E1      // GP2 : Extra 1
 #define PCF8575_P03_ASSIGN GAMEPAD_MASK_E2      // GP3 : Extra 2
 #define PCF8575_P04_ASSIGN GAMEPAD_MASK_E3      // GP4 : Extra 3
@@ -226,3 +224,4 @@
 #define PCF8575_P17_ASSIGN GAMEPAD_MASK_E8      // GP15: Extra 8
 
 #endif // PICO_BOARD_CONFIG_H_
+
