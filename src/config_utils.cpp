@@ -1152,11 +1152,11 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     // MINI Super 専用：不具合防止・変則ケースLEDインデックス完全固定
     // ====================================================================
     if (strcmp(config.boardConfig, "MINI Super") == 0) {
-        // 物理配線14個目（配列インデックス13）から始まる34個分のみを発光対象にする
-        config.ledOptions.indexLEDCaseStart = 13;
-        config.ledOptions.countLEDCase = 34;
-        config.ledOptions.has_indexLEDCaseStart = true;
-        config.ledOptions.has_countLEDCase = true;
+        // 物理配線14個目（インデックス13）から始まる34個分をケースLEDとして強制固定
+        config.ledOptions.indexSelectedIndexStart = 13;
+        config.ledOptions.countSelectedIndex = 34;
+        config.ledOptions.has_indexSelectedIndexStart = true;
+        config.ledOptions.has_countSelectedIndex = true;
     }
 
 } // initUnsetPropertiesWithDefaults 関数の閉じ括弧
