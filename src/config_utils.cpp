@@ -1149,27 +1149,17 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
     // ====================================================================
-    // MINI Super 専用：WebConfig消失バグ・リセット不具合の完全防止ロジック
+    // MINI Super 専用：不具合防止・変則ケースLEDインデックス完全固定
     // ====================================================================
     if (strcmp(config.boardConfig, "MINI Super") == 0) {
-        // 1. 変則ケースLEDインデックスの強制上書き（14個目/インデックス13から34個）
+        // 物理配線14個目（配列インデックス13）から始まる34個分のみを発光対象にする
         config.ledOptions.indexLEDCaseStart = 13;
         config.ledOptions.countLEDCase = 34;
         config.ledOptions.has_indexLEDCaseStart = true;
         config.ledOptions.has_countLEDCase = true;
-
-        // 2. Wii拡張アドオン（ヌンチャク）のアナログスティックを左側に固定
-        config.addonOptions.wiiOptions.forced_analog_left = true;
-        config.addonOptions.wiiOptions.has_forced_analog_left = true;
-
-        // 3. JQ8900 (UART1) アドオンの強制有効化フラグの永続注入
-        config.addonOptions.has_jq8900Options = true;
-        config.addonOptions.jq8900Options.enabled = true;
-        config.addonOptions.jq8900Options.has_enabled = true;
     }
 
 } // initUnsetPropertiesWithDefaults 関数の閉じ括弧
-
 // -----------------------------------------------------
 // migrations
 // used for when we might need to populate configs with
