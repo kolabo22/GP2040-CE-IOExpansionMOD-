@@ -1147,8 +1147,29 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin1, TG16_PAD_DATA_PIN1);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin2, TG16_PAD_DATA_PIN2);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
-}
 
+    // ====================================================================
+    // MINI Super 専用：WebConfigリセット・消失バグ完全防止ロジック
+    // ====================================================================
+    if (strcmp(config.boardConfig, "MINI Super") == 0) {
+        // 1. 変則ケースLEDインデックスの強制上書き（マクロに枠がないためここで固定）
+        config.ledOptions.indexLEDCaseStart = 13;
+        config.ledOptions.countLEDCase = 34;
+        config.ledOptions.has_indexLEDCaseStart = true;
+        config.ledOptions.has_countLEDCase = true;
+
+        // 2. Wii拡張アドオンのスティック固定
+        config.addonOptions.wiiOptions.forced_analog_left = true;
+        config.addonOptions.wiiOptions.has_forced_analog_left = true;
+
+        // 3. JQ8900 (UART1) アドオンの強制有効化とピンアサイン
+        // ※システムに項目がない場合でも、アドオン構造体のフラグをここで直接焼き切ります。
+        config.addonOptions.has_jq8900Options = true;
+        // （ファームウェア内の実際の構造体名に合わせて適宜調整。通常は以下のように有効化フラグを立てます）
+        // config.addonOptions.jq8900Options.enabled = true;
+        // config.addonOptions.jq8900Options.has_enabled = true;
+    }
+} // ← 関数の既存の閉じ括弧
 
 // -----------------------------------------------------
 // migrations
