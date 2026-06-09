@@ -1142,7 +1142,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         INIT_UNSET_PROPERTY(config.addonOptions.macroOptions.macroList[i], deprecatedMacroTriggerPin, -1);
     }
 
-		// addonOptions.tg16Options
+    // addonOptions.tg16Options
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, enabled, !!TG16_PAD_ENABLED);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, oePin, TG16_PAD_OE_PIN);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, selectPin, TG16_PAD_SELECT_PIN);
@@ -1191,23 +1191,23 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         config.addonOptions.pcf8575Options.enabled = true;
         config.addonOptions.pcf8575Options.has_enabled = true;
 
-        // PCF8575 IOエクスパンダー 16ピン完全入力マッピング
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_A3;
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_A2;
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_E1;
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_E2;
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_E3;
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_E4;
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_E5;
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_E6;
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_A4;   // P10
-        config.addonOptions.pcf8575Options.pins.action  = GpioAction::BUTTON_PRESS_L3;   // P11
-        config.addonOptions.pcf8575Options.pins.action = GpioAction::BUTTON_PRESS_R3;   // P12
-        config.addonOptions.pcf8575Options.pins.action = GpioAction::BUTTON_PRESS_S1;   // P13
-        config.addonOptions.pcf8575Options.pins.action = GpioAction::BUTTON_PRESS_A1;   // P14
-        config.addonOptions.pcf8575Options.pins.action = GpioAction::NONE;              // P15 (スキップ)
-        config.addonOptions.pcf8575Options.pins.action = GpioAction::BUTTON_PRESS_E7;   // P16
-        config.addonOptions.pcf8575Options.pins.action = GpioAction::BUTTON_PRESS_E8;   // P17
+        // PCF8575 IOエクスパンダー 16ピン完全入力マッピング（インデックス修正版）
+        config.addonOptions.pcf8575Options.pins[0].action  = GpioAction::BUTTON_PRESS_A3;   // P00
+        config.addonOptions.pcf8575Options.pins[1].action  = GpioAction::BUTTON_PRESS_A2;   // P01
+        config.addonOptions.pcf8575Options.pins[2].action  = GpioAction::BUTTON_PRESS_E1;   // P02
+        config.addonOptions.pcf8575Options.pins[3].action  = GpioAction::BUTTON_PRESS_E2;   // P03
+        config.addonOptions.pcf8575Options.pins[4].action  = GpioAction::BUTTON_PRESS_E3;   // P04
+        config.addonOptions.pcf8575Options.pins[5].action  = GpioAction::BUTTON_PRESS_E4;   // P05
+        config.addonOptions.pcf8575Options.pins[6].action  = GpioAction::BUTTON_PRESS_E5;   // P06
+        config.addonOptions.pcf8575Options.pins[7].action  = GpioAction::BUTTON_PRESS_E6;   // P07
+        config.addonOptions.pcf8575Options.pins[8].action  = GpioAction::BUTTON_PRESS_A4;   // P10
+        config.addonOptions.pcf8575Options.pins[9].action  = GpioAction::BUTTON_PRESS_L3;   // P11
+        config.addonOptions.pcf8575Options.pins[10].action = GpioAction::BUTTON_PRESS_R3;   // P12
+        config.addonOptions.pcf8575Options.pins[11].action = GpioAction::BUTTON_PRESS_S1;   // P13
+        config.addonOptions.pcf8575Options.pins[12].action = GpioAction::BUTTON_PRESS_A1;   // P14
+        config.addonOptions.pcf8575Options.pins[13].action = GpioAction::NONE;              // P15 (スキップ)
+        config.addonOptions.pcf8575Options.pins[14].action = GpioAction::BUTTON_PRESS_E7;   // P16
+        config.addonOptions.pcf8575Options.pins[15].action = GpioAction::BUTTON_PRESS_E8;   // P17
 
         for (int p = 0; p < 16; p++) {
             config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
@@ -1216,7 +1216,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         }
         config.addonOptions.pcf8575Options.pins_count = 16;
 
-        // 4. LED構成の強制ロック（構造体に無い変数アクセスを排除して安全化）
+        // 4. LED構成の強制ロック
         config.ledOptions.dataPin = 27;
         config.ledOptions.has_dataPin = true;
         config.ledOptions.brightnessMaximum = 80;
