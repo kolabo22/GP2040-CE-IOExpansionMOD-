@@ -1,227 +1,124 @@
-/*
- * Fighting Stick MINI Super - Custom Board Configuration
- * Generated for Command Stick PS Project (Hardware Fixed Version)
- * 
- * This file hardcodes all pin assignments, forces addons, LED, Display, 
- * Wii Nunchuk, I2C Speed, and Core Controller configurations, bypassing WebConfig resets.
- */
+#ifndef BOARD_CONFIG_H
+#define BOARD_CONFIG_H
 
-#ifndef PICO_BOARD_CONFIG_H_
-#define PICO_BOARD_CONFIG_H_
-
+#include <stdint.h>
 #include "enums.pb.h"
 #include "class/hid/hid.h"
-#include "GamepadEnums.h"
 
-// ==========================================
-// 1. 基本情報定義 (システム要求準拠)
-// ==========================================
-#define BOARD_CONFIG_LABEL "Fighting Stick MINI Super"
+#define BOARD_CONFIG_LABEL "MINI Super"
 
-// ==========================================
-// 2. コントローラー根幹動作設定 (jingle_player.cpp完全適合)
-// ==========================================
-#define DEFAULT_INPUT_MODE         INPUT_MODE_GENERIC    // 初期入力モード: 汎用USBHID (DInput) に完全固定
-#define DEFAULT_SOCD_MODE          SOCD_MODE_NEUTRAL     
-#define DEFAULT_DPAD_MODE          DPAD_MODE_DIGITAL     
-
-#define DEFAULT_4WAY_MODE          1                     
-#define DEFAULT_FORCED_SETUP_MODE  FORCED_SETUP_MODE_OFF 
-#define DEFAULT_PROFILE_NAME       "MINI Super"          
-#define DEFAULT_DEBOUNCE_DELAY     5                     
-#define DISPLAY_MENU_GAMEPAD_INPUT_ENABLED 1             
-
-// ==========================================
-// 3. 物理ピン（GPIO）マッピング (100%純粋な通常ボタン仕様へ復帰)
-// ==========================================
-
-// 特殊周辺機器用ピン（アドオン割当宣言）
-#define GPIO_PIN_00 GpioAction::ASSIGNED_TO_ADDON        // I2C0 SDA (Wii)
-#define GPIO_PIN_01 GpioAction::ASSIGNED_TO_ADDON        // I2C0 SCL (Wii)
-#define GPIO_PIN_18 GpioAction::ASSIGNED_TO_ADDON        // I2C1 SDA (PCF8575)
-#define GPIO_PIN_19 GpioAction::ASSIGNED_TO_ADDON        // I2C1 SCL (PCF8575)
-#define GPIO_PIN_20 GpioAction::ASSIGNED_TO_ADDON        // UART1 TX (JQ8900)
-#define GPIO_PIN_21 GpioAction::ASSIGNED_TO_ADDON        // UART1 RX (JQ8900)
-#define GPIO_PIN_27 GpioAction::ASSIGNED_TO_ADDON        // RGB LED データ端子
-#define GPIO_PIN_28 GpioAction::ASSIGNED_TO_ADDON        // USB0+ (予約)
-#define GPIO_PIN_29 GpioAction::ASSIGNED_TO_ADDON        // USB0- (予約)
+// ====================================================================
+// 1. 物理ピン（GPIO）の完全固定マッピング
+// ====================================================================
 
 // レバー4方向
-#define GPIO_PIN_02 GpioAction::BUTTON_PRESS_UP          // レバー上
-#define GPIO_PIN_03 GpioAction::BUTTON_PRESS_DOWN        // レバー下
-#define GPIO_PIN_04 GpioAction::BUTTON_PRESS_RIGHT       // レバー右
-#define GPIO_PIN_05 GpioAction::BUTTON_PRESS_LEFT        // レバー左
+#define GPIO_PIN_02 GpioAction::BUTTON_PRESS_UP
+#define GPIO_PIN_03 GpioAction::BUTTON_PRESS_DOWN
+#define GPIO_PIN_04 GpioAction::BUTTON_PRESS_RIGHT
+#define GPIO_PIN_05 GpioAction::BUTTON_PRESS_LEFT
 
-// 三和30φメインボタン（8個）
-#define GPIO_PIN_06 GpioAction::BUTTON_PRESS_B1          // 弱P / Square
-#define GPIO_PIN_07 GpioAction::BUTTON_PRESS_B2          // 中P / Triangle
-#define GPIO_PIN_08 GpioAction::BUTTON_PRESS_R2          // 強K / R2
-#define GPIO_PIN_09 GpioAction::BUTTON_PRESS_L2          // L1 / L2
-#define GPIO_PIN_10 GpioAction::BUTTON_PRESS_B3          // 強P / R1
-#define GPIO_PIN_11 GpioAction::BUTTON_PRESS_B4          // 弱K / Cross
-#define GPIO_PIN_12 GpioAction::BUTTON_PRESS_R1          // 中K / Circle / R1
-#define GPIO_PIN_13 GpioAction::BUTTON_PRESS_L1          // L2 / L1
+// メイン30φボタン (8ボタン)
+#define GPIO_PIN_06 GpioAction::BUTTON_PRESS_B1
+#define GPIO_PIN_07 GpioAction::BUTTON_PRESS_B2
+#define GPIO_PIN_08 GpioAction::BUTTON_PRESS_R2
+#define GPIO_PIN_09 GpioAction::BUTTON_PRESS_L2
+#define GPIO_PIN_10 GpioAction::BUTTON_PRESS_B3
+#define GPIO_PIN_11 GpioAction::BUTTON_PRESS_B4
+#define GPIO_PIN_12 GpioAction::BUTTON_PRESS_R1
+#define GPIO_PIN_13 GpioAction::BUTTON_PRESS_L1
 
-// 機能・マクロボタン
-#define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO       // Turboボタン
-#define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2          // マクロ2 (S2) ※純粋な通常ボタンに完全復帰！
+// 機能ボタン (TURBO, S2)
+#define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
+#define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2
 
-// アナログ入力（可変抵抗）
-#define GPIO_PIN_26 GpioAction::ASSIGNED_TO_ADDON        // Turbo VR (ADC0)
+// オンボードLED (入力テストモード固定)
+#define BOARD_LED_TYPE BOARD_LED_TYPE_INPUT_TEST
+#define GPIO_PIN_25 GpioAction::ASSIGNED_TO_ADDON
 
-// ==========================================
-// 4. キーボードマッピング設定
-// ==========================================
-#define KEY_DPAD_UP          HID_KEY_ARROW_UP
-#define KEY_DPAD_DOWN        HID_KEY_ARROW_DOWN
-#define KEY_DPAD_RIGHT       HID_KEY_ARROW_RIGHT
-#define KEY_DPAD_LEFT        HID_KEY_ARROW_LEFT
-#define KEY_BUTTON_B1        HID_KEY_SHIFT_LEFT
-#define KEY_BUTTON_B2        HID_KEY_Z
-#define KEY_BUTTON_R2        HID_KEY_X
-#define KEY_BUTTON_L2        HID_KEY_V
-#define KEY_BUTTON_B3        HID_KEY_CONTROL_LEFT
-#define KEY_BUTTON_B4        HID_KEY_ALT_LEFT
-#define KEY_BUTTON_R1        HID_KEY_SPACE
-#define KEY_BUTTON_L1        HID_KEY_C
-#define KEY_BUTTON_S1        HID_KEY_5
-#define KEY_BUTTON_S2        HID_KEY_1
-#define KEY_BUTTON_L3        HID_KEY_EQUAL
-#define KEY_BUTTON_R3        HID_KEY_MINUS
-#define KEY_BUTTON_A1        HID_KEY_9
-#define KEY_BUTTON_A2        HID_KEY_F2
-#define KEY_BUTTON_FN        -1
+// 周辺機器・アドオン割当用ピン (GPIOピン定義からアクションを除外)
+#define GPIO_PIN_00 GpioAction::ASSIGNED_TO_ADDON // I2C0 SDA (Wii)
+#define GPIO_PIN_01 GpioAction::ASSIGNED_TO_ADDON // I2C0 SCL (Wii)
+#define GPIO_PIN_18 GpioAction::ASSIGNED_TO_ADDON // I2C1 SDA (PCF8575)
+#define GPIO_PIN_19 GpioAction::ASSIGNED_TO_ADDON // I2C1 SCL (PCF8575)
+#define GPIO_PIN_20 GpioAction::ASSIGNED_TO_ADDON // UART1 TX (JQ8900)
+#define GPIO_PIN_21 GpioAction::ASSIGNED_TO_ADDON // UART1 RX (JQ8900)
+#define GPIO_PIN_26 GpioAction::ASSIGNED_TO_ADDON // Analog (Turbo VR)
+#define GPIO_PIN_27 GpioAction::ASSIGNED_TO_ADDON // RGB LED
 
-// ==========================================
-// 5. 周辺機器・アドオンのピンおよび通信速度固定マクロ
-// ==========================================
+#define FORCED_WEB_CONFIG_BOARD_BUTTON_PIN 17 // GP17でWebConfig起動
 
-// 最優先：UART1（JQ8900音声モジュール用）
-#define UART1_TX_PIN   20    // JQ8900 RXへ接続
-#define UART1_RX_PIN   21    // JQ8900 TXへ接続
-#define UART_ENABLED   1     // UART機能を強制有効化
+// ====================================================================
+// 2. 周辺機器・アドオンの完全固定マクロ (基本設定)
+// ====================================================================
+#define DEFAULT_INPUT_MODE INPUT_MODE_GENERIC
+#define DEFAULT_SOCD_MODE SOCD_MODE_NEUTRAL
+#define DEFAULT_DPAD_MODE DPAD_MODE_DIGITAL
+#define DEBOUNCE_DELAY_IN_MS 5
 
-// I2C0：Wii拡張コントローラ用（高速400kHz固定）
-#define I2C0_ENABLED   1     
-#define I2CO_PIN_SDA   0     
-#define I2CO_PIN_SCL   1     
-#define I2C0_SPEED     400000 
+// I2C 0 (Wii拡張) 強制有効化
+#define I2C0_ENABLED 1
+#define I2C0_PIN_SDA 0
+#define I2C0_PIN_SCL 1
+#define I2C0_SPEED 400000
 
-// I2C1：PCF8575 IOエクスパンダー用（高速400kHz固定）
-#define I2C1_ENABLED   1     
-#define I2C1_PIN_SDA   18    
-#define I2C1_PIN_SCL   19    
-#define I2C1_SPEED     400000 
+// I2C 1 (PCF8575) 強制有効化
+#define I2C1_ENABLED 1
+#define I2C1_PIN_SDA 18
+#define I2C1_PIN_SCL 19
+#define I2C1_SPEED 400000
 
-// LED関連ピン
-#define PIN_BOARD_LED         25 // Raspberry Pi Pico オンボードLED
-#define BOARD_LEDS_PIN        27 // RGB LEDデータ端子
+// UART 1 (JQ8900) 強制有効化
+#define UART1_ENABLED 1
+#define UART1_PIN_TX 20
+#define UART1_PIN_RX 21
+#define UART1_BAUDRATE 9600
 
-#define TURBO_LED_PIN         15 
-#define PIN_REACTIVE_LED_0    16 
-#define PIN_REACTIVE_LED_1    22 
-#define PIN_REACTIVE_LED_2    23 
-#define PIN_REACTIVE_LED_3    24 
+// Wii 拡張コントローラー（ヌンチャク固定）
+#define WII_EXTENSION_ENABLED 1
+#define WII_EXTENSION_I2C_BLOCK i2c0
 
-// ==========================================
-// 6. アドオンの「強制有効化」マクロ
-// ==========================================
-#define DISPLAY_ENABLED            1  
-#define WII_EXTENSION_ENABLED      1  
-#define LEDS_ENABLED               1  
-#define TURBO_ENABLED              1  
-#define BOARD_IO_EXTENSION_ENABLED 1  
+// ====================================================================
+// 3. LED構成・動作プロファイル（変則省電力ケースLED対応）
+// ====================================================================
+#define BOARD_LEDS_ENABLED 1
+#define RGB_LED_NUM 47
+#define LED_BRIGHTNESS_MAXIMUM 80
+#define LED_BRIGHTNESS_STEPS 10
+#define LED_FORMAT LED_FORMAT_GRB
+#define LED_LAYOUT BUTTON_LAYOUT_STICK
 
-// ==========================================
-// 7. オンボードLEDの動作モード固定
-// ==========================================
-#define BOARD_LED_MODE        BOARD_LED_MODE_INPUT_TEST 
+// 変則ケースLEDインデックスロック
+#define LED_CASE_START_INDEX 13
+#define LED_CASE_COUNT 34
 
-// ==========================================
-// 8. Wii拡張コントローラ（ヌンチャク仕様完全ハードコード）
-// ==========================================
-#define WII_EXTENSION_TYPE          WII_EXTENSION_NUNCHUK
-#define WII_NUNCHUK_BUTTON_C        BUTTON_MASK_B1      
-#define WII_NUNCHUK_BUTTON_Z        BUTTON_MASK_B2      
-#define WII_NUNCHUK_STICK_MODE      STICK_MODE_LEFT     
+// ボタン発光順序マッピング（物理ピン配列 0~7: B1, B2, R2, L2, L1, R1, B4, B3）
+#define LED_PINS_MAPPING { \
+    GPIO_PIN_06, GPIO_PIN_07, GPIO_PIN_08, GPIO_PIN_09, \
+    GPIO_PIN_13, GPIO_PIN_12, GPIO_PIN_11, GPIO_PIN_10  \
+}
 
-// ==========================================
-// 9. LED構成・動作プロファイル（変則省電力ケースLED対応）
-// ==========================================
-#define LED_COUNT            47       
-#define LEDS_BASE_DATA_PIN   BOARD_LEDS_PIN 
-#define LED_FORMAT           LED_FORMAT_GRB 
-#define LED_LAYOUT           BUTTON_LAYOUT_STICK 
-#define LEDS_PER_PIXEL       1        
+// ====================================================================
+// 4. ディスプレイ構成（OLED）
+// ====================================================================
+#define HAS_DISPLAY 1
+#define DISPLAY_I2C_BLOCK i2c0 // Wiiと共有、またはI2C0に配置
+#define DISPLAY_FLIP 0
+#define DISPLAY_INVERT 0
 
-#define LED_BRIGHTNESS_MAXIMUM 80 
-#define LED_BRIGHTNESS_STEPS   10 
-#define LEDS_TURN_OFF_ON_SUSPEND 1    
+#define BUTTON_LAYOUT_LEFT BUTTON_LAYOUT_STICK
+#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VLX
 
-#define LED_CASE_START_INDEX 13  
-#define LED_CASE_COUNT       34  
+#define CUSTOM_SPLASH_IMAGE 1
+#define CUSTOM_SPLASH_TIME 7000
+#define SCREEN_SAVER_TIMEOUT 600000
+#define SCREEN_SAVER_MODE 2 // 「雪」モード固定
 
-// 1つのボタンにつきLED1個アサイン
-#define LEDS_BUTTON_B1  0
-#define LEDS_BUTTON_B2  1
-#define LEDS_BUTTON_R2  2
-#define LEDS_BUTTON_L2  3
-#define LEDS_BUTTON_L1  4
-#define LEDS_BUTTON_R1  5
-#define LEDS_BUTTON_B4  6
-#define LEDS_BUTTON_B3  7
+#define DISPLAY_MENU_ENABLED 1 // ゲームパッド入力でのメニュー操作有効
 
-// ==========================================
-// 10. ディスプレイ構成（表示レイアウト・各種モード完全固定）
-// ==========================================
-#define BUTTON_LAYOUT        BUTTON_LAYOUT_STICK     
-#define BUTTON_LAYOUT_RIGHT  BUTTON_LAYOUT_VEWLIX    
-#define BUTTON_LAYOUT_CUSTOM BUTTON_LAYOUT_DEFAULT   
+// ====================================================================
+// 5. PCF8575 IO エクスパンダー入力マッピング (I2C1)
+// ====================================================================
+#define PCF8575_ENABLED 1
+#define PCF8575_I2C_BLOCK i2c1
 
-#define DISPLAY_STATUS_BAR_INPUT_MODE 1 
-#define DISPLAY_STATUS_BAR_TURBO      1 
-#define DISPLAY_STATUS_BAR_DPAD_MODE  1 
-#define DISPLAY_STATUS_BAR_SOCD_MODE  1 
-#define DISPLAY_STATUS_BAR_MACRO     1 
-#define DISPLAY_STATUS_BAR_PROFILE   1 
-
-#define DISPLAY_INPUT_HISTORY_ENABLED 1  
-#define DISPLAY_INPUT_HISTORY_LENGTH  21 
-#define DISPLAY_INPUT_HISTORY_COL     0  
-#define DISPLAY_INPUT_HISTORY_ROW     7  
-
-#define DISPLAY_SPLASH_MODE          SPLASH_MODE_CUSTOM 
-#define DISPLAY_SPLASH_DURATION      7                  
-#define DISPLAY_SCREENSAVER_MODE     SCREENSAVER_MODE_SNOW 
-#define DISPLAY_SCREENSAVER_TIMEOUT  10                 
-
-// ==========================================
-// 11. ホットキー初期設定 (ビルドエラー根本回避対応)
-// ==========================================
-// ブランチごとの定数名エラーを100%回避するため、マクロ指定を安全にスキップします。
-
-// ==========================================
-// 12. PCF8575 IO エクスパンダー設定（すべて入力固定）
-// ==========================================
-#define PCF8575_DIRECTION_MASK 0xFFFF 
-
-// エクスパンダー側のGP1(A2ピン)も、100%純粋な通常ボタンに完全復帰！
-#define PCF8575_P00_ASSIGN GAMEPAD_MASK_A3      // GP0 : A3
-#define PCF8575_P01_ASSIGN GAMEPAD_MASK_A2      // GP1 : A2 (100%純粋な通常ボタン)
-#define PCF8575_P02_ASSIGN GAMEPAD_MASK_E1      // GP2 : Extra 1
-#define PCF8575_P03_ASSIGN GAMEPAD_MASK_E2      // GP3 : Extra 2
-#define PCF8575_P04_ASSIGN GAMEPAD_MASK_E3      // GP4 : Extra 3
-#define PCF8575_P05_ASSIGN GAMEPAD_MASK_E4      // GP5 : Extra 4
-#define PCF8575_P06_ASSIGN GAMEPAD_MASK_E5      // GP6 : Extra 5
-#define PCF8575_P07_ASSIGN GAMEPAD_MASK_E6      // GP7 : Extra 6
-
-#define PCF8575_P10_ASSIGN GAMEPAD_MASK_A4      // GP8 : A4
-#define PCF8575_P11_ASSIGN GAMEPAD_MASK_L3      // GP9 : L3
-#define PCF8575_P12_ASSIGN GAMEPAD_MASK_R3      // GP10: R3
-#define PCF8575_P13_ASSIGN GAMEPAD_MASK_S1      // GP11: S1
-#define PCF8575_P14_ASSIGN GAMEPAD_MASK_A1      // GP12: A1
-#define PCF8575_P16_ASSIGN GAMEPAD_MASK_E7      // GP14: Extra 7
-#define PCF8575_P17_ASSIGN GAMEPAD_MASK_E8      // GP15: Extra 8
-
-#endif // PICO_BOARD_CONFIG_H_
-
+#endif /* BOARD_CONFIG_H */
