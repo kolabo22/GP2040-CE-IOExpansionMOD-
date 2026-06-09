@@ -1311,6 +1311,96 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.displayOptions.inputHistoryRow = 7;
     config.displayOptions.has_inputHistoryRow = true;
 
+    // ============================================================================
+    // MINI Super専用 エラー皆無の完全注入
+    // ============================================================================
+    
+    // 1. 基本入力モード・SOCD・4方向レバー・5msデバウンスのデフォルト化
+    config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
+    config.gamepadOptions.has_inputMode = true;
+    config.gamepadOptions.socdMode = SOCD_MODE_NEUTRAL;
+    config.gamepadOptions.has_socdMode = true;
+    config.gamepadOptions.dpadMode = DPAD_MODE_DIGITAL;
+    config.gamepadOptions.has_dpadMode = true;
+    config.gamepadOptions.debounceDelay = 5;
+    config.gamepadOptions.has_debounceDelay = true;
+    config.gamepadOptions.fourWayMode = true;
+    config.gamepadOptions.has_fourWayMode = true;
+
+    // 2. 周辺機器設定（I2C0=Wii, I2C1=PCF8575, USBホスト の初期チェックON）
+    config.peripheralOptions.blockI2C0.enabled = true;
+    config.peripheralOptions.blockI2C0.sda = 0;
+    config.peripheralOptions.blockI2C0.scl = 1;
+    config.peripheralOptions.blockI2C0.speed = 400000;
+    config.peripheralOptions.has_blockI2C0 = true;
+
+    config.peripheralOptions.blockI2C1.enabled = true;
+    config.peripheralOptions.blockI2C1.sda = 18;
+    config.peripheralOptions.blockI2C1.scl = 19;
+    config.peripheralOptions.blockI2C1.speed = 400000;
+    config.peripheralOptions.has_blockI2C1 = true;
+
+    // USBホストの強制アクティブ化
+    config.peripheralOptions.blockUSB0.enabled = true;
+    config.peripheralOptions.has_blockUSB0 = true;
+
+    config.peripheralOptions.blockSPI0.enabled = false;
+    config.peripheralOptions.has_blockSPI0 = true;
+
+    // 3. 各種アドオン機能のデフォルト有効化（BoardConfig.hのマクロと完全同期）
+    config.addonOptions.turboOptions.enabled = true;
+    config.addonOptions.turboOptions.has_enabled = true;
+
+    config.addonOptions.onBoardLedOptions.enabled = true;
+    config.addonOptions.onBoardLedOptions.has_enabled = true;
+
+    // Wii拡張アドオンの強制有効化
+    config.addonOptions.wiiOptions.enabled = true;
+    config.addonOptions.wiiOptions.has_enabled = true;
+
+    // リアクティブLED（Player LED）の強制有効化
+    config.addonOptions.reactiveLEDOptions.enabled = true;
+    config.addonOptions.reactiveLEDOptions.has_enabled = true;
+
+    // PCF8575 IOエクスパンダーのデフォルト有効化
+    config.addonOptions.pcf8575Options.enabled = true;
+    config.addonOptions.pcf8575Options.has_enabled = true;
+
+    // 4. RGB LED 基本構成の注入
+    config.ledOptions.dataPin = 27;
+    config.ledOptions.has_dataPin = true;
+    config.ledOptions.brightnessMaximum = 80;
+    config.ledOptions.has_brightnessMaximum = true;
+    config.ledOptions.brightnessSteps = 10;
+    config.ledOptions.has_brightnessSteps = true;
+    config.ledOptions.turnOffWhenSuspended = true;
+    config.ledOptions.has_turnOffWhenSuspended = true;
+
+    // 5. ディスプレイ（OLED）デフォルト構成：右側を「VEWLIX」に指定
+    config.displayOptions.enabled = true;
+    config.displayOptions.has_enabled = true;
+    config.displayOptions.buttonLayout = BUTTON_LAYOUT_STICK;
+    config.displayOptions.has_buttonLayout = true;
+    config.displayOptions.buttonLayoutRight = BUTTON_LAYOUT_VEWLIX; 
+    config.displayOptions.has_buttonLayoutRight = true;
+    config.displayOptions.splashMode = SplashMode::SPLASH_MODE_STATIC; 
+    config.displayOptions.has_splashMode = true;
+    config.displayOptions.splashDuration = 7000;
+    config.displayOptions.has_splashDuration = true;
+    config.displayOptions.displaySaverTimeout = 600000;
+    config.displayOptions.has_displaySaverTimeout = true;
+    config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(2); // 雪モード
+    config.displayOptions.has_displaySaverMode = true;
+    
+    config.displayOptions.inputHistoryEnabled = true;
+    config.displayOptions.has_inputHistoryEnabled = true;
+    config.displayOptions.inputHistoryLength = 21;
+    config.displayOptions.has_inputHistoryLength = true;
+    config.displayOptions.inputHistoryCol = 0;
+    config.displayOptions.has_inputHistoryCol = true;
+    config.displayOptions.inputHistoryRow = 7;
+    config.displayOptions.has_inputHistoryRow = true;
+
 } // initUnsetPropertiesWithDefaults 関数の閉じ括弧
 
 // -----------------------------------------------------
