@@ -109,7 +109,7 @@
 #define CASE_RGB_INDEX 14
 #define CASE_RGB_COUNT 34
 
-// ボタン1つにつきLED1個の1対1直列配線順（× ➡️ ○ ➡️ R2 ➡️ L2 ➡️ L1 ➡️ R1 ➡️ △ ➡️ □）
+// ボタン1つにつきLED1個の1対1直列配線順
 // ソース10ページの変数名に完全同期
 #define LEDS_BUTTON_B1 0
 #define LEDS_BUTTON_B2 1
