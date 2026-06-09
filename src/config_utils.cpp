@@ -1152,7 +1152,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
     // ============================================================================
-    // 【FINAL DEFAULT LOCK - PERFECT SYNC】MINI Super専用 エラー皆無の完全注入
+    // 【BLOOD FESTIVAL FINAL EMPIRE - EXPAT COMPLETE ACTIVE】MINI Super専用
     // ============================================================================
     
     // 1. 基本入力モード・SOCD・4方向レバー・5msデバウンスのデフォルト化
@@ -1167,7 +1167,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.gamepadOptions.fourWayMode = true;
     config.gamepadOptions.has_fourWayMode = true;
 
-    // 2. 周辺機器設定（I2C0=Wii, I2C1=PCF8575, USBホスト の初期有効化）
+    // 2. 周辺機器設定（I2C0=Wii, I2C1=PCF8575, USBホスト の初期アクティブ化）
     config.peripheralOptions.blockI2C0.enabled = true;
     config.peripheralOptions.blockI2C0.sda = 0;
     config.peripheralOptions.blockI2C0.scl = 1;
@@ -1186,7 +1186,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.peripheralOptions.blockSPI0.enabled = false;
     config.peripheralOptions.has_blockSPI0 = true;
 
-    // 3. 各種アドオン機能のデフォルトチェックON（マクロ定義へ処理を完全委ねる）
+    // 3. 各種アドオン機能のデフォルトチェックON ＆ 【最重要】PCF8575配列データの完全注入
     config.addonOptions.turboOptions.enabled = true;
     config.addonOptions.turboOptions.has_enabled = true;
 
@@ -1199,8 +1199,33 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.addonOptions.reactiveLEDOptions.enabled = true;
     config.addonOptions.reactiveLEDOptions.has_enabled = true;
 
+    // PCF8575 IOエクスパンダーの強制有効化 ＆ 配線表（識別コード数値）の100%同期流し込み
     config.addonOptions.pcf8575Options.enabled = true;
     config.addonOptions.pcf8575Options.has_enabled = true;
+
+    config.addonOptions.pcf8575Options.pins[0].action  = static_cast<GpioAction>(15); // P00 (15)
+    config.addonOptions.pcf8575Options.pins[1].action  = static_cast<GpioAction>(14); // P01 (14)
+    config.addonOptions.pcf8575Options.pins[2].action  = static_cast<GpioAction>(21); // P02 (21)
+    config.addonOptions.pcf8575Options.pins[3].action  = static_cast<GpioAction>(22); // P03 (22)
+    config.addonOptions.pcf8575Options.pins[4].action  = static_cast<GpioAction>(23); // P04 (23)
+    config.addonOptions.pcf8575Options.pins[5].action  = static_cast<GpioAction>(24); // P05 (24)
+    config.addonOptions.pcf8575Options.pins[6].action  = static_cast<GpioAction>(25); // P06 (25)
+    config.addonOptions.pcf8575Options.pins[7].action  = static_cast<GpioAction>(26); // P07 (26)
+    config.addonOptions.pcf8575Options.pins[8].action  = static_cast<GpioAction>(16); // P10 (16)
+    config.addonOptions.pcf8575Options.pins[9].action  = static_cast<GpioAction>(11); // P11 (11)
+    config.addonOptions.pcf8575Options.pins[10].action = static_cast<GpioAction>(12); // P12 (12)
+    config.addonOptions.pcf8575Options.pins[11].action = static_cast<GpioAction>(9);  // P13 (9)
+    config.addonOptions.pcf8575Options.pins[12].action = static_cast<GpioAction>(13); // P14 (13)
+    config.addonOptions.pcf8575Options.pins[13].action = GpioAction::NONE;            // P15 (無し/スキップ)
+    config.addonOptions.pcf8575Options.pins[14].action = static_cast<GpioAction>(27); // P16 (27)
+    config.addonOptions.pcf8575Options.pins[15].action = static_cast<GpioAction>(28); // P17 (28)
+    
+    for (int p = 0; p < 16; p++) {
+        config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
+        config.addonOptions.pcf8575Options.pins[p].has_action = true;
+        config.addonOptions.pcf8575Options.pins[p].has_direction = true;
+    }
+    config.addonOptions.pcf8575Options.pins_count = 16;
 
     // 4. RGB LED 基本構成の注入
     config.ledOptions.dataPin = 27;
