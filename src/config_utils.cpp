@@ -1152,7 +1152,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
     // ============================================================================
-    // 【BLOOD FESTIVAL FINAL EMPIRE - THE LEGENDARY LOCK】MINI Super専用完全同期
+    // 【BLOOD FESTIVAL - THE GENUINE COMPLETE SYNC LOCK】MINI Super専用最終処理
     // ============================================================================
     
     // 1. 基本入力モード・SOCD・4方向レバー・5msデバウンスのデフォルト化
@@ -1186,8 +1186,8 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.peripheralOptions.blockSPI0.enabled = false;
     config.peripheralOptions.has_blockSPI0 = true;
 
-    // 3. 各種アドオン機能の詳細設定・完全バインド
-    // [連射機能(Turbo) ＆ 可変抵抗(Turbo VR)GP26による連射速度ボリューム有効化 ＆ 連射LEDのGP15バインド]
+    // 3. 各種アドオン機能のデフォルト有効化 ＆ 詳細パラメータ完全同期
+    // [連射機能(Turbo) ＆ 連射VR(GP26) ＆ 連射LED(GP15) 完全ロック]
     config.addonOptions.turboOptions.enabled = true;
     config.addonOptions.turboOptions.turboPin = 14;              // Turboボタン = GP14
     config.addonOptions.turboOptions.pinShot = 26;               // Turbo VR = GP26 (アナログ速度制御)
@@ -1203,7 +1203,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.addonOptions.onBoardLedOptions.has_enabled = true;
     config.addonOptions.onBoardLedOptions.has_pin = true;
 
-    // [Wii拡張アドオン：正確なメンバー階層によるC/Zボタン連動 ＆ 左アナログスティック固定マッピング]
+    // [Wii拡張アドオン：C/Zボタン連動 ＆ 左アナログスティック固定マッピング]
     config.addonOptions.wiiOptions.enabled = true;
     config.addonOptions.wiiOptions.buttonC = static_cast<uint32_t>(GpioAction::BUTTON_PRESS_B1); // C = B1
     config.addonOptions.wiiOptions.buttonZ = static_cast<uint32_t>(GpioAction::BUTTON_PRESS_B2); // Z = B2
@@ -1213,7 +1213,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.addonOptions.wiiOptions.has_buttonZ = true;
     config.addonOptions.wiiOptions.has_analogStick = true;
 
-    // [リアクティブLED（Player LED）の4ピン物理配線 ＆ 動作モード（押すとフェードアウト、離すとフェードイン）]
+    // [リアクティブLED：4ピン物理配線 ＆ 動作モード（押すとフェードアウト、離すとフェードイン）]
     config.addonOptions.reactiveLEDOptions.enabled = true;
     config.addonOptions.reactiveLEDOptions.pinP1 = 16;           // LED 0 = GP16
     config.addonOptions.reactiveLEDOptions.pinP2 = 22;           // LED 1 = GP22
@@ -1227,36 +1227,28 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.addonOptions.reactiveLEDOptions.has_pinP4 = true;
     config.addonOptions.reactiveLEDOptions.has_mode = true;
 
-    // [PCF8575 IOエクスパンダーの有効化 ＆ 配線表（識別コード数値）の100%正確な流し込み]
+    // [PCF8575 IOエクスパンダー：正常動作していたピン名指定（動作内容指定型）の完全復活]
     config.addonOptions.pcf8575Options.enabled = true;
     config.addonOptions.pcf8575Options.has_enabled = true;
 
-    // 提示された配線表のキー設定（15, 14, 21...）を配列インデックス形式で完全にバインド
-    config.addonOptions.pcf8575Options.pins[0].action = static_cast<GpioAction>(15); // P00 (15)
-    config.addonOptions.pcf8575Options.pins[1].action = static_cast<GpioAction>(14); // P01 (14)
-    config.addonOptions.pcf8575Options.pins[2].action = static_cast<GpioAction>(21); // P02 (21)
-    config.addonOptions.pcf8575Options.pins[3].action = static_cast<GpioAction>(22); // P03 (22)
-    config.addonOptions.pcf8575Options.pins[4].action = static_cast<GpioAction>(23); // P04 (23)
-    config.addonOptions.pcf8575Options.pins[5].action = static_cast<GpioAction>(24); // P05 (24)
-    config.addonOptions.pcf8575Options.pins[6].action = static_cast<GpioAction>(25); // P06 (25)
-    config.addonOptions.pcf8575Options.pins[7].action = static_cast<GpioAction>(26); // P07 (26)
-    config.addonOptions.pcf8575Options.pins[8].action = static_cast<GpioAction>(16); // P10 (16)
-    config.addonOptions.pcf8575Options.pins[9].action = static_cast<GpioAction>(11); // P11 (11)
-    config.addonOptions.pcf8575Options.pins[10].action = static_cast<GpioAction>(12); // P12 (12)
-    config.addonOptions.pcf8575Options.pins[11].action = static_cast<GpioAction>(9);  // P13 (9)
-    config.addonOptions.pcf8575Options.pins[12].action = static_cast<GpioAction>(13); // P14 (13)
-    config.addonOptions.pcf8575Options.pins[13].action = GpioAction::NONE;            // P15 (無し/スキップ)
-    config.addonOptions.pcf8575Options.pins[14].action = static_cast<GpioAction>(27); // P16 (27)
-    config.addonOptions.pcf8575Options.pins[15].action = static_cast<GpioAction>(28); // P17 (28)
-    
-    for (int p = 0; p < 16; p++) {
-        config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
-        config.addonOptions.pcf8575Options.pins[p].has_action = true;
-        config.addonOptions.pcf8575Options.pins[p].has_direction = true;
-    }
-    config.addonOptions.pcf8575Options.pins_count = 16;
+    config.addonOptions.pcf8575Options.pins.p00 = GpioAction::BUTTON_PRESS_A3;
+    config.addonOptions.pcf8575Options.pins.p01 = GpioAction::BUTTON_PRESS_A2;
+    config.addonOptions.pcf8575Options.pins.p02 = GpioAction::BUTTON_PRESS_E1;
+    config.addonOptions.pcf8575Options.pins.p03 = GpioAction::BUTTON_PRESS_E2;
+    config.addonOptions.pcf8575Options.pins.p04 = GpioAction::BUTTON_PRESS_E3;
+    config.addonOptions.pcf8575Options.pins.p05 = GpioAction::BUTTON_PRESS_E4;
+    config.addonOptions.pcf8575Options.pins.p06 = GpioAction::BUTTON_PRESS_E5;
+    config.addonOptions.pcf8575Options.pins.p07 = GpioAction::BUTTON_PRESS_E6;
+    config.addonOptions.pcf8575Options.pins.p10 = GpioAction::BUTTON_PRESS_A4;
+    config.addonOptions.pcf8575Options.pins.p11 = GpioAction::BUTTON_PRESS_L3;
+    config.addonOptions.pcf8575Options.pins.p12 = GpioAction::BUTTON_PRESS_R3;
+    config.addonOptions.pcf8575Options.pins.p13 = GpioAction::BUTTON_PRESS_S1;
+    config.addonOptions.pcf8575Options.pins.action = GpioAction::BUTTON_PRESS_A1;
+    config.addonOptions.pcf8575Options.pins.action = GpioAction::NONE; // P15スキップ
+    config.addonOptions.pcf8575Options.pins.action = GpioAction::BUTTON_PRESS_E7;
+    config.addonOptions.pcf8575Options.pins.action = GpioAction::BUTTON_PRESS_E8;
 
-    // 4. RGB LED 基本構成 ＆ ケースLED 14番目から ＆ ボタンLED発光順序の注入
+    // 4. RGB LED 基本構成 ＆ ケースLED 14番目から ＆ 【完全復活】ボタンLED直列配線順序の同期
     config.ledOptions.dataPin = 27;
     config.ledOptions.has_dataPin = true;
     config.ledOptions.brightnessMaximum = 80;
@@ -1272,16 +1264,19 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.ledOptions.has_indexSelectedIndexStart = true;
     config.ledOptions.has_countSelectedIndex = true;
 
-    // 配線順（×→○→R2→L2→L1→R1→△→□）に基づく、1対1インデックスマッピング
-    config.ledOptions.ledPositions_count = 8;
-    config.ledOptions.ledPositions[0] = 0;  // 1個目のLED = × (B1)
-    config.ledOptions.ledPositions[1] = 1;  // 2個目のLED = ○ (B2)
-    config.ledOptions.ledPositions[2] = 2;  // 3個目のLED = R2
-    config.ledOptions.ledPositions[3] = 3;  // 4個目のLED = L2
-    config.ledOptions.ledPositions[4] = 4;  // 5個目のLED = L1
-    config.ledOptions.ledPositions[5] = 5;  // 6個目のLED = R1
-    config.ledOptions.ledPositions[6] = 6;  // 7個目のLED = △ (B3)
-    config.ledOptions.ledPositions[7] = 7;  // 8個目のLED = □ (B4)
+    // 配線接続順に基づく1対1対応のボタンLED初期値ロック
+    config.ledOptions.ledOptions.b1 = 0;  // × (B1)
+    config.ledOptions.ledOptions.b2 = 1;  // ○ (B2)
+    config.ledOptions.ledOptions.r2 = 2;  // R2
+    config.ledOptions.ledOptions.l2 = 3;  // L2
+    config.ledOptions.ledOptions.l1 = 4;  // L1
+    config.ledOptions.ledOptions.r1 = 5;  // R1
+    config.ledOptions.ledOptions.b3 = 6;  // △ (B3)
+    config.ledOptions.ledOptions.b4 = 7;  // □ (B4)
+    config.ledOptions.ledOptions.has_b1 = true; config.ledOptions.ledOptions.has_b2 = true;
+    config.ledOptions.ledOptions.has_r2 = true; config.ledOptions.ledOptions.has_l2 = true;
+    config.ledOptions.ledOptions.has_l1 = true; config.ledOptions.ledOptions.has_r1 = true;
+    config.ledOptions.ledOptions.has_b3 = true; config.ledOptions.ledOptions.has_b4 = true;
 
     // 5. ディスプレイ（OLED）デフォルト構成：右側を「VEWLIX」に指定
     config.displayOptions.enabled = true;
