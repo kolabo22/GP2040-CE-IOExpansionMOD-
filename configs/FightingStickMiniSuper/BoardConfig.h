@@ -27,9 +27,9 @@
 #define GPIO_PIN_12 GpioAction::BUTTON_PRESS_R1
 #define GPIO_PIN_13 GpioAction::BUTTON_PRESS_L1
 
-// 機能ボタン (TURBO, S2)
+// 機能ボタン (TURBOは維持、S2はOLEDの自動スキャンから除外するためADDONへ逃がす)
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
-#define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2
+#define GPIO_PIN_17 GpioAction::ASSIGNED_TO_ADDON
 
 // オンボードLED (入力テストモード固定)
 #define BOARD_LED_TYPE ON_BOARD_LED_MODE_INPUT_TEST 
@@ -101,12 +101,12 @@
 // 4. ディスプレイ構成（OLED）
 // ====================================================================
 #define HAS_DISPLAY 1
-#define DISPLAY_I2C_BLOCK i2c0 // Wiiと共有、またはI2C0に配置
+#define DISPLAY_I2C_BLOCK i2c0 
 #define DISPLAY_FLIP 0
 #define DISPLAY_INVERT 0
 
 #define BUTTON_LAYOUT_LEFT BUTTON_LAYOUT_STICK
-#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VLXB
+#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VEWLIX // VLXBから「VEWLIX」に修正
 
 #define CUSTOM_SPLASH_IMAGE 1
 #define CUSTOM_SPLASH_TIME 7000
