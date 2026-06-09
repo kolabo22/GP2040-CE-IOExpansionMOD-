@@ -391,25 +391,25 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     // forcedSetupMode
     INIT_UNSET_PROPERTY(config.forcedSetupOptions, mode, DEFAULT_FORCED_SETUP_MODE);
 
-    // keyboardMapping
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyDpadUp, KEY_DPAD_UP);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyDpadDown, KEY_DPAD_DOWN);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyDpadRight, KEY_DPAD_RIGHT);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyDpadLeft, KEY_DPAD_LEFT);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonB1, KEY_BUTTON_B1);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonB2, KEY_BUTTON_B2);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonR2, KEY_BUTTON_R2);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonL2, KEY_BUTTON_L2);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonB3, KEY_BUTTON_B3);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonB4, KEY_BUTTON_B4);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonR1, KEY_BUTTON_R1);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonL1, KEY_BUTTON_L1);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonS1, KEY_BUTTON_S1);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonS2, KEY_BUTTON_S2);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonL3, KEY_BUTTON_L3);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonR3, KEY_BUTTON_R3);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonA1, KEY_BUTTON_A1);
-    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonA2, KEY_BUTTON_A2);
+    // keyboardMapping (HID標準スキャンコード直接割当によるエラー回避版)
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyDpadUp, 26);     // Wキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyDpadDown, 22);   // Sキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyDpadRight, 7);    // Dキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyDpadLeft, 4);     // Aキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonB1, 13);    // Jキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonB2, 12);    // Iキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonR2, 15);    // Lキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonL2, 14);    // Kキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonB3, 21);    // Rキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonB4, 9);     // Fキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonR1, 23);    // Uキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonL1, 28);    // Yキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonS1, 40);    // Enterキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonS2, 43);    // Tabキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonL3, 20);    // Qキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonR3, 8);     // Eキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonA1, 44);    // Spaceキー
+    INIT_UNSET_PROPERTY(config.keyboardMapping, keyButtonA2, 41);    // Escapeキー
 
     // displayOptions
     INIT_UNSET_PROPERTY(config.displayOptions, enabled, !!HAS_I2C_DISPLAY);
@@ -1087,24 +1087,27 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, enabled, KEYBOARD_HOST_ENABLED);
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, deprecatedPinDplus, KEYBOARD_HOST_PIN_DPLUS);
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, deprecatedPin5V, KEYBOARD_HOST_PIN_5V);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyDpadUp, KEY_DPAD_UP);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyDpadDown, KEY_DPAD_DOWN);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyDpadRight, KEY_DPAD_RIGHT);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyDpadLeft, KEY_DPAD_LEFT);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonB1, KEY_BUTTON_B1);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonB2, KEY_BUTTON_B2);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonR2, KEY_BUTTON_R2);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonL2, KEY_BUTTON_L2);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonB3, KEY_BUTTON_B3);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonB4, KEY_BUTTON_B4);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonR1, KEY_BUTTON_R1);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonL1, KEY_BUTTON_L1);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonS1, KEY_BUTTON_S1);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonS2, KEY_BUTTON_S2);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonL3, KEY_BUTTON_L3);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonR3, KEY_BUTTON_R3);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonA1, KEY_BUTTON_A1);
-    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonA2, KEY_BUTTON_A2);
+    
+	// keyboardHostOptions.mapping (エラー回避版)
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyDpadUp, 26);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyDpadDown, 22);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyDpadRight, 7);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyDpadLeft, 4);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonB1, 13);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonB2, 12);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonR2, 15);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonL2, 14);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonB3, 21);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonB4, 9);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonR1, 23);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonL1, 28);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonS1, 40);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonS2, 43);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonL3, 20);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonR3, 8);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonA1, 44);
+    INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions.mapping, keyButtonA2, 41);
+
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, mouseLeft, 0);
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, mouseMiddle, 0);
     INIT_UNSET_PROPERTY(config.addonOptions.keyboardHostOptions, mouseRight, 0);
@@ -1178,9 +1181,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         config.peripheralOptions.blockI2C1.speed = 400000;
         config.peripheralOptions.has_blockI2C1 = true;
 
-        // JQ8900用UART1の強制バインド
-        // ※GP2040-CEのperipheralOptionsの仕様に合わせ、必要に応じて拡張してください
-        config.peripheralOptions.blockSPI0.enabled = false; // 競合防止でSPIは明示的オフ
+        config.peripheralOptions.blockSPI0.enabled = false;
         config.peripheralOptions.has_blockSPI0 = true;
 
         // 3. アドオン（Wii拡張 / PCF8575）の強制注入
@@ -1225,29 +1226,27 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         config.ledOptions.turnOffWhenSuspended = true;
         config.ledOptions.has_turnOffWhenSuspended = true;
         
-        // 変則ケースLEDインデックス完全バインド
-        config.ledOptions.indexSelectedIndexStart = 13;
-        config.ledOptions.countSelectedIndex = 34;
-        config.ledOptions.has_indexSelectedIndexStart = true;
-        config.ledOptions.has_countSelectedIndex = true;
+        config.ledOptions.ledCaseStartIndex = 13;
+        config.ledOptions.ledCaseCount = 34;
+        config.ledOptions.has_ledCaseStartIndex = true;
+        config.ledOptions.has_ledCaseCount = true;
 
         // 5. ディスプレイ構成（OLED）のロック
         config.displayOptions.enabled = true;
         config.displayOptions.has_enabled = true;
         config.displayOptions.buttonLayout = BUTTON_LAYOUT_STICK;
         config.displayOptions.has_buttonLayout = true;
-        config.displayOptions.buttonLayoutRight = BUTTON_LAYOUT_VLX;
+        config.displayOptions.buttonLayoutRight = BUTTON_LAYOUT_VLXB; 
         config.displayOptions.has_buttonLayoutRight = true;
-        config.displayOptions.splashMode = SplashMode::SPLASH_MODE_CUSTOM;
+        config.displayOptions.splashMode = SplashMode::SPLASH_MODE_STATIC; 
         config.displayOptions.has_splashMode = true;
         config.displayOptions.splashDuration = 7000;
         config.displayOptions.has_splashDuration = true;
         config.displayOptions.displaySaverTimeout = 600000;
         config.displayOptions.has_displaySaverTimeout = true;
-        config.displayOptions.displaySaverMode = 2; // 「雪」モード
+        
+        config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(2); // 雪モード
         config.displayOptions.has_displaySaverMode = true;
-        config.displayOptions.miniMenuGamepadInput = 1; // メニュー操作有効化
-        config.displayOptions.has_miniMenuGamepadInput = true;
         
         config.displayOptions.inputHistoryEnabled = true;
         config.displayOptions.has_inputHistoryEnabled = true;
