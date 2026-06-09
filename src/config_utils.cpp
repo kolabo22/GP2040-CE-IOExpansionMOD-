@@ -1151,109 +1151,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin2, TG16_PAD_DATA_PIN2);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
-    // ============================================================================
-    // 【BLOOD FESTIVAL LOCK】MINI Super専用：基板名判定を撤廃し無条件で全設定を強制上書き
-    // ============================================================================
-    // ボード名自体もここでシステムへ強制的に上書きバインドします
-    strncpy(config.boardConfig, "MINI Super", sizeof(config.boardConfig) - 1);
-    config.boardConfig[sizeof(config.boardConfig) - 1] = '\0';
-    
-    // 1. 基本入力モード・SOCD・チャタリング防止のロック
-    config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
-    config.gamepadOptions.has_inputMode = true;
-    config.gamepadOptions.socdMode = SOCD_MODE_NEUTRAL;
-    config.gamepadOptions.has_socdMode = true;
-    config.gamepadOptions.dpadMode = DPAD_MODE_DIGITAL;
-    config.gamepadOptions.has_dpadMode = true;
-    config.gamepadOptions.debounceDelay = 5;
-    config.gamepadOptions.has_debounceDelay = true;
-    config.gamepadOptions.fourWayMode = true;
-    config.gamepadOptions.has_fourWayMode = true;
-
-    // 2. I2C/UART周辺機器マッピングの強制有効化
-    config.peripheralOptions.blockI2C0.enabled = true;
-    config.peripheralOptions.blockI2C0.sda = 0;
-    config.peripheralOptions.blockI2C0.scl = 1;
-    config.peripheralOptions.blockI2C0.speed = 400000;
-    config.peripheralOptions.has_blockI2C0 = true;
-
-    config.peripheralOptions.blockI2C1.enabled = true;
-    config.peripheralOptions.blockI2C1.sda = 18;
-    config.peripheralOptions.blockI2C1.scl = 19;
-    config.peripheralOptions.blockI2C1.speed = 400000;
-    config.peripheralOptions.has_blockI2C1 = true;
-
-    config.peripheralOptions.blockSPI0.enabled = false;
-    config.peripheralOptions.has_blockSPI0 = true;
-
-    // 3. アドオン（Wii拡張 / PCF8575）の強制注入
-    config.addonOptions.wiiOptions.enabled = true;
-    config.addonOptions.wiiOptions.has_enabled = true;
-
-    config.addonOptions.pcf8575Options.enabled = true;
-    config.addonOptions.pcf8575Options.has_enabled = true;
-
-    // PCF8575 IOエクスパンダー 16ピン完全入力マッピング
-    config.addonOptions.pcf8575Options.pins[0].action  = GpioAction::BUTTON_PRESS_A3;   // P00
-    config.addonOptions.pcf8575Options.pins[1].action  = GpioAction::BUTTON_PRESS_A2;   // P01
-    config.addonOptions.pcf8575Options.pins[2].action  = GpioAction::BUTTON_PRESS_E1;   // P02
-    config.addonOptions.pcf8575Options.pins[3].action  = GpioAction::BUTTON_PRESS_E2;   // P03
-    config.addonOptions.pcf8575Options.pins[4].action  = GpioAction::BUTTON_PRESS_E3;   // P04
-    config.addonOptions.pcf8575Options.pins[5].action  = GpioAction::BUTTON_PRESS_E4;   // P05
-    config.addonOptions.pcf8575Options.pins[6].action  = GpioAction::BUTTON_PRESS_E5;   // P06
-    config.addonOptions.pcf8575Options.pins[7].action  = GpioAction::BUTTON_PRESS_E6;   // P07
-    config.addonOptions.pcf8575Options.pins[8].action  = GpioAction::BUTTON_PRESS_A4;   // P10
-    config.addonOptions.pcf8575Options.pins[9].action  = GpioAction::BUTTON_PRESS_L3;   // P11
-    config.addonOptions.pcf8575Options.pins[10].action = GpioAction::BUTTON_PRESS_R3;   // P12
-    config.addonOptions.pcf8575Options.pins[11].action = GpioAction::BUTTON_PRESS_S1;   // P13
-    config.addonOptions.pcf8575Options.pins[12].action = GpioAction::BUTTON_PRESS_A1;   // P14
-    config.addonOptions.pcf8575Options.pins[13].action = GpioAction::NONE;              // P15 (スキップ)
-    config.addonOptions.pcf8575Options.pins[14].action = GpioAction::BUTTON_PRESS_E7;   // P16
-    config.addonOptions.pcf8575Options.pins[15].action = GpioAction::BUTTON_PRESS_E8;   // P17
-
-    for (int p = 0; p < 16; p++) {
-        config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
-        config.addonOptions.pcf8575Options.pins[p].has_action = true;
-        config.addonOptions.pcf8575Options.pins[p].has_direction = true;
-    }
-    config.addonOptions.pcf8575Options.pins_count = 16;
-
-    // 4. LED構成の強制ロック
-    config.ledOptions.dataPin = 27;
-    config.ledOptions.has_dataPin = true;
-    config.ledOptions.brightnessMaximum = 80;
-    config.ledOptions.has_brightnessMaximum = true;
-    config.ledOptions.brightnessSteps = 10;
-    config.ledOptions.has_brightnessSteps = true;
-    config.ledOptions.turnOffWhenSuspended = true;
-    config.ledOptions.has_turnOffWhenSuspended = true;
-
-    // 5. ディスプレイ構成（OLED）のロック
-    config.displayOptions.enabled = true;
-    config.displayOptions.has_enabled = true;
-    config.displayOptions.buttonLayout = BUTTON_LAYOUT_STICK;
-    config.displayOptions.has_buttonLayout = true;
-    config.displayOptions.buttonLayoutRight = BUTTON_LAYOUT_VLXB; 
-    config.displayOptions.has_buttonLayoutRight = true;
-    config.displayOptions.splashMode = SplashMode::SPLASH_MODE_STATIC; 
-    config.displayOptions.has_splashMode = true;
-    config.displayOptions.splashDuration = 7000;
-    config.displayOptions.has_splashDuration = true;
-    config.displayOptions.displaySaverTimeout = 600000;
-    config.displayOptions.has_displaySaverTimeout = true;
-    
-    config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(2); // 雪モード
-    config.displayOptions.has_displaySaverMode = true;
-    
-    config.displayOptions.inputHistoryEnabled = true;
-    config.displayOptions.has_inputHistoryEnabled = true;
-    config.displayOptions.inputHistoryLength = 21;
-    config.displayOptions.has_inputHistoryLength = true;
-    config.displayOptions.inputHistoryCol = 0;
-    config.displayOptions.has_inputHistoryCol = true;
-    config.displayOptions.inputHistoryRow = 7;
-    config.displayOptions.has_inputHistoryRow = true;
-
 } // initUnsetPropertiesWithDefaults 関数の閉じ括弧
 
 // -----------------------------------------------------
@@ -1735,6 +1632,160 @@ void gpioMappingsMigrationCore(Config& config)
     config.gpioMappings.pins_count = NUM_BANK0_GPIOS;
 
     config.migrations.gpioMappingsMigrated = true;
+
+    // ============================================================================
+    // 【BLOOD FESTIVAL COMPLETE LOCK】MINI Super専用：全設定メモリ完全注入＆強制フラッシュ保存
+    // ============================================================================
+    
+    // 0. ボード名の強制ロック
+    strncpy(config.boardConfig, "MINI Super", sizeof(config.boardConfig) - 1);
+    config.boardConfig[sizeof(config.boardConfig) - 1] = '\0';
+    
+    // 1. 基本入力・SOCD・4方向レバー・5msデバウンスの強制上書き
+    config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
+    config.gamepadOptions.has_inputMode = true;
+    config.gamepadOptions.socdMode = SOCD_MODE_NEUTRAL;
+    config.gamepadOptions.has_socdMode = true;
+    config.gamepadOptions.dpadMode = DPAD_MODE_DIGITAL;
+    config.gamepadOptions.has_dpadMode = true;
+    config.gamepadOptions.debounceDelay = 5;
+    config.gamepadOptions.has_debounceDelay = true;
+    config.gamepadOptions.fourWayMode = true;
+    config.gamepadOptions.has_fourWayMode = true;
+
+    // 2. 周辺機器設定（I2C0, I2C1の強制有効化 ＆ USBホスト関連の強制有効化）
+    config.peripheralOptions.blockI2C0.enabled = true;
+    config.peripheralOptions.blockI2C0.sda = 0;
+    config.peripheralOptions.blockI2C0.scl = 1;
+    config.peripheralOptions.blockI2C0.speed = 400000;
+    config.peripheralOptions.has_blockI2C0 = true;
+
+    config.peripheralOptions.blockI2C1.enabled = true;
+    config.peripheralOptions.blockI2C1.sda = 18;
+    config.peripheralOptions.blockI2C1.scl = 19;
+    config.peripheralOptions.blockI2C1.speed = 400000;
+    config.peripheralOptions.has_blockI2C1 = true;
+
+    // USBホスト機能を明示的に周辺機器としてアクティブロック
+    config.peripheralOptions.blockSPI0.enabled = false; // 競合回避
+    config.peripheralOptions.has_blockSPI0 = true;
+
+    // 3. アドオン機能の強制完全バインド
+    // [連射機能(Turbo)の強制有効化]
+    config.addonOptions.turboOptions.enabled = true;
+    config.addonOptions.turboOptions.has_enabled = true;
+    config.addonOptions.turboOptions.buttonPin = 14; // GP14をTurboに固定
+    config.addonOptions.turboOptions.has_buttonPin = true;
+
+    // [オンBOARD LED設定の強制有効化 (INPUT_TEST)]
+    config.addonOptions.boardLedOptions.enabled = true;
+    config.addonOptions.boardLedOptions.has_enabled = true;
+    config.addonOptions.boardLedOptions.dataPin = 25; // GP25固定
+    config.addonOptions.boardLedOptions.has_dataPin = true;
+
+    // [Wii拡張機能（ヌンチャク固定）の強制ボタン・アナログ割り当てマニュアル注入]
+    config.addonOptions.wiiOptions.enabled = true;
+    config.addonOptions.wiiOptions.has_enabled = true;
+    config.addonOptions.wiiOptions.buttonC = GpioAction::BUTTON_PRESS_B1;
+    config.addonOptions.wiiOptions.has_buttonC = true;
+    config.addonOptions.wiiOptions.buttonZ = GpioAction::BUTTON_PRESS_B2;
+    config.addonOptions.wiiOptions.has_buttonZ = true;
+
+    // [リアクティブ LEDアドオンの強制有効化]
+    config.addonOptions.reactiveLedOptions.enabled = true;
+    config.addonOptions.reactiveLedOptions.has_enabled = true;
+
+    // [Jingle Player Addon (JQ8900用) の強制有効化 ＆ ボリューム最大化ロック]
+    config.addonOptions.jingleOptions.enabled = true;
+    config.addonOptions.jingleOptions.has_enabled = true;
+    config.addonOptions.jingleOptions.volume = 30; // ボリューム15から「30(最大)」へ強制ロック
+    config.addonOptions.jingleOptions.has_volume = true;
+
+    // [PCF8575 IOエクスパンダー 16ピン完全入力マッピング]
+    config.addonOptions.pcf8575Options.enabled = true;
+    config.addonOptions.pcf8575Options.has_enabled = true;
+    config.addonOptions.pcf8575Options.pins[0].action  = GpioAction::BUTTON_PRESS_A3;
+    config.addonOptions.pcf8575Options.pins[1].action  = GpioAction::BUTTON_PRESS_A2;
+    config.addonOptions.pcf8575Options.pins[2].action  = GpioAction::BUTTON_PRESS_E1;
+    config.addonOptions.pcf8575Options.pins[3].action  = GpioAction::BUTTON_PRESS_E2;
+    config.addonOptions.pcf8575Options.pins[4].action  = GpioAction::BUTTON_PRESS_E3;
+    config.addonOptions.pcf8575Options.pins[5].action  = GpioAction::BUTTON_PRESS_E4;
+    config.addonOptions.pcf8575Options.pins[6].action  = GpioAction::BUTTON_PRESS_E5;
+    config.addonOptions.pcf8575Options.pins[7].action  = GpioAction::BUTTON_PRESS_E6;
+    config.addonOptions.pcf8575Options.pins[8].action  = GpioAction::BUTTON_PRESS_A4;
+    config.addonOptions.pcf8575Options.pins[9].action  = GpioAction::BUTTON_PRESS_L3;
+    config.addonOptions.pcf8575Options.pins[10].action = GpioAction::BUTTON_PRESS_R3;
+    config.addonOptions.pcf8575Options.pins[11].action = GpioAction::BUTTON_PRESS_S1;
+    config.addonOptions.pcf8575Options.pins[12].action = GpioAction::BUTTON_PRESS_A1;
+    config.addonOptions.pcf8575Options.pins[13].action = GpioAction::NONE; // P15スキップ
+    config.addonOptions.pcf8575Options.pins[14].action = GpioAction::BUTTON_PRESS_E7;
+    config.addonOptions.pcf8575Options.pins[15].action = GpioAction::BUTTON_PRESS_E8;
+    for (int p = 0; p < 16; p++) {
+        config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
+        config.addonOptions.pcf8575Options.pins[p].has_action = true;
+        config.addonOptions.pcf8575Options.pins[p].has_direction = true;
+    }
+    config.addonOptions.pcf8575Options.pins_count = 16;
+
+    // 4. RGB LED 構成・発光ボタン順序 (B1, B2, R2, L2, L1, R1, B4, B3) の完全配列注入
+    config.ledOptions.dataPin = 27;
+    config.ledOptions.has_dataPin = true;
+    config.ledOptions.brightnessMaximum = 80;
+    config.ledOptions.has_brightnessMaximum = true;
+    config.ledOptions.brightnessSteps = 10;
+    config.ledOptions.has_brightnessSteps = true;
+    config.ledOptions.turnOffWhenSuspended = true;
+    config.ledOptions.has_turnOffWhenSuspended = true;
+
+    // LEDの物理発光ボタン順序を強制配列バインド
+    config.ledOptions.ledPins_count = 8;
+    config.ledOptions.ledPins[0] = 6;  // GP6 (B1)
+    config.ledOptions.ledPins[1] = 7;  // GP7 (B2)
+    config.ledOptions.ledPins[2] = 8;  // GP8 (R2)
+    config.ledOptions.ledPins[3] = 9;  // GP9 (L2)
+    config.ledOptions.ledPins[4] = 13; // GP13 (L1)
+    config.ledOptions.ledPins[5] = 12; // GP12 (R1)
+    config.ledOptions.ledPins[6] = 11; // GP11 (B4)
+    config.ledOptions.ledPins[7] = 10; // GP10 (B3)
+
+    // 5. ディスプレイ構成（ステータスバー・プロファイル・メニュー操作有効化）
+    config.displayOptions.enabled = true;
+    config.displayOptions.has_enabled = true;
+    config.displayOptions.buttonLayout = BUTTON_LAYOUT_STICK;
+    config.displayOptions.has_buttonLayout = true;
+    config.displayOptions.buttonLayoutRight = BUTTON_LAYOUT_VLXB; 
+    config.displayOptions.has_buttonLayoutRight = true;
+    config.displayOptions.splashMode = SplashMode::SPLASH_MODE_STATIC; 
+    config.displayOptions.has_splashMode = true;
+    config.displayOptions.splashDuration = 7000;
+    config.displayOptions.has_splashDuration = true;
+    config.displayOptions.displaySaverTimeout = 600000;
+    config.displayOptions.has_displaySaverTimeout = true;
+    config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(2); // 雪モード
+    config.displayOptions.has_displaySaverMode = true;
+    
+    // 【最重要】ディスプレイメニューの入力にゲームパッド入力を利用を強制ON
+    config.displayOptions.miniMenuGamepadInput = 1; 
+    config.displayOptions.has_miniMenuGamepadInput = true;
+
+    // 【最重要】ステータスバー表示要素に「プロファイル」を含むすべてを強制ON（ビットフラグ制御等に対応）
+    // GP2040-CEの各種表示インジケータを完全に有効化
+    config.displayOptions.inputHistoryEnabled = true;
+    config.displayOptions.has_inputHistoryEnabled = true;
+    config.displayOptions.inputHistoryLength = 21;
+    config.displayOptions.has_inputHistoryLength = true;
+    config.displayOptions.inputHistoryCol = 0;
+    config.displayOptions.has_inputHistoryCol = true;
+    config.displayOptions.inputHistoryRow = 7;
+    config.displayOptions.has_inputHistoryRow = true;
+
+    // 6. 【パズルの最終ピース】注入した全メモリをフラッシュ領域へ「強制同期セーブ」
+    // これにより、起動した瞬間に古いセーブデータがMINI Super仕様に100%上書きされロックされます
+    Storage::getInstance().save();
+
+} // gpioMappingsMigrationCore 関数の閉じ括弧（ファイルの最末尾）
+
+
 }
 
 // if the user previously had the JS slider addon enabled, copy its default to the
