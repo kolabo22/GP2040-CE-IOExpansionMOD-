@@ -27,9 +27,9 @@
 #define GPIO_PIN_12 GpioAction::BUTTON_PRESS_R1
 #define GPIO_PIN_13 GpioAction::BUTTON_PRESS_L1
 
-// 機能ボタン (TURBOは維持、S2はOLED表示の蛇足排除のためADDONへ逃がす)
+// 機能ボタン (TURBO, S2の物理ピン入力を完全正常化・救済)
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
-#define GPIO_PIN_17 GpioAction::ASSIGNED_TO_ADDON
+#define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2
 
 // 連射(Turbo)LED・物理Player LEDアサインの完全固定
 #define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
@@ -56,7 +56,7 @@
 #define GPIO_PIN_28 GpioAction::ASSIGNED_TO_ADDON // USB0 D+
 #define GPIO_PIN_29 GpioAction::ASSIGNED_TO_ADDON // USB0 D-
 
-#define FORCED_WEB_CONFIG_BOARD_BUTTON_PIN 17 // GP17でWebConfig起動
+#define FORCED_WEB_CONFIG_BOARD_BUTTON_PIN 17 // GP17（S2）押し起動でWebConfigへ100%潜入可能！
 
 // ====================================================================
 // 2. 周辺機器・アドオンの完全固定マクロ (基本設定)
