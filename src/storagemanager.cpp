@@ -25,6 +25,119 @@ void Storage::init() {
 	systemFlashSize = System::getPhysicalFlash(); // System Flash Size must be called once
 	EEPROM.start();
 	ConfigUtils::load(config);
+
+	// ============================================================================
+	// 【LOCK】MINI Super 専用：起動時ストレージ強制同期
+	// ============================================================================
+	
+	// 0. ボード名をシステムに強制固定
+	strncpy(this->config.boardConfig, "MINI Super", sizeof(this->config.boardConfig) - 1);
+	this->config.boardConfig[sizeof(this->config.boardConfig) - 1] = '\0';
+	
+	// 1. 基本入力・SOCD・4方向レバー・5msデバウンスの強制上書き
+	this->config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
+	this->config.gamepadOptions.has_inputMode = true;
+	this->config.gamepadOptions.socdMode = SOCD_MODE_NEUTRAL;
+	this->config.gamepadOptions.has_socdMode = true;
+	this->config.gamepadOptions.dpadMode = DPAD_MODE_DIGITAL;
+	this->config.gamepadOptions.has_dpadMode = true;
+	this->config.gamepadOptions.debounceDelay = 5;
+	this->config.gamepadOptions.has_debounceDelay = true;
+	this->config.gamepadOptions.fourWayMode = true;
+	this->config.gamepadOptions.has_fourWayMode = true;
+
+	// 2. 周辺機器設定（I2C0, I2C1の強制アクティブ有効化）
+	this->config.peripheralOptions.blockI2C0.enabled = true;
+	this->config.peripheralOptions.blockI2C0.sda = 0;
+	this->config.peripheralOptions.blockI2C0.scl = 1;
+	this->config.peripheralOptions.blockI2C0.speed = 400000;
+	this->config.peripheralOptions.has_blockI2C0 = true;
+
+	this->config.peripheralOptions.blockI2C1.enabled = true;
+	this->config.peripheralOptions.blockI2C1.sda = 18;
+	this->config.peripheralOptions.blockI2C1.scl = 19;
+	this->config.peripheralOptions.blockI2C1.speed = 400000;
+	this->config.peripheralOptions.has_blockI2C1 = true;
+
+	this->config.peripheralOptions.blockSPI0.enabled = false;
+	this->config.peripheralOptions.has_blockSPI0 = true;
+
+	// 3. 各種アドオン機能の強制チェックON（WebConfig同期型）
+	this->config.addonOptions.turboOptions.enabled = true;
+	this->config.addonOptions.turboOptions.has_enabled = true;
+
+	this->config.addonOptions.onBoardLedOptions.enabled = true;
+	this->config.addonOptions.onBoardLedOptions.has_enabled = true;
+
+	this->config.addonOptions.wiiOptions.enabled = true;
+	this->config.addonOptions.wiiOptions.has_enabled = true;
+
+	this->config.addonOptions.reactiveLEDOptions.enabled = true;
+	this->config.addonOptions.reactiveLEDOptions.has_enabled = true;
+
+	// PCF8575 IOエクスパンダー 16ピンのメモリ強制書き換え
+	this->config.addonOptions.pcf8575Options.enabled = true;
+	this->config.addonOptions.pcf8575Options.has_enabled = true;
+	this->config.addonOptions.pcf8575Options.pins[0].action  = GpioAction::BUTTON_PRESS_A3;
+	this->config.addonOptions.pcf8575Options.pins[1].action  = GpioAction::BUTTON_PRESS_A2;
+	this->config.addonOptions.pcf8575Options.pins[2].action  = GpioAction::BUTTON_PRESS_E1;
+	this->config.addonOptions.pcf8575Options.pins[3].action  = GpioAction::BUTTON_PRESS_E2;
+	this->config.addonOptions.pcf8575Options.pins[4].action  = GpioAction::BUTTON_PRESS_E3;
+	this->config.addonOptions.pcf8575Options.pins[5].action  = GpioAction::BUTTON_PRESS_E4;
+	this->config.addonOptions.pcf8575Options.pins[6].action  = GpioAction::BUTTON_PRESS_E5;
+	this->config.addonOptions.pcf8575Options.pins[7].action  = GpioAction::BUTTON_PRESS_E6;
+	this->config.addonOptions.pcf8575Options.pins[8].action  = GpioAction::BUTTON_PRESS_A4;
+	this->config.addonOptions.pcf8575Options.pins[9].action  = GpioAction::BUTTON_PRESS_L3;
+	this->config.addonOptions.pcf8575Options.pins[10].action = GpioAction::BUTTON_PRESS_R3;
+	this->config.addonOptions.pcf8575Options.pins[11].action = GpioAction::BUTTON_PRESS_S1;
+	this->config.addonOptions.pcf8575Options.pins[12].action = GpioAction::BUTTON_PRESS_A1;
+	this->config.addonOptions.pcf8575Options.pins[13].action = GpioAction::NONE;
+	this->config.addonOptions.pcf8575Options.pins[14].action = GpioAction::BUTTON_PRESS_E7;
+	this->config.addonOptions.pcf8575Options.pins[15].action = GpioAction::BUTTON_PRESS_E8;
+	for (int p = 0; p < 16; p++) {
+		this->config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
+		this->config.addonOptions.pcf8575Options.pins[p].has_action = true;
+		this->config.addonOptions.pcf8575Options.pins[p].has_direction = true;
+	}
+	this->config.addonOptions.pcf8575Options.pins_count = 16;
+
+	// 4. RGB LED 輝度・データピン固定
+	this->config.ledOptions.dataPin = 27;
+	this->config.ledOptions.has_dataPin = true;
+	this->config.ledOptions.brightnessMaximum = 80;
+	this->config.ledOptions.has_brightnessMaximum = true;
+	this->config.ledOptions.brightnessSteps = 10;
+	this->config.ledOptions.has_brightnessSteps = true;
+	this->config.ledOptions.turnOffWhenSuspended = true;
+	this->config.ledOptions.has_turnOffWhenSuspended = true;
+
+	// 5. ディスプレイ構成（OLED）のロック
+	this->config.displayOptions.enabled = true;
+	this->config.displayOptions.has_enabled = true;
+	this->config.displayOptions.buttonLayout = BUTTON_LAYOUT_STICK;
+	this->config.displayOptions.has_buttonLayout = true;
+	this->config.displayOptions.buttonLayoutRight = BUTTON_LAYOUT_VLXB; 
+	this->config.displayOptions.has_buttonLayoutRight = true;
+	this->config.displayOptions.splashMode = SplashMode::SPLASH_MODE_STATIC; 
+	this->config.displayOptions.has_splashMode = true;
+	this->config.displayOptions.splashDuration = 7000;
+	this->config.displayOptions.has_splashDuration = true;
+	this->config.displayOptions.displaySaverTimeout = 600000;
+	this->config.displayOptions.has_displaySaverTimeout = true;
+	this->config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(2); // 雪モード
+	this->config.displayOptions.has_displaySaverMode = true;
+	
+	this->config.displayOptions.inputHistoryEnabled = true;
+	this->config.displayOptions.has_inputHistoryEnabled = true;
+	this->config.displayOptions.inputHistoryLength = 21;
+	this->config.displayOptions.has_inputHistoryLength = true;
+	this->config.displayOptions.inputHistoryCol = 0;
+	this->config.displayOptions.has_inputHistoryCol = true;
+	this->config.displayOptions.inputHistoryRow = 7;
+	this->config.displayOptions.has_inputHistoryRow = true;
+
+	// 6. 【最重要】強制セーブフラグ(true)で即時保存を実行
+	this->save(true);
 }
 
 /**
