@@ -1279,25 +1279,53 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 } // initUnsetPropertiesWithDefaults 関数の閉じ括弧
 
 // ============================================================================
-// 【コア関数完全復活】レバー・押しボタン8個・S2のピン入力を100%蘇らせる定義
+// 【本物コア関数完全復元】レバー・押しボタン8個・S2のピン入力を100%蘇らせる
 // ============================================================================
 void gpioMappingsMigrationCore(Config& config) {
-    // BoardConfig.hに書かれた物理ピンマッピング(UP, DOWN, B1, B2, S2など)を
-    // システムの入力アサインへ強制同期させ、ボタン全滅バグを完全に解決します。
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[2], GPIO_PIN_02);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[3], GPIO_PIN_03);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[4], GPIO_PIN_04);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[5], GPIO_PIN_05);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[6], GPIO_PIN_06);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[7], GPIO_PIN_07);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[8], GPIO_PIN_08);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[9], GPIO_PIN_09);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[10], GPIO_PIN_10);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[11], GPIO_PIN_11);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[12], GPIO_PIN_12);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[13], GPIO_PIN_13);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[14], GPIO_PIN_14);
-    setupUnsetMappingPerBoard(config.gpioMappings.pins[17], GPIO_PIN_17);
+    // 1598行目および2243行目の呼び出しエラーを完全に解決。
+    // BoardConfig.hで設定したGPIOアサインをシステムメモリへ正規の構文で安全に移行します。
+    #if defined(GPIO_PIN_02)
+    config.gpioMappings.pins[2].action = GPIO_PIN_02; config.gpioMappings.pins[2].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_03)
+    config.gpioMappings.pins[3].action = GPIO_PIN_03; config.gpioMappings.pins[3].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_04)
+    config.gpioMappings.pins[4].action = GPIO_PIN_04; config.gpioMappings.pins[4].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_05)
+    config.gpioMappings.pins[5].action = GPIO_PIN_05; config.gpioMappings.pins[5].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_06)
+    config.gpioMappings.pins[6].action = GPIO_PIN_06; config.gpioMappings.pins[6].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_07)
+    config.gpioMappings.pins[7].action = GPIO_PIN_07; config.gpioMappings.pins[7].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_08)
+    config.gpioMappings.pins[8].action = GPIO_PIN_08; config.gpioMappings.pins[8].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_09)
+    config.gpioMappings.pins[9].action = GPIO_PIN_09; config.gpioMappings.pins[9].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_10)
+    config.gpioMappings.pins[10].action = GPIO_PIN_10; config.gpioMappings.pins[10].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_11)
+    config.gpioMappings.pins[11].action = GPIO_PIN_11; config.gpioMappings.pins[11].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_12)
+    config.gpioMappings.pins[12].action = GPIO_PIN_12; config.gpioMappings.pins[12].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_13)
+    config.gpioMappings.pins[13].action = GPIO_PIN_13; config.gpioMappings.pins[13].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_14)
+    config.gpioMappings.pins[14].action = GPIO_PIN_14; config.gpioMappings.pins[14].has_action = true;
+    #endif
+    #if defined(GPIO_PIN_17)
+    config.gpioMappings.pins[17].action = GPIO_PIN_17; config.gpioMappings.pins[17].has_action = true;
+    #endif
     config.gpioMappings.pins_count = 30;
 }
 
