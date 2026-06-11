@@ -1154,8 +1154,8 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     // ============================================================================
     // 【BLOOD FESTIVAL FINAL EMPIRE - THE GENUINE LOCK】MINI Super専用完全同期
     // ============================================================================
-    // C++の構文として正しい配列インデックス（[0]〜[15]）アクセスへ完全適合。
-    // WebConfigリセット時に一撃で全項目（エクスパンダー、LED順序）を完全に埋め尽くします。
+    // 10ページ目の本物の変数名階層（直下型アクセス）に完全適合させエラーを完封。
+    // WebConfigリセット時に一撃で全設定（エクスパンダー、LED順序）を完全に埋め尽くします。
     
     // 1. 基本入力モード・SOCD・4方向レバー・5msデバウンスのデフォルト化
     config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
@@ -1198,8 +1198,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.addonOptions.wiiOptions.enabled = true;
     config.addonOptions.wiiOptions.has_enabled = true;
 
-    // [リアクティブLED（Player LED）：正しい配列インデックス[0]〜[3]による初期バインド]
-    // 押すとフェードアウト、離すとフェードインするリバース静的モード（OFF/ON）を直接流し込み
+    // [リアクティブLED（Player LED）：正しい配列形式による初期バインド]
     config.addonOptions.reactiveLEDOptions.enabled = true;
     config.addonOptions.reactiveLEDOptions.leds[0].pin = 16;
     config.addonOptions.reactiveLEDOptions.leds[0].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
@@ -1215,7 +1214,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.addonOptions.reactiveLEDOptions.leds[3].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;
     config.addonOptions.reactiveLEDOptions.has_enabled = true;
 
-    // [PCF8575 IOエクスパンダー：正しい配列インデックス[0]〜[15]による16キー完全バインド]
+    // [PCF8575 IOエクスパンダー：正常動作していた動作内容指定型の完全復活]
     config.addonOptions.pcf8575Options.enabled = true;
     config.addonOptions.pcf8575Options.has_enabled = true;
     config.addonOptions.pcf8575Options.pins[0].action = GpioAction::BUTTON_PRESS_A3;  // P00
@@ -1252,19 +1251,19 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.ledOptions.turnOffWhenSuspended = true;
     config.ledOptions.has_turnOffWhenSuspended = true;
 
-    // ご提示の直列配線順に基づき、ボタンLEDオプション構造体のインデックス（0〜7）を確実に同期
-    config.ledOptions.ledOptions.b1 = 0;  // × (B1)
-    config.ledOptions.ledOptions.b2 = 1;  // ○ (B2)
-    config.ledOptions.ledOptions.r2 = 2;  // R2
-    config.ledOptions.ledOptions.l2 = 3;  // L2
-    config.ledOptions.ledOptions.l1 = 4;  // L1
-    config.ledOptions.ledOptions.r1 = 5;  // R1
-    config.ledOptions.ledOptions.b3 = 6;  // △ (B3)
-    config.ledOptions.ledOptions.b4 = 7;  // □ (B4)
-    config.ledOptions.ledOptions.has_b1 = true; config.ledOptions.ledOptions.has_b2 = true;
-    config.ledOptions.ledOptions.has_r2 = true; config.ledOptions.ledOptions.has_l2 = true;
-    config.ledOptions.ledOptions.has_l1 = true; config.ledOptions.ledOptions.has_r1 = true;
-    config.ledOptions.ledOptions.has_b3 = true; config.ledOptions.ledOptions.has_b4 = true;
+    // 【修正完了】ログに基づき、ledOptions直下の変数に直接通し番号（0〜7）を代入してエラーを完封
+    config.ledOptions.b1 = 0;  // × (B1)
+    config.ledOptions.b2 = 1;  // ○ (B2)
+    config.ledOptions.r2 = 2;  // R2
+    config.ledOptions.l2 = 3;  // L2
+    config.ledOptions.l1 = 4;  // L1
+    config.ledOptions.r1 = 5;  // R1
+    config.ledOptions.b3 = 6;  // △ (B3)
+    config.ledOptions.b4 = 7;  // □ (B4)
+    config.ledOptions.has_b1 = true; config.ledOptions.has_b2 = true;
+    config.ledOptions.has_r2 = true; config.ledOptions.has_l2 = true;
+    config.ledOptions.has_l1 = true; config.ledOptions.has_r1 = true;
+    config.ledOptions.has_b3 = true; config.ledOptions.has_b4 = true;
 
     // 5. ディスプレイ（OLED）デフォルト構成：右側を「VEWLIX」に指定
     config.displayOptions.enabled = true;
@@ -1279,12 +1278,9 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.displayOptions.has_splashDuration = true;
     config.displayOptions.displaySaverTimeout = 600000;
     config.displayOptions.has_displaySaverTimeout = true;
-    config.displayOptions.displaySaverMode = DisplaySaverMode::DISPLAY_SAVER_MODE_SNOW; // エナム型へ適合
+    config.displayOptions.displaySaverMode = DisplaySaverMode::SNOW; // 正しいEnum名に修正
     config.displayOptions.has_displaySaverMode = true;
     
-    config.displayOptions.buttonLayoutCustomOptions.enabled = true;
-    config.displayOptions.buttonLayoutCustomOptions.has_enabled = true;
-
     config.displayOptions.inputHistoryEnabled = true;
     config.displayOptions.has_inputHistoryEnabled = true;
     config.displayOptions.inputHistoryLength = 21;
@@ -1295,7 +1291,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.displayOptions.has_inputHistoryRow = true;
 
 } // initUnsetPropertiesWithDefaults 関数の閉じ括弧
-
 // if the user previously had the JS slider addon enabled, copy its default to the
 // core gamepad setting, since the functionality is within the core now
 void migrateJSliderToCore(Config& config)
