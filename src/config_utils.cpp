@@ -1468,7 +1468,7 @@ void ConfigUtils::load(Config& config)
     // Run migrations that need to happen after initUnset...
     // ProtoBuf && Board Config settings are loaded here
     if (!config.migrations.gpioMappingsMigrated)
-        gpioMappingsMigrationCore(config);
+    //  gpioMappingsMigrationCore(config);
 
     // Run migration to enable or disable pre-existing profiles
     if (!config.migrations.profileEnabledFlagsMigrated)
@@ -2113,7 +2113,7 @@ bool ConfigUtils::fromJSON(Config& config, const char* data, size_t dataLen)
     initUnsetPropertiesWithDefaults(config);
 
     // we need to run migrations here too, in case the json document changed pins or things derived from pins
-    gpioMappingsMigrationCore(config);
+ // gpioMappingsMigrationCore(config);
     migrateTurboPinToGpio(config);
     migrateAuthenticationMethods(config);
     migrateMacroPinsToGpio(config);
