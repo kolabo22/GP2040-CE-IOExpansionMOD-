@@ -10,11 +10,14 @@
 // ====================================================================
 // 1. 物理ピン（GPIO）の完全固定マッピング
 // ====================================================================
+
+// レバー4方向（初期設定のまま100%ネイティブロード）
 #define GPIO_PIN_02 GpioAction::BUTTON_PRESS_UP
 #define GPIO_PIN_03 GpioAction::BUTTON_PRESS_DOWN
 #define GPIO_PIN_04 GpioAction::BUTTON_PRESS_RIGHT
 #define GPIO_PIN_05 GpioAction::BUTTON_PRESS_LEFT
 
+// メイン30φボタン (8ボタン ＆ 初期設定のまま100%ネイティブロード)
 #define GPIO_PIN_06 GpioAction::BUTTON_PRESS_B1
 #define GPIO_PIN_07 GpioAction::BUTTON_PRESS_B2
 #define GPIO_PIN_08 GpioAction::BUTTON_PRESS_R2
@@ -24,17 +27,18 @@
 #define GPIO_PIN_12 GpioAction::BUTTON_PRESS_R1
 #define GPIO_PIN_13 GpioAction::BUTTON_PRESS_L1
 
-// 機能ボタン (S2/STARTは通常のゲーム中に100%通常ボタンとして機能させます)
+// 機能ボタン (TURBO, S2/STARTはゲーム中に通常使用する独立ボタンとして100%通常救済固定)
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
 #define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2
 
-// 各種アドオン/周辺機器ピンをADDON管轄へリリース
-#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED
-#define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // Player LED 1
-#define GPIO_PIN_22 GpioAction::ASSIGNED_TO_ADDON // Player LED 2
-#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON // Player LED 3
-#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON // Player LED 4
+// 各種アドオン/周辺機器ピンをADDON管轄へ明示的リリース
+#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
+#define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // Player LED 1 (GP16)
+#define GPIO_PIN_22 GpioAction::ASSIGNED_TO_ADDON // Player LED 2 (GP22)
+#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON // Player LED 3 (GP23)
+#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON // Player LED 4 (GP24)
 #define GPIO_PIN_25 GpioAction::ASSIGNED_TO_ADDON // オンボードLED
+
 #define GPIO_PIN_00 GpioAction::ASSIGNED_TO_ADDON // I2C0 SDA (Wii)
 #define GPIO_PIN_01 GpioAction::ASSIGNED_TO_ADDON // I2C0 SCL (Wii)
 #define GPIO_PIN_18 GpioAction::ASSIGNED_TO_ADDON // I2C1 SDA (PCF8575)
@@ -47,13 +51,14 @@
 #define GPIO_PIN_29 GpioAction::ASSIGNED_TO_ADDON // USB0 D-
 
 // ====================================================================
-// 2. 周辺機器・アドオンの完全固定マクロ
+// 2. 周辺機器・アドオンの完全固定マクロ (システム自動ロード適合名)
 // ====================================================================
 #define DEFAULT_INPUT_MODE INPUT_MODE_GENERIC
 #define DEFAULT_SOCD_MODE SOCD_MODE_NEUTRAL
 #define DEFAULT_DPAD_MODE DPAD_MODE_DIGITAL
 #define DEBOUNCE_DELAY_IN_MS 5
 
+// コア通信ブロックの強制有効化
 #define I2C0_ENABLED 1
 #define I2C0_PIN_SDA 0
 #define I2C0_PIN_SCL 1
@@ -74,7 +79,29 @@
 #define USB_PIN_VBUS_ENABLE -1
 
 // ====================================================================
-// 3. LED構成・ディスプレイ・IOエクスパンダー標準定義
+// 3. 各種アドオン機能の初期動作設定（【重要】公式システム変数名に完全適合）
+// ====================================================================
+// Wii拡張アドオン（WiiOptions構造体と自動ロード連動）
+#define WII_EXTENSION_ENABLED 1
+#define WII_EXTENSION_I2C_BLOCK i2c0
+
+// 連射アドオン（【完全修正】13ページ目の公式変数「PIN_SHMUP_DIAL」へ名前を完全同期）
+#define TURBO_ENABLED 1
+#define TURBO_PIN 14
+#define TURBO_LED_PIN 15
+#define PIN_SHMUP_DIAL 26
+#define TURBO_SHMUP_MODE 1
+
+// リアクティブLEDアドオン（【完全修正】17ページ目の公式変数「REACTIVE_LED_ENABLED」へ完全同期）
+#define REACTIVE_LED_ENABLED 1
+#define REACTIVE_LED_PIN_0 16
+#define REACTIVE_LED_PIN_1 22
+#define REACTIVE_LED_PIN_2 23
+#define REACTIVE_LED_PIN_3 24
+#define REACTIVE_LED_REACTIVE_MODE 2 // 2 = 押すと消え、離すと光るリバースフェード
+
+// ====================================================================
+// 4. LED構成・点灯順序・変則ケースLED（10ページ目の公式仕様に完全同期）
 // ====================================================================
 #define BOARD_LEDS_ENABLED 1
 #define RGB_LED_NUM 47
@@ -83,37 +110,72 @@
 #define LED_FORMAT LED_FORMAT_GRB
 #define LED_LAYOUT BUTTON_LAYOUT_STICK
 
+// 【完全修正】10ページ目の公式構造体名「caseRGBIndex」へマクロ名を完全同期
+#define CASE_RGB_TYPE 1
+#define CASE_RGB_INDEX 14
+#define CASE_RGB_COUNT 34
+
+// ボタン1つにつきLED1個の1対1直列接続順
+#define LEDS_BUTTON_B1 0
+#define LEDS_BUTTON_B2 1
+#define LEDS_BUTTON_R2 2
+#define LEDS_BUTTON_L2 3
+#define LEDS_BUTTON_L1 4
+#define LEDS_BUTTON_R1 5
+#define LEDS_BUTTON_B3 6
+#define LEDS_BUTTON_B4 7
+
+// ====================================================================
+// 5. ディスプレイ構成（OLED ＆ 雪モード固定・8〜9ページ目完全同期）
+// ====================================================================
 #define HAS_DISPLAY 1
-#define DISPLAY_I2C_BLOCK i2c0 
-#define DISPLAY_FLIP 0
-#define DISPLAY_INVERT 0
-#define BUTTON_LAYOUT_LEFT BUTTON_LAYOUT_STICK
-#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VEWLIX 
+#define BUTTON_LAYOUT BUTTON_LAYOUT_STICK
+#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VEWLIX // 右側ビューリックス固定
 
 #define SPLASH_MODE SplashMode::SPLASH_MODE_STATIC
 #define DISPLAY_SAVER_TIMEOUT 600000
-#define SCREEN_SAVER_MODE 2 
+#define SCREEN_SAVER_MODE 2 // 2 = 雪モード固定
 #define DISPLAY_MENU_ENABLED 1 
 
-#define PCF8575_ENABLED 1
-#define PCF8575_I2C_BLOCK i2c1
+// ====================================================================
+// 6. PCF8575 IO エクスパンダー 16ピン入力キーマッピング（16ページ完全同期）
+// ====================================================================
+#define I2C_PCF8575_ENABLED 1
+#define I2C_PCF8575_BLOCK i2c1
+#define PCF8575_PIN_COUNT 16
 
-// PCF8575の全16ピンの役割を、C++側が直接同期ロードできる正規マクロ名として完全ロック
-#define PCF8575_PIN_00_ACTION GpioAction::BUTTON_PRESS_A3
-#define PCF8575_PIN_01_ACTION GpioAction::BUTTON_PRESS_A2
-#define PCF8575_PIN_02_ACTION GpioAction::BUTTON_PRESS_E1
-#define PCF8575_PIN_03_ACTION GpioAction::BUTTON_PRESS_E2
-#define PCF8575_PIN_04_ACTION GpioAction::BUTTON_PRESS_E3
-#define PCF8575_PIN_05_ACTION GpioAction::BUTTON_PRESS_E4
-#define PCF8575_PIN_06_ACTION GpioAction::BUTTON_PRESS_E5
-#define PCF8575_PIN_07_ACTION GpioAction::BUTTON_PRESS_E6
-#define PCF8575_PIN_10_ACTION GpioAction::BUTTON_PRESS_A4
-#define PCF8575_PIN_11_ACTION GpioAction::BUTTON_PRESS_L3
-#define PCF8575_PIN_12_ACTION GpioAction::BUTTON_PRESS_R3
-#define PCF8575_PIN_13_ACTION GpioAction::BUTTON_PRESS_S1
-#define PCF8575_PIN_14_ACTION GpioAction::BUTTON_PRESS_A1
-#define PCF8575_PIN_15_ACTION GpioAction::NONE
-#define PCF8575_PIN_16_ACTION GpioAction::BUTTON_PRESS_E7
-#define PCF8575_PIN_17_ACTION GpioAction::BUTTON_PRESS_E8
+#define PCF8575_PIN00_ACTION GpioAction::BUTTON_PRESS_A3
+#define PCF8575_PIN01_ACTION GpioAction::BUTTON_PRESS_A2
+#define PCF8575_PIN02_ACTION GpioAction::BUTTON_PRESS_E1
+#define PCF8575_PIN03_ACTION GpioAction::BUTTON_PRESS_E2
+#define PCF8575_PIN04_ACTION GpioAction::BUTTON_PRESS_E3
+#define PCF8575_PIN05_ACTION GpioAction::BUTTON_PRESS_E4
+#define PCF8575_PIN06_ACTION GpioAction::BUTTON_PRESS_E5
+#define PCF8575_PIN07_ACTION GpioAction::BUTTON_PRESS_E6
+#define PCF8575_PIN08_ACTION GpioAction::BUTTON_PRESS_A4
+#define PCF8575_PIN09_ACTION GpioAction::BUTTON_PRESS_L3
+#define PCF8575_PIN10_ACTION GpioAction::BUTTON_PRESS_R3
+#define PCF8575_PIN11_ACTION GpioAction::BUTTON_PRESS_S1
+#define PCF8575_PIN12_ACTION GpioAction::BUTTON_PRESS_A1
+#define PCF8575_PIN13_ACTION GpioAction::NONE
+#define PCF8575_PIN14_ACTION GpioAction::BUTTON_PRESS_E7
+#define PCF8575_PIN15_ACTION GpioAction::BUTTON_PRESS_E8
+
+#define PCF8575_PIN00_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN01_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN02_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN03_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN04_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN05_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN06_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN07_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN08_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN09_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN10_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN11_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN12_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN13_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN14_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
+#define PCF8575_PIN15_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
 
 #endif /* BOARD_CONFIG_H */
