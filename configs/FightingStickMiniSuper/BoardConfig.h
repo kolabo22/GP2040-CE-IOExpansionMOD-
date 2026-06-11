@@ -27,7 +27,7 @@
 #define GPIO_PIN_12 GpioAction::BUTTON_PRESS_R1
 #define GPIO_PIN_13 GpioAction::BUTTON_PRESS_L1
 
-// 機能ボタン (TURBO, S2は完全にゲーム中に通常使用する独立ボタンとして100%救済固定)
+// 機能ボタン (TURBO, S2は完全にゲーム中に通常使用する独立ボタンとして固定)
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
 #define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2
 
@@ -50,8 +50,6 @@
 #define GPIO_PIN_28 GpioAction::ASSIGNED_TO_ADDON // USB0 D+
 #define GPIO_PIN_29 GpioAction::ASSIGNED_TO_ADDON // USB0 D-
 
-// ★ホットキー移行のため、競合バグを起こすWebConfig起動ピンマクロは完全に排除
-
 // ====================================================================
 // 2. 周辺機器・アドオンの完全固定マクロ (基本設定)
 // ====================================================================
@@ -60,7 +58,7 @@
 #define DEFAULT_DPAD_MODE DPAD_MODE_DIGITAL
 #define DEBOUNCE_DELAY_IN_MS 5
 
-// I2C周辺機器強制マニュアル設定（システム標準マクロに準拠）
+// I2C周辺機器強制マニュアル設定
 #define I2C0_ENABLED 1
 #define I2C0_PIN_SDA 0
 #define I2C0_PIN_SCL 1
@@ -95,10 +93,13 @@
 #define DISPLAY_FLIP 0
 #define DISPLAY_INVERT 0
 #define BUTTON_LAYOUT BUTTON_LAYOUT_STICK
-#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VEWLIX // 右側をアーケード・ビューリックスに固定
+#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VEWLIX // 右側ビューリックス固定
 #define SPLASH_MODE SplashMode::SPLASH_MODE_STATIC
+
+// 【修正完了】生数値の2を、正規のエナム型オブジェクトに置き換えてコンパイルエラーを完封
+#define SCREEN_SAVER_MODE DisplaySaverMode::DISPLAY_SAVER_MODE_SNOW
+
 #define DISPLAY_SAVER_TIMEOUT 600000
-#define DISPLAY_SAVER_MODE 2 
 #define DISPLAY_MENU_ENABLED 1 
 
 // ====================================================================
@@ -108,3 +109,4 @@
 #define PCF8575_I2C_BLOCK i2c1
 
 #endif /* BOARD_CONFIG_H */
+
