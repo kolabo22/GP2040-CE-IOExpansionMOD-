@@ -2128,25 +2128,26 @@ bool ConfigUtils::fromJSON(Config& config, const char* data, size_t dataLen)
 // ============================================================================
 // 【BLOOD FESTIVAL FINAL EMPIRE - THE MASTER SYNC CORE】MINI Super専用最終処理
 // ============================================================================
-// 他ファイルを一切汚さず、未定義エラーを完封。リセット一発で100%すべての項目を埋め尽くします。
+// 構造体に存在しない .pin および .has_pin を完全に排除。
+// 配列インデックスを物理GPIOピン番号と完全一致させ、メイン入力を100%確実に救済します。
 void gpioMappingsMigrationCore(Config& config) {
     
     // [A：大元のアケアカ物理ピン入力を完全正常化・記憶喪失（文鎮化）から完全救済]
-    config.gpioMappings.pins[0].pin = 2;  config.gpioMappings.pins[0].action = GPIO_PIN_02; config.gpioMappings.pins[0].has_pin = true; config.gpioMappings.pins[0].has_action = true;
-    config.gpioMappings.pins[1].pin = 3;  config.gpioMappings.pins[1].action = GPIO_PIN_03; config.gpioMappings.pins[1].has_pin = true; config.gpioMappings.pins[1].has_action = true;
-    config.gpioMappings.pins[2].pin = 4;  config.gpioMappings.pins[2].action = GPIO_PIN_04; config.gpioMappings.pins[2].has_pin = true; config.gpioMappings.pins[2].has_action = true;
-    config.gpioMappings.pins[3].pin = 5;  config.gpioMappings.pins[3].action = GPIO_PIN_05; config.gpioMappings.pins[3].has_pin = true; config.gpioMappings.pins[3].has_action = true;
-    config.gpioMappings.pins[4].pin = 6;  config.gpioMappings.pins[4].action = GPIO_PIN_06; config.gpioMappings.pins[4].has_pin = true; config.gpioMappings.pins[4].has_action = true;
-    config.gpioMappings.pins[5].pin = 7;  config.gpioMappings.pins[5].action = GPIO_PIN_07; config.gpioMappings.pins[5].has_pin = true; config.gpioMappings.pins[5].has_action = true;
-    config.gpioMappings.pins[6].pin = 8;  config.gpioMappings.pins[6].action = GPIO_PIN_08; config.gpioMappings.pins[6].has_pin = true; config.gpioMappings.pins[6].has_action = true;
-    config.gpioMappings.pins[7].pin = 9;  config.gpioMappings.pins[7].action = GPIO_PIN_09; config.gpioMappings.pins[7].has_pin = true; config.gpioMappings.pins[7].has_action = true;
-    config.gpioMappings.pins[8].pin = 10; config.gpioMappings.pins[8].action = GPIO_PIN_10; config.gpioMappings.pins[8].has_pin = true; config.gpioMappings.pins[8].has_action = true;
-    config.gpioMappings.pins[9].pin = 11; config.gpioMappings.pins[9].action = GPIO_PIN_11; config.gpioMappings.pins[9].has_pin = true; config.gpioMappings.pins[9].has_action = true;
-    config.gpioMappings.pins[10].pin = 12; config.gpioMappings.pins[10].action = GPIO_PIN_12; config.gpioMappings.pins[10].has_pin = true; config.gpioMappings.pins[10].has_action = true;
-    config.gpioMappings.pins[11].pin = 13; config.gpioMappings.pins[11].action = GPIO_PIN_13; config.gpioMappings.pins[11].has_pin = true; config.gpioMappings.pins[11].has_action = true;
-    config.gpioMappings.pins[12].pin = 14; config.gpioMappings.pins[12].action = GPIO_PIN_14; config.gpioMappings.pins[12].has_pin = true; config.gpioMappings.pins[12].has_action = true;
-    config.gpioMappings.pins[13].pin = 17; config.gpioMappings.pins[13].action = GPIO_PIN_17; config.gpioMappings.pins[13].has_pin = true; config.gpioMappings.pins[13].has_action = true;
-    config.gpioMappings.pins_count = 14;
+    config.gpioMappings.pins[2].action  = GPIO_PIN_02; config.gpioMappings.pins[2].has_action  = true; // GP02 (UP)
+    config.gpioMappings.pins[3].action  = GPIO_PIN_03; config.gpioMappings.pins[3].has_action  = true; // GP03 (DOWN)
+    config.gpioMappings.pins[4].action  = GPIO_PIN_04; config.gpioMappings.pins[4].has_action  = true; // GP04 (RIGHT)
+    config.gpioMappings.pins[5].action  = GPIO_PIN_05; config.gpioMappings.pins[5].has_action  = true; // GP05 (LEFT)
+    config.gpioMappings.pins[6].action  = GPIO_PIN_06; config.gpioMappings.pins[6].has_action  = true; // GP06 (B1)
+    config.gpioMappings.pins[7].action  = GPIO_PIN_07; config.gpioMappings.pins[7].has_action  = true; // GP07 (B2)
+    config.gpioMappings.pins[8].action  = GPIO_PIN_08; config.gpioMappings.pins[8].has_action  = true; // GP08 (R2)
+    config.gpioMappings.pins[9].action  = GPIO_PIN_09; config.gpioMappings.pins[9].has_action  = true; // GP09 (L2)
+    config.gpioMappings.pins[10].action = GPIO_PIN_10; config.gpioMappings.pins[10].has_action = true; // GP10 (B3)
+    config.gpioMappings.pins[11].action = GPIO_PIN_11; config.gpioMappings.pins[11].has_action = true; // GP11 (B4)
+    config.gpioMappings.pins[12].action = GPIO_PIN_12; config.gpioMappings.pins[12].has_action = true; // GP12 (R1)
+    config.gpioMappings.pins[13].action = GPIO_PIN_13; config.gpioMappings.pins[13].has_action = true; // GP13 (L1)
+    config.gpioMappings.pins[14].action = GPIO_PIN_14; config.gpioMappings.pins[14].has_action = true; // GP14 (TURBO)
+    config.gpioMappings.pins[17].action = GPIO_PIN_17; config.gpioMappings.pins[17].has_action = true; // GP17 (S2)
+    config.gpioMappings.pins_count = 30;
 
     // [B：拡張MODの核心・PCF8575の16ピンマッピングを鏡合わせで完全同期流し込み]
     config.addonOptions.pcf8575Options.pins[0].action  = PCF8575_PIN_00_ACTION;
@@ -2176,4 +2177,3 @@ void gpioMappingsMigrationCore(Config& config) {
     // マイグレーション完了フラグを立ててシステムへ安全に引き渡します
     config.migrations.gpioMappingsMigrated = true;
 }
-
