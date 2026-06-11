@@ -76,22 +76,6 @@
 #define UART1_PIN_RX 21
 #define UART1_BAUDRATE 9600
 
-// USBホスト、Wii、連射、Player LEDの詳細アサインをシステムマクロとして100%固定
-#define USB_PERIPHERAL_ENABLED 1
-#define USB_PERIPHERAL_PIN_DPLUS 28
-#define USB_PERIPHERAL_PIN_5V -1
-
-#define WII_EXTENSION_ENABLED 1
-#define WII_EXTENSION_I2C_BLOCK i2c0
-#define WII_EXTENSION_I2C_SPEED 400000
-
-#define TURBO_ENABLED 1
-#define TURBO_LED_PIN 15
-
-// 物理Player LED（リアクティブLED）詳細アサイン
-#define REACTIVE_LED_ENABLED 1
-#define REACTIVE_LED_COUNT 4
-
 // ====================================================================
 // 3. LED構成・動作プロファイル（変則省電力ケースLED対応）
 // ====================================================================
@@ -102,74 +86,25 @@
 #define LED_BRIGHTNESS_STEPS 10
 #define LED_FORMAT LED_FORMAT_GRB
 #define LED_LAYOUT BUTTON_LAYOUT_STICK
-#define LEDS_PER_PIXEL 1
-
-// システム標準マクロに完全同期（インデックス14、34個分をケースLEDとして固定）
-#define CASE_RGB_TYPE 1
-#define CASE_RGB_INDEX 14
-#define CASE_RGB_COUNT 34
-
-// ボタン1つにつきLED1個の1対1直列配線順
-// ソース10ページの変数名に完全同期
-#define LEDS_BUTTON_B1 0
-#define LEDS_BUTTON_B2 1
-#define LEDS_BUTTON_R2 2
-#define LEDS_BUTTON_L2 3
-#define LEDS_BUTTON_L1 4
-#define LEDS_BUTTON_R1 5
-#define LEDS_BUTTON_B3 6
-#define LEDS_BUTTON_B4 7
 
 // ====================================================================
 // 4. ディスプレイ構成（OLED）
 // ====================================================================
 #define HAS_DISPLAY 1
-#define HAS_I2C_DISPLAY 1
 #define DISPLAY_I2C_BLOCK i2c0 
-#define DISPLAY_I2C_ADDR 0x3C
-#define I2C_SPEED 400000
 #define DISPLAY_FLIP 0
 #define DISPLAY_INVERT 0
-
 #define BUTTON_LAYOUT BUTTON_LAYOUT_STICK
 #define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VEWLIX // 右側をアーケード・ビューリックスに固定
-
 #define SPLASH_MODE SplashMode::SPLASH_MODE_STATIC
-#define SPLASH_CHOICE 0
-#define SPLASH_DURATION 7000
 #define DISPLAY_SAVER_TIMEOUT 600000
-#define DISPLAY_SAVER_MODE 2 // 「雪」モード固定
-
+#define DISPLAY_SAVER_MODE 2 
 #define DISPLAY_MENU_ENABLED 1 
-#define MINI_MENU_GAMEPAD_INPUT 1
-
-#define INPUT_HISTORY_ENABLED 1
-#define INPUT_HISTORY_LENGTH 21
-#define INPUT_HISTORY_COL 0
-#define INPUT_HISTORY_ROW 7
 
 // ====================================================================
-// 5. PCF8575 IO エクスパンダー入力マッピング（16ピンの定義を完全同期化）
+// 5. PCF8575 IO エクスパンダー
 // ====================================================================
-#define I2C_PCF8575_ENABLED 1
-#define I2C_PCF8575_BLOCK i2c1
-#define PCF8575_PIN_COUNT 16
-
-#define PCF8575_PIN00_ACTION GpioAction::BUTTON_PRESS_A3
-#define PCF8575_PIN01_ACTION GpioAction::BUTTON_PRESS_A2
-#define PCF8575_PIN02_ACTION GpioAction::BUTTON_PRESS_E1
-#define PCF8575_PIN03_ACTION GpioAction::BUTTON_PRESS_E2
-#define PCF8575_PIN04_ACTION GpioAction::BUTTON_PRESS_E3
-#define PCF8575_PIN05_ACTION GpioAction::BUTTON_PRESS_E4
-#define PCF8575_PIN06_ACTION GpioAction::BUTTON_PRESS_E5
-#define PCF8575_PIN07_ACTION GpioAction::BUTTON_PRESS_E6
-#define PCF8575_PIN08_ACTION GpioAction::BUTTON_PRESS_A4
-#define PCF8575_PIN09_ACTION GpioAction::BUTTON_PRESS_L3
-#define PCF8575_PIN10_ACTION GpioAction::BUTTON_PRESS_R3
-#define PCF8575_PIN11_ACTION GpioAction::BUTTON_PRESS_S1
-#define PCF8575_PIN12_ACTION GpioAction::BUTTON_PRESS_A1
-#define PCF8575_PIN13_ACTION GpioAction::NONE            // P15 (無し/スキップ)
-#define PCF8575_PIN14_ACTION GpioAction::BUTTON_PRESS_E7
-#define PCF8575_PIN15_ACTION GpioAction::BUTTON_PRESS_E8
+#define PCF8575_ENABLED 1
+#define PCF8575_I2C_BLOCK i2c1
 
 #endif /* BOARD_CONFIG_H */
