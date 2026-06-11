@@ -2126,8 +2126,54 @@ bool ConfigUtils::fromJSON(Config& config, const char* data, size_t dataLen)
 }
 
 // ============================================================================
-// 【拡張MOD救済ブロック】実体定義（他の関数ブロックの外側に配置することでエラーを完封）
+// 【BLOOD FESTIVAL FINAL EMPIRE - THE MASTER SYNC CORE】MINI Super専用最終処理
 // ============================================================================
+// 他ファイルを一切汚さず、未定義エラーを完封。リセット一発で100%すべての項目を埋め尽くします。
 void gpioMappingsMigrationCore(Config& config) {
-    // 何も処理を挟まず、BoardConfig.h側のネイティブ自動ロードへバトンを渡します。
+    
+    // [A：大元のアケアカ物理ピン入力を完全正常化・記憶喪失（文鎮化）から完全救済]
+    config.gpioMappings.pins[0].pin = 2;  config.gpioMappings.pins[0].action = GPIO_PIN_02; config.gpioMappings.pins[0].has_pin = true; config.gpioMappings.pins[0].has_action = true;
+    config.gpioMappings.pins[1].pin = 3;  config.gpioMappings.pins[1].action = GPIO_PIN_03; config.gpioMappings.pins[1].has_pin = true; config.gpioMappings.pins[1].has_action = true;
+    config.gpioMappings.pins[2].pin = 4;  config.gpioMappings.pins[2].action = GPIO_PIN_04; config.gpioMappings.pins[2].has_pin = true; config.gpioMappings.pins[2].has_action = true;
+    config.gpioMappings.pins[3].pin = 5;  config.gpioMappings.pins[3].action = GPIO_PIN_05; config.gpioMappings.pins[3].has_pin = true; config.gpioMappings.pins[3].has_action = true;
+    config.gpioMappings.pins[4].pin = 6;  config.gpioMappings.pins[4].action = GPIO_PIN_06; config.gpioMappings.pins[4].has_pin = true; config.gpioMappings.pins[4].has_action = true;
+    config.gpioMappings.pins[5].pin = 7;  config.gpioMappings.pins[5].action = GPIO_PIN_07; config.gpioMappings.pins[5].has_pin = true; config.gpioMappings.pins[5].has_action = true;
+    config.gpioMappings.pins[6].pin = 8;  config.gpioMappings.pins[6].action = GPIO_PIN_08; config.gpioMappings.pins[6].has_pin = true; config.gpioMappings.pins[6].has_action = true;
+    config.gpioMappings.pins[7].pin = 9;  config.gpioMappings.pins[7].action = GPIO_PIN_09; config.gpioMappings.pins[7].has_pin = true; config.gpioMappings.pins[7].has_action = true;
+    config.gpioMappings.pins[8].pin = 10; config.gpioMappings.pins[8].action = GPIO_PIN_10; config.gpioMappings.pins[8].has_pin = true; config.gpioMappings.pins[8].has_action = true;
+    config.gpioMappings.pins[9].pin = 11; config.gpioMappings.pins[9].action = GPIO_PIN_11; config.gpioMappings.pins[9].has_pin = true; config.gpioMappings.pins[9].has_action = true;
+    config.gpioMappings.pins[10].pin = 12; config.gpioMappings.pins[10].action = GPIO_PIN_12; config.gpioMappings.pins[10].has_pin = true; config.gpioMappings.pins[10].has_action = true;
+    config.gpioMappings.pins[11].pin = 13; config.gpioMappings.pins[11].action = GPIO_PIN_13; config.gpioMappings.pins[11].has_pin = true; config.gpioMappings.pins[11].has_action = true;
+    config.gpioMappings.pins[12].pin = 14; config.gpioMappings.pins[12].action = GPIO_PIN_14; config.gpioMappings.pins[12].has_pin = true; config.gpioMappings.pins[12].has_action = true;
+    config.gpioMappings.pins[13].pin = 17; config.gpioMappings.pins[13].action = GPIO_PIN_17; config.gpioMappings.pins[13].has_pin = true; config.gpioMappings.pins[13].has_action = true;
+    config.gpioMappings.pins_count = 14;
+
+    // [B：拡張MODの核心・PCF8575の16ピンマッピングを鏡合わせで完全同期流し込み]
+    config.addonOptions.pcf8575Options.pins[0].action  = PCF8575_PIN_00_ACTION;
+    config.addonOptions.pcf8575Options.pins[1].action  = PCF8575_PIN_01_ACTION;
+    config.addonOptions.pcf8575Options.pins[2].action  = PCF8575_PIN_02_ACTION;
+    config.addonOptions.pcf8575Options.pins[3].action  = PCF8575_PIN_03_ACTION;
+    config.addonOptions.pcf8575Options.pins[4].action  = PCF8575_PIN_04_ACTION;
+    config.addonOptions.pcf8575Options.pins[5].action  = PCF8575_PIN_05_ACTION;
+    config.addonOptions.pcf8575Options.pins[6].action  = PCF8575_PIN_06_ACTION;
+    config.addonOptions.pcf8575Options.pins[7].action  = PCF8575_PIN_07_ACTION;
+    config.addonOptions.pcf8575Options.pins[8].action  = PCF8575_PIN_10_ACTION;
+    config.addonOptions.pcf8575Options.pins[9].action  = PCF8575_PIN_11_ACTION;
+    config.addonOptions.pcf8575Options.pins[10].action = PCF8575_PIN_12_ACTION;
+    config.addonOptions.pcf8575Options.pins[11].action = PCF8575_PIN_13_ACTION;
+    config.addonOptions.pcf8575Options.pins[12].action = PCF8575_PIN_14_ACTION;
+    config.addonOptions.pcf8575Options.pins[13].action = PCF8575_PIN_15_ACTION;
+    config.addonOptions.pcf8575Options.pins[14].action = GpioAction::BUTTON_PRESS_E7; // P16
+    config.addonOptions.pcf8575Options.pins[15].action = GpioAction::BUTTON_PRESS_E8; // P17
+
+    for (int p = 0; p < 16; p++) {
+        config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
+        config.addonOptions.pcf8575Options.pins[p].has_action = true;
+        config.addonOptions.pcf8575Options.pins[p].has_direction = true;
+    }
+    config.addonOptions.pcf8575Options.pins_count = 16;
+
+    // マイグレーション完了フラグを立ててシステムへ安全に引き渡します
+    config.migrations.gpioMappingsMigrated = true;
 }
+
