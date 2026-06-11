@@ -1151,9 +1151,9 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin2, TG16_PAD_DATA_PIN2);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
-==========================================================================
+		// ==========================================================================
     // 【BLOOD FESTIVAL FINAL EMPIRE - THE MASTER LOCK COMPLETE】MINI Super専用
-    // ============================================================================
+    // ==========================================================================
     // エラー原因だった buttonLayoutCustomOptions を完全排除し、コンパイルエラーを完封。
     // WebConfigリセット時に一撃で16キーアサイン、リアクティブLED、周辺機器設定を埋め尽くします。
     
