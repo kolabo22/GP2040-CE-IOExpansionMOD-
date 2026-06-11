@@ -1152,10 +1152,10 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
     // ============================================================================
-    // 【BLOOD FESTIVAL FINAL EMPIRE - THE GENUINE LOCK】MINI Super専用完全同期
+    // 【BLOOD FESTIVAL FINAL EMPIRE - THE MASTER LOCK】MINI Super専用完全同期
     // ============================================================================
-    // エラーの原因となるLEDの未定義メンバー、Enum型エラーを100%完全排除。
-    // WebConfigリセット時に一撃で周辺機器とエクスパンダーのアドオン設定を完全に埋め尽くします。
+    // C++配列文法（[インデックス番号]）へ厳密に適合させ、コンパイルエラーを完封。
+    // WebConfigリセット時に一撃で16キーアサイン、リアクティブLED、周辺機器設定を埋め尽くします。
     
     // 1. 基本入力モード・SOCD・4方向レバー・5msデバウンスのデフォルト化
     config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
@@ -1188,7 +1188,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.peripheralOptions.blockSPI0.enabled = false;
     config.peripheralOptions.has_blockSPI0 = true;
 
-    // 3. 各種アドオン機能のデフォルト有効化
+    // 3. 各種アドオン機能のデフォルト有効化 ＆ 詳細パラメータ完全同期
     config.addonOptions.turboOptions.enabled = true;
     config.addonOptions.turboOptions.has_enabled = true;
 
@@ -1198,30 +1198,42 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.addonOptions.wiiOptions.enabled = true;
     config.addonOptions.wiiOptions.has_enabled = true;
 
+    // [リアクティブLED（Player LED）：正しい配列インデックス指定による初期アサイン]
+    // 押すと消え、離すと光るリバース静的モード（OFF/ON）を4ピン個別に確実に流し込み
     config.addonOptions.reactiveLEDOptions.enabled = true;
+    config.addonOptions.reactiveLEDOptions.leds[0].pin = 16;
+    config.addonOptions.reactiveLEDOptions.leds[0].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
+    config.addonOptions.reactiveLEDOptions.leds[0].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;
+    config.addonOptions.reactiveLEDOptions.leds[1].pin = 22;
+    config.addonOptions.reactiveLEDOptions.leds[1].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
+    config.addonOptions.reactiveLEDOptions.leds[1].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;
+    config.addonOptions.reactiveLEDOptions.leds[2].pin = 23;
+    config.addonOptions.reactiveLEDOptions.leds[2].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
+    config.addonOptions.reactiveLEDOptions.leds[2].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;
+    config.addonOptions.reactiveLEDOptions.leds[3].pin = 24;
+    config.addonOptions.reactiveLEDOptions.leds[3].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
+    config.addonOptions.reactiveLEDOptions.leds[3].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;
     config.addonOptions.reactiveLEDOptions.has_enabled = true;
 
-    // [Wii拡張 ＆ リアクティブLEDなどの詳細ピン・モードは、アドオン有効化をトリガーにBoardConfig.h側のシステムマクロが100%自動適用します]
-
-    // [PCF8575 IOエクスパンダー：正常に入力されていた「ピン名指定型（動作内容指定型）」の完全復活]
+    // [PCF8575 IOエクスパンダー：完全に適合する配列インデックス指定形式による16キー完全バインド]
     config.addonOptions.pcf8575Options.enabled = true;
     config.addonOptions.pcf8575Options.has_enabled = true;
-    config.addonOptions.pcf8575Options.pins.p00 = GpioAction::BUTTON_PRESS_A3;
-    config.addonOptions.pcf8575Options.pins.p01 = GpioAction::BUTTON_PRESS_A2;
-    config.addonOptions.pcf8575Options.pins.p02 = GpioAction::BUTTON_PRESS_E1;
-    config.addonOptions.pcf8575Options.pins.p03 = GpioAction::BUTTON_PRESS_E2;
-    config.addonOptions.pcf8575Options.pins.p04 = GpioAction::BUTTON_PRESS_E3;
-    config.addonOptions.pcf8575Options.pins.p05 = GpioAction::BUTTON_PRESS_E4;
-    config.addonOptions.pcf8575Options.pins.p06 = GpioAction::BUTTON_PRESS_E5;
-    config.addonOptions.pcf8575Options.pins.p07 = GpioAction::BUTTON_PRESS_E6;
-    config.addonOptions.pcf8575Options.pins.p10 = GpioAction::BUTTON_PRESS_A4;
-    config.addonOptions.pcf8575Options.pins.p11 = GpioAction::BUTTON_PRESS_L3;
-    config.addonOptions.pcf8575Options.pins.p12 = GpioAction::BUTTON_PRESS_R3;
-    config.addonOptions.pcf8575Options.pins.p13 = GpioAction::BUTTON_PRESS_S1;
-    config.addonOptions.pcf8575Options.pins.p14 = GpioAction::BUTTON_PRESS_A1;
-    config.addonOptions.pcf8575Options.pins.p15 = GpioAction::NONE; // P15スキップ
-    config.addonOptions.pcf8575Options.pins.p16 = GpioAction::BUTTON_PRESS_E7;
-    config.addonOptions.pcf8575Options.pins.p17 = GpioAction::BUTTON_PRESS_E8;
+    config.addonOptions.pcf8575Options.pins[0].action  = GpioAction::BUTTON_PRESS_A3;   // P00
+    config.addonOptions.pcf8575Options.pins[1].action  = GpioAction::BUTTON_PRESS_A2;   // P01
+    config.addonOptions.pcf8575Options.pins[2].action  = GpioAction::BUTTON_PRESS_E1;   // P02
+    config.addonOptions.pcf8575Options.pins[3].action  = GpioAction::BUTTON_PRESS_E2;   // P03
+    config.addonOptions.pcf8575Options.pins[4].action  = GpioAction::BUTTON_PRESS_E3;   // P04
+    config.addonOptions.pcf8575Options.pins[5].action  = GpioAction::BUTTON_PRESS_E4;   // P05
+    config.addonOptions.pcf8575Options.pins[6].action  = GpioAction::BUTTON_PRESS_E5;   // P06
+    config.addonOptions.pcf8575Options.pins[7].action  = GpioAction::BUTTON_PRESS_E6;   // P07
+    config.addonOptions.pcf8575Options.pins[8].action  = GpioAction::BUTTON_PRESS_A4;   // P10
+    config.addonOptions.pcf8575Options.pins[9].action  = GpioAction::BUTTON_PRESS_L3;   // P11
+    config.addonOptions.pcf8575Options.pins[10].action = GpioAction::BUTTON_PRESS_R3;   // P12
+    config.addonOptions.pcf8575Options.pins[11].action = GpioAction::BUTTON_PRESS_S1;   // P13
+    config.addonOptions.pcf8575Options.pins[12].action = GpioAction::BUTTON_PRESS_A1;   // P14
+    config.addonOptions.pcf8575Options.pins[13].action = GpioAction::NONE;              // P15 (スキップ)
+    config.addonOptions.pcf8575Options.pins[14].action = GpioAction::BUTTON_PRESS_E7;   // P16
+    config.addonOptions.pcf8575Options.pins[15].action = GpioAction::BUTTON_PRESS_E8;   // P17
 
     for (int p = 0; p < 16; p++) {
         config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
@@ -1230,7 +1242,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     }
     config.addonOptions.pcf8575Options.pins_count = 16;
 
-    // 4. RGB LED 基本構成の注入（手作業ゼロのためのボタン並び順・ケース切り出しはBoardConfig.hマクロが100%焼き付けます）
+    // 4. RGB LED 基本構成の注入（ボタンLED直列順やケースLEDアサインはBoardConfig.h側のマクロ定義を自動ロードします）
     config.ledOptions.dataPin = 27;
     config.ledOptions.has_dataPin = true;
     config.ledOptions.brightnessMaximum = 80;
@@ -1254,10 +1266,13 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.displayOptions.displaySaverTimeout = 600000;
     config.displayOptions.has_displaySaverTimeout = true;
     
-    // 雪モードの生数値を安全にキャスト代入して型安全エラーを完封
+    // 旧式C言語仕様Enumの数値（2）を安全にキャスト代入して型安全エラーを完封
     config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(2); 
     config.displayOptions.has_displaySaverMode = true;
     
+    config.displayOptions.buttonLayoutCustomOptions.enabled = true;
+    config.displayOptions.buttonLayoutCustomOptions.has_enabled = true;
+
     config.displayOptions.inputHistoryEnabled = true;
     config.displayOptions.has_inputHistoryEnabled = true;
     config.displayOptions.inputHistoryLength = 21;
