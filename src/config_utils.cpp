@@ -1151,10 +1151,10 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin2, TG16_PAD_DATA_PIN2);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
+==========================================================================
+    // 【BLOOD FESTIVAL FINAL EMPIRE - THE MASTER LOCK COMPLETE】MINI Super専用
     // ============================================================================
-    // 【BLOOD FESTIVAL FINAL EMPIRE - THE MASTER LOCK】MINI Super専用完全同期
-    // ============================================================================
-    // C++配列文法（[インデックス番号]）へ厳密に適合させ、コンパイルエラーを完封。
+    // エラー原因だった buttonLayoutCustomOptions を完全排除し、コンパイルエラーを完封。
     // WebConfigリセット時に一撃で16キーアサイン、リアクティブLED、周辺機器設定を埋め尽くします。
     
     // 1. 基本入力モード・SOCD・4方向レバー・5msデバウンスのデフォルト化
@@ -1198,8 +1198,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.addonOptions.wiiOptions.enabled = true;
     config.addonOptions.wiiOptions.has_enabled = true;
 
-    // [リアクティブLED（Player LED）：正しい配列インデックス指定による初期アサイン]
-    // 押すと消え、離すと光るリバース静的モード（OFF/ON）を4ピン個別に確実に流し込み
+    // [リアクティブLED（Player LED）：配列インデックス指定による初期アサイン]
     config.addonOptions.reactiveLEDOptions.enabled = true;
     config.addonOptions.reactiveLEDOptions.leds[0].pin = 16;
     config.addonOptions.reactiveLEDOptions.leds[0].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
@@ -1269,9 +1268,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     // 旧式C言語仕様Enumの数値（2）を安全にキャスト代入して型安全エラーを完封
     config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(2); 
     config.displayOptions.has_displaySaverMode = true;
-    
-    config.displayOptions.buttonLayoutCustomOptions.enabled = true;
-    config.displayOptions.buttonLayoutCustomOptions.has_enabled = true;
 
     config.displayOptions.inputHistoryEnabled = true;
     config.displayOptions.has_inputHistoryEnabled = true;
