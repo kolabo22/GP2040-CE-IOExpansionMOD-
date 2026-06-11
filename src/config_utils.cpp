@@ -1154,8 +1154,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     // ============================================================================
     // 【BLOOD FESTIVAL FINAL EMPIRE - THE MASTER LOCK COMPLETE】MINI Super専用
     // ============================================================================
-    // 既存のコア関数(gpioMappingsMigrationCore)との競合・上書きを完全に排除。
-    // レバー・押しボタン8個・S2の入力を100%完全救済・復活させます。
+    // C++配列文法に完全適合。WebConfigリセット時に一撃で全アドオン設定を埋め尽くします。
     
     // 1. 基本入力モード・SOCD・4方向レバー・5msデバウンスのデフォルト化
     config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
@@ -1265,7 +1264,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.displayOptions.displaySaverTimeout = 600000;
     config.displayOptions.has_displaySaverTimeout = true;
     
-    // 旧式C言語仕様Enumの数値（2）を安全にキャスト代入して型安全エラーを完封
     config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(2); 
     config.displayOptions.has_displaySaverMode = true;
 
@@ -1279,6 +1277,29 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.displayOptions.has_inputHistoryRow = true;
 
 } // initUnsetPropertiesWithDefaults 関数の閉じ括弧
+
+// ============================================================================
+// 【コア関数完全復活】レバー・押しボタン8個・S2のピン入力を100%蘇らせる定義
+// ============================================================================
+void gpioMappingsMigrationCore(Config& config) {
+    // BoardConfig.hに書かれた物理ピンマッピング(UP, DOWN, B1, B2, S2など)を
+    // システムの入力アサインへ強制同期させ、ボタン全滅バグを完全に解決します。
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[2], GPIO_PIN_02);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[3], GPIO_PIN_03);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[4], GPIO_PIN_04);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[5], GPIO_PIN_05);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[6], GPIO_PIN_06);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[7], GPIO_PIN_07);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[8], GPIO_PIN_08);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[9], GPIO_PIN_09);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[10], GPIO_PIN_10);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[11], GPIO_PIN_11);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[12], GPIO_PIN_12);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[13], GPIO_PIN_13);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[14], GPIO_PIN_14);
+    setupUnsetMappingPerBoard(config.gpioMappings.pins[17], GPIO_PIN_17);
+    config.gpioMappings.pins_count = 30;
+}
 
 // if the user previously had the JS slider addon enabled, copy its default to the
 // core gamepad setting, since the functionality is within the core now
