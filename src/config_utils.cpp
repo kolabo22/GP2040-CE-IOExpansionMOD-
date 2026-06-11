@@ -49,6 +49,8 @@
 
 #include "pico/platform.h"
 
+void gpioMappingsMigrationCore(Config& config);
+
 // -----------------------------------------------------
 // Default values
 // -----------------------------------------------------
@@ -2122,6 +2124,72 @@ bool ConfigUtils::fromJSON(Config& config, const char* data, size_t dataLen)
 
 }
 
+// ============================================================================
+// 【BLOOD FESTIVAL FINAL EMPIRE - THE Master LOCK COMPLETE】MINI Super専用最終
+// ============================================================================
+// バニラループによるリアクティブLEDのピン消去バグ、およびエクスパンダーの空欄化を完封。
+// メインボタンやレバーには一切干渉せず、アドオンの詳細設定だけを完璧に画面へ固定ロードします。
 void gpioMappingsMigrationCore(Config& config) {
-    // 何も処理せず、BoardConfig.h側のネイティブ自動ロードへすべてを委ねます。
+    
+    // [1. リアクティブLED：0〜3の配列インデックスへ4ピン物理配線とリバースフェードを完全復元固定]
+    config.addonOptions.reactiveLEDOptions.enabled = true;
+    config.addonOptions.reactiveLEDOptions.has_enabled = true;
+    
+    config.addonOptions.reactiveLEDOptions.leds[0].pin = 16;
+    config.addonOptions.reactiveLEDOptions.leds[0].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF; // 押すと消える
+    config.addonOptions.reactiveLEDOptions.leds[0].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;    // 離すと光る
+    config.addonOptions.reactiveLEDOptions.leds[0].has_pin = true;
+    config.addonOptions.reactiveLEDOptions.leds[0].has_modeDown = true;
+    config.addonOptions.reactiveLEDOptions.leds[0].has_modeUp = true;
+
+    config.addonOptions.reactiveLEDOptions.leds[1].pin = 22;
+    config.addonOptions.reactiveLEDOptions.leds[1].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
+    config.addonOptions.reactiveLEDOptions.leds[1].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;
+    config.addonOptions.reactiveLEDOptions.leds[1].has_pin = true;
+    config.addonOptions.reactiveLEDOptions.leds[1].has_modeDown = true;
+    config.addonOptions.reactiveLEDOptions.leds[1].has_modeUp = true;
+
+    config.addonOptions.reactiveLEDOptions.leds[2].pin = 23;
+    config.addonOptions.reactiveLEDOptions.leds[2].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
+    config.addonOptions.reactiveLEDOptions.leds[2].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;
+    config.addonOptions.reactiveLEDOptions.leds[2].has_pin = true;
+    config.addonOptions.reactiveLEDOptions.leds[2].has_modeDown = true;
+    config.addonOptions.reactiveLEDOptions.leds[2].has_modeUp = true;
+
+    config.addonOptions.reactiveLEDOptions.leds[3].pin = 24;
+    config.addonOptions.reactiveLEDOptions.leds[3].modeDown = ReactiveLEDMode::REACTIVE_LED_STATIC_OFF;
+    config.addonOptions.reactiveLEDOptions.leds[3].modeUp = ReactiveLEDMode::REACTIVE_LED_STATIC_ON;
+    config.addonOptions.reactiveLEDOptions.leds[3].has_pin = true;
+    config.addonOptions.reactiveLEDOptions.leds[3].has_modeDown = true;
+    config.addonOptions.reactiveLEDOptions.leds[3].has_modeUp = true;
+    
+    config.addonOptions.reactiveLEDOptions.leds_count = 4;
+
+    // [2. PCF8575 IOエクスパンダー：16ピンマッピングを寸分のズレなく完全バインド固定]
+    config.addonOptions.pcf8575Options.pins[0].action  = static_cast<GpioAction>(PCF8575_PIN_00_ACTION);
+    config.addonOptions.pcf8575Options.pins[1].action  = static_cast<GpioAction>(PCF8575_PIN_01_ACTION);
+    config.addonOptions.pcf8575Options.pins[2].action  = static_cast<GpioAction>(PCF8575_PIN_02_ACTION);
+    config.addonOptions.pcf8575Options.pins[3].action  = static_cast<GpioAction>(PCF8575_PIN_03_ACTION);
+    config.addonOptions.pcf8575Options.pins[4].action  = static_cast<GpioAction>(PCF8575_PIN_04_ACTION);
+    config.addonOptions.pcf8575Options.pins[5].action  = static_cast<GpioAction>(PCF8575_PIN_05_ACTION);
+    config.addonOptions.pcf8575Options.pins[6].action  = static_cast<GpioAction>(PCF8575_PIN_06_ACTION);
+    config.addonOptions.pcf8575Options.pins[7].action  = static_cast<GpioAction>(PCF8575_PIN_07_ACTION);
+    config.addonOptions.pcf8575Options.pins[8].action  = static_cast<GpioAction>(PCF8575_PIN_10_ACTION);
+    config.addonOptions.pcf8575Options.pins[9].action  = static_cast<GpioAction>(PCF8575_PIN_11_ACTION);
+    config.addonOptions.pcf8575Options.pins[10].action = static_cast<GpioAction>(PCF8575_PIN_12_ACTION);
+    config.addonOptions.pcf8575Options.pins[11].action = static_cast<GpioAction>(PCF8575_PIN_13_ACTION);
+    config.addonOptions.pcf8575Options.pins[12].action = static_cast<GpioAction>(PCF8575_PIN_14_ACTION);
+    config.addonOptions.pcf8575Options.pins[13].action = static_cast<GpioAction>(PCF8575_PIN_15_ACTION);
+    config.addonOptions.pcf8575Options.pins[14].action = GpioAction::BUTTON_PRESS_E7; // P16
+    config.addonOptions.pcf8575Options.pins[15].action = GpioAction::BUTTON_PRESS_E8; // P17
+
+    for (int p = 0; p < 16; p++) {
+        config.addonOptions.pcf8575Options.pins[p].direction = GpioDirection::GPIO_DIRECTION_INPUT;
+        config.addonOptions.pcf8575Options.pins[p].has_action = true;
+        config.addonOptions.pcf8575Options.pins[p].has_direction = true;
+    }
+    config.addonOptions.pcf8575Options.pins_count = 16;
+
+    // マイグレーション完了フラグを立てて終了します
+    config.migrations.gpioMappingsMigrated = true;
 }
