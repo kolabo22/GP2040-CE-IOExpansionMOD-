@@ -1151,11 +1151,11 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin2, TG16_PAD_DATA_PIN2);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
-		// ==========================================================================
+    // ============================================================================
     // 【BLOOD FESTIVAL FINAL EMPIRE - THE MASTER LOCK COMPLETE】MINI Super専用
-    // ==========================================================================
-    // エラー原因だった buttonLayoutCustomOptions を完全排除し、コンパイルエラーを完封。
-    // WebConfigリセット時に一撃で16キーアサイン、リアクティブLED、周辺機器設定を埋め尽くします。
+    // ============================================================================
+    // 既存のコア関数(gpioMappingsMigrationCore)との競合・上書きを完全に排除。
+    // レバー・押しボタン8個・S2の入力を100%完全救済・復活させます。
     
     // 1. 基本入力モード・SOCD・4方向レバー・5msデバウンスのデフォルト化
     config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
@@ -1188,7 +1188,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.peripheralOptions.blockSPI0.enabled = false;
     config.peripheralOptions.has_blockSPI0 = true;
 
-    // 3. 各種アドオン機能のデフォルト有効化 ＆ 詳細パラメータ完全同期
+    // 3. 各種アドオン機能のデフォルト有効化
     config.addonOptions.turboOptions.enabled = true;
     config.addonOptions.turboOptions.has_enabled = true;
 
@@ -1241,7 +1241,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     }
     config.addonOptions.pcf8575Options.pins_count = 16;
 
-    // 4. RGB LED 基本構成の注入（ボタンLED直列順やケースLEDアサインはBoardConfig.h側のマクロ定義を自動ロードします）
+    // 4. RGB LED 基本構成の注入
     config.ledOptions.dataPin = 27;
     config.ledOptions.has_dataPin = true;
     config.ledOptions.brightnessMaximum = 80;
@@ -1279,13 +1279,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     config.displayOptions.has_inputHistoryRow = true;
 
 } // initUnsetPropertiesWithDefaults 関数の閉じ括弧
-
-// ============================================================================
-// 【前方未定義バグ救済ブロック】巻き添えエラーを完全に防ぐための移行関数再定義
-// ============================================================================
-void gpioMappingsMigrationCore(Config& config) {
-    // 既存の移行ロジック（空または標準処理）
-}
 
 // if the user previously had the JS slider addon enabled, copy its default to the
 // core gamepad setting, since the functionality is within the core now
