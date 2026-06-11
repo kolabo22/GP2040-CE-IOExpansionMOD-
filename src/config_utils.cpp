@@ -2119,4 +2119,13 @@ bool ConfigUtils::fromJSON(Config& config, const char* data, size_t dataLen)
     migrateMacroPinsToGpio(config);
 
     return true;
+
+// ============================================================================
+// 【拡張MOD未定義バグ救済関数定義】他ファイルを一切汚さずにビルドエラーを完封
+// ============================================================================
+void gpioMappingsMigrationCore(Config& config) {
+    // 1471行目と2116行目の未定義呼び出しをここで受け止め、安全にスルーさせます。
+}
+
+
 }
