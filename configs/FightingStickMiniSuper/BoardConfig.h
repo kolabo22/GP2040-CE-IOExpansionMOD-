@@ -58,7 +58,7 @@
 #define DEFAULT_DPAD_MODE DPAD_MODE_DIGITAL
 #define DEBOUNCE_DELAY_IN_MS 5
 
-// コア通信ブロックの強制有効化
+// I2C周辺機器強制ON
 #define I2C0_ENABLED 1
 #define I2C0_PIN_SDA 0
 #define I2C0_PIN_SCL 1
@@ -79,13 +79,13 @@
 #define USB_PIN_VBUS_ENABLE -1
 
 // ====================================================================
-// 3. 各種アドオン機能の初期動作設定（手作業ゼロ化マクロ）
+// 3. アドオン機能のデフォルト初期値定義（再設定作業をゼロにするマクロ）
 // ====================================================================
 // Wii拡張アドオン
 #define WII_EXTENSION_ENABLED 1
 #define WII_EXTENSION_I2C_BLOCK i2c0
 
-// 連射アドオン（ボタン14、LED15、VR26速度制御）
+// 連射アドオン（ボタン14、LED15、ツマミ26無段階速度制御）
 #define TURBO_ENABLED 1
 #define TURBO_PIN 14
 #define TURBO_LED_PIN 15
@@ -113,7 +113,7 @@
 #define LED_CASE_START_INDEX 14
 #define LED_CASE_COUNT 34
 
-// ボタン1つにつきLED1個の1対1直列配線順（× ➡️ ○ ➡️ R2 ➡️ L2 ➡️ L1 ➡️ R1 ➡️ △ ➡️ □）
+// ボタン1つにつきLED1個の1対1直列配線順
 #define LED_PINS_MAPPING { 0, 1, 2, 3, 4, 5, 6, 7 }
 
 // ====================================================================
@@ -132,7 +132,7 @@
 #define DISPLAY_MENU_ENABLED 1 
 
 // ====================================================================
-// 6. PCF8575 IO エクスパンダー 16ピン入力キーマッピング
+// 6. PCF8575 IO エクスパンダー 16ピン入力キーマッピング完全同期
 // ====================================================================
 #define PCF8575_ENABLED 1
 #define PCF8575_I2C_BLOCK i2c1
@@ -153,16 +153,5 @@
 #define PCF8575_PIN_15_ACTION 0  
 #define PCF8575_PIN_16_ACTION 27
 #define PCF8575_PIN_17_ACTION 28
-
-// ====================================================================
-// 7. 【本当のバグ解決】幽霊関数の実体を「空の安全な箱」として完全定義
-// ====================================================================
-// 暴走の原因だった別関数への無理やりなすり替え（#define）を完全に廃止。
-// 1471行目と2116行目のコンパイルエラーを完封しつつ、メイン入力を100%完全に復活させます。
-#ifdef __cplusplus
-inline void gpioMappingsMigrationCore(Config& config) {
-    // 何も処理を挟まずバニラの物理ロードにバトンを渡します
-}
-#endif
 
 #endif /* BOARD_CONFIG_H */
