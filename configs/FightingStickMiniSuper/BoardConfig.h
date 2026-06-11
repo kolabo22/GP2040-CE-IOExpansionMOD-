@@ -96,8 +96,8 @@
 #define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VEWLIX // 右側ビューリックス固定
 #define SPLASH_MODE SplashMode::SPLASH_MODE_STATIC
 
-// 【修正完了】生数値の2を、正規のエナム型オブジェクトに置き換えてコンパイルエラーを完封
-#define SCREEN_SAVER_MODE DisplaySaverMode::DISPLAY_SAVER_MODE_SNOW
+// 【修正完了】正しいマクロ名形式へ適合
+#define SCREEN_SAVER_MODE DisplaySaverMode::SNOW
 
 #define DISPLAY_SAVER_TIMEOUT 600000
 #define DISPLAY_MENU_ENABLED 1 
@@ -109,4 +109,3 @@
 #define PCF8575_I2C_BLOCK i2c1
 
 #endif /* BOARD_CONFIG_H */
-
