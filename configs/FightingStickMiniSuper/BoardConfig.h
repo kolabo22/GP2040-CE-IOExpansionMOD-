@@ -159,7 +159,7 @@
 #define LED_LAYOUT BUTTON_LAYOUT_STICK
 
 // 10ページのバニラ名に完全同期
-#define CASE_RGB_TYPE 1u
+#define CASE_RGB_TYPE {1}
 #define CASE_RGB_INDEX 14
 #define CASE_RGB_COUNT 34
 
