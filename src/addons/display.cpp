@@ -28,9 +28,12 @@ bool DisplayAddon::available() {
 		options.contrast = 128;               // 【MINI Super仕様】明るさ半分（焼き付き防止・省電力）
 		options.displaySaverTimeout = 600000; // スクリーンセーバー起動時間 (10分: 600000ms)
 		
-		// スプラッシュ画面設定 (Protobuf列挙型をキャスト代入して安全に適合)
-		options.splashMode = static_cast<SplashMode>(1); // 1: 標準ロゴモード
-		options.splashDuration = 7000;        // スプラッシュ表示時間 7秒 (7000ms)
+        // 🌟【追加・修正】スクリーンセーバーの挙動を「雪（Snow）」に指定
+        // 0: 消灯(DISPLAY_OFF), 1: 雪(SNOW), 2: バウンス(BOUNCE)
+        options.displaySaverMode = static_cast<DisplaySaverMode>(1); 
+
+        options.splashMode = static_cast<SplashMode>(1);
+        options.splashDuration = 7000;        // 7秒スプラッシュ
 	}
 
 	bool result = false;
