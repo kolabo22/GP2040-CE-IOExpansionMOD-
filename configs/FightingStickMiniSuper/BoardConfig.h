@@ -31,6 +31,28 @@
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
 #define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2
 
+// Keyboard Mapping Configuration
+//                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |
+#define KEY_DPAD_UP     HID_KEY_ARROW_UP      // UP     | UP     | UP      | UP       | UP     | UP     |
+#define KEY_DPAD_DOWN   HID_KEY_ARROW_DOWN    // DOWN   | DOWN   | DOWN    | DOWN     | DOWN   | DOWN   |
+#define KEY_DPAD_RIGHT  HID_KEY_ARROW_RIGHT   // RIGHT  | RIGHT  | RIGHT   | RIGHT    | RIGHT  | RIGHT  |
+#define KEY_DPAD_LEFT   HID_KEY_ARROW_LEFT    // LEFT   | LEFT   | LEFT    | LEFT     | LEFT   | LEFT   |
+#define KEY_BUTTON_B1   HID_KEY_SHIFT_LEFT    // B1     | A      | B       | Cross    | 2      | K1     |
+#define KEY_BUTTON_B2   HID_KEY_Z             // B2     | B      | A       | Circle   | 3      | K2     |
+#define KEY_BUTTON_R2   HID_KEY_X             // R2     | RT     | ZR      | R2       | 8      | K3     |
+#define KEY_BUTTON_L2   HID_KEY_V             // L2     | LT     | ZL      | L2       | 7      | K4     |
+#define KEY_BUTTON_B3   HID_KEY_CONTROL_LEFT  // B3     | X      | Y       | Square   | 1      | P1     |
+#define KEY_BUTTON_B4   HID_KEY_ALT_LEFT      // B4     | Y      | X       | Triangle | 4      | P2     |
+#define KEY_BUTTON_R1   HID_KEY_SPACE         // R1     | RB     | R       | R1       | 6      | P3     |
+#define KEY_BUTTON_L1   HID_KEY_C             // L1     | LB     | L       | L1       | 5      | P4     |
+#define KEY_BUTTON_S1   HID_KEY_5             // S1     | Back   | Minus   | Select   | 9      | Coin   |
+#define KEY_BUTTON_S2   HID_KEY_1             // S2     | Start  | Plus    | Start    | 10     | Start  |
+#define KEY_BUTTON_L3   HID_KEY_EQUAL         // L3     | LS     | LS      | L3       | 11     | LS     |
+#define KEY_BUTTON_R3   HID_KEY_MINUS         // R3     | RS     | RS      | R3       | 12     | RS     |
+#define KEY_BUTTON_A1   HID_KEY_9             // A1     | Guide  | Home    | PS       | 13     | ~      |
+#define KEY_BUTTON_A2   HID_KEY_F2            // A2     | ~      | Capture | ~        | 14     | ~      |
+#define KEY_BUTTON_FN   -1                    // Hotkey Function                                        |
+
 // 各種アドオン/周辺機器ピンをADDON管轄へ明示的リリース
 #define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
 #define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // Player LED 1 (GP16)
@@ -75,13 +97,16 @@
 #define UART1_BAUDRATE 9600
 
 #define USB_PERIPHERAL_ENABLED 1
-#define USB_PIN_DP 28
+#define USB_PIN_DP 27
 #define USB_PIN_VBUS_ENABLE -1
 
 // 各アドオン機能の初期ONマクロ
 #define WII_EXTENSION_ENABLED 1
 #define TURBO_ENABLED 1
 #define REACTIVE_LED_ENABLED 1
+#define TURBO_ENABLED 1
+#define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
+#define TURBO_LED_PIN 15
 
 // ====================================================================
 // 3. 【16ページ完全同期】PCF8575 IOエクスパンダー 初期アサイン定数
@@ -150,12 +175,5 @@
 #define SPLASH_DURATION 7000
 #define DISPLAY_SAVER_TIMEOUT 600000
 #define DISPLAY_SAVER_MODE static_cast<DisplaySaverMode>(2) 
-
-// ====================================================================
-// 5. 【バニラ未定義バグ完全救済】空のマクロ関数でエラー完封
-// ====================================================================
-// 34ページの「gpioMappingsMigrationCore」未定義エラーを、多重インクルード(全即死)を
-// 起こさない do-while 形式で完封し、物理ピンの100%正常認識とWebConfig起動を保証します。
-#define gpioMappingsMigrationCore(config) do { } while(0)
 
 #endif /* BOARD_CONFIG_H */
