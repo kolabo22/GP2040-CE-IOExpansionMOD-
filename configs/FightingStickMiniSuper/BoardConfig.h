@@ -101,7 +101,7 @@
 #define UART1_BAUDRATE 9600
 
 #define USB_PERIPHERAL_ENABLED 1
-#define USB_PIN_DP 27
+#define USB_PIN_DP 28
 #define USB_PIN_VBUS_ENABLE -1
 
 // 各アドオン機能の初期ONマクロ
