@@ -247,27 +247,6 @@ bool NeoPicoLEDAddon::available() {
 void NeoPicoLEDAddon::setup() {
     // Set Default LED Options
     const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
-
-    // ==== MINI Super Dedicated LED & Reactive Defaults ====
-    if (ledOptions.ledLayout == 0) { 
-        LEDOptions* pOpts = (LEDOptions*)&ledOptions; // 安全なポインタキャスト
-        pOpts->ledFormat = static_cast<LEDFormat_Proto>(1); // 1: GRB
-        pOpts->ledLayout = static_cast<ButtonLayout>(12);   // 12: BUTTON_LAYOUT_ARCADE
-        pOpts->ledsPerButton = 1;
-        pOpts->brightnessMaximum = 80;
-        pOpts->brightnessSteps = 10;
-        pOpts->caseRGBType = static_cast<CaseRGBType>(2);   // 2: LINKED完全同期
-        pOpts->caseRGBIndex = 14; 
-        pOpts->caseRGBCount = 34;
-        pOpts->pledType = static_cast<PLEDType>(0);         // 0: NONE
-
-        // 8ボタンチェーンアサイン
-        pOpts->indexB1 = 0; pOpts->indexB2 = 1; pOpts->indexR2 = 2; pOpts->indexL2 = 3;
-        pOpts->indexL1 = 4; pOpts->indexR1 = 5; pOpts->indexB4 = 6; pOpts->indexB3 = 7;
-        pOpts->indexUp = 48; pOpts->indexDown = 49; pOpts->indexLeft = 50; pOpts->indexRight = 51;
-        pOpts->indexS1 = -1; pOpts->indexS2 = -1; pOpts->indexL3 = -1; pOpts->indexR3 = -1;
-        pOpts->indexA1 = -1; pOpts->indexA2 = -1;
-    }
 	
 	// Setup our aux state player ID sensors
     Gamepad * gamepad = Storage::getInstance().GetProcessedGamepad();
