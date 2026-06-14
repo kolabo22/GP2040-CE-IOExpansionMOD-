@@ -245,10 +245,66 @@ bool NeoPicoLEDAddon::available() {
 }
 
 void NeoPicoLEDAddon::setup() {
-    // Set Default LED Options
-    const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
-	
-	// Setup our aux state player ID sensors
+    // 1. 既存のストレージインスタンスから、WebConfigで管理される各設定Optionsへの参照を取得
+    //    ※MODブランチのバニラ仕様に合わせ、constではなく非const(参照)で取得して書き換え可能にします。
+    LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
+    AnimationOptions& animationOptions = Storage::getInstance().getAnimationOptions();
+    TurboOptions& turboOptions = Storage::getInstance().getAddonOptions().turboOptions;
+
+    // =========================================================================
+    // ==== 【MINI Super 専用】WebConfig設定リセット時（データ空）の自動初期値注入 ====
+    // =========================================================================
+    // 手作業による再設定の手間を「完全にゼロ」にするため、未設定（dataPinが初期値等）の時に強制介入します。
+    if (!ledOptions.has_dataPin || ledOptions.dataPin == 255 || ledOptions.dataPin == -1) {
+        
+        // --- A. 物理LED基本仕様の強制固定 ---
+        ledOptions.dataPin = 15;                                 // LEDデータ信号：GPIO 15
+        ledOptions.ledFormat = LEDFormatProto::LED_FORMAT_GRB;   // 使用LED基板形式：GRB (WS2812B標準)
+        ledOptions.ledLayout = ButtonLayoutProto::BUTTON_LAYOUT_STICKLESS; // レアウト形式：レバーレス
+        ledOptions.ledsPerButton = 1;                            // ボタン1個あたりのLED数：1個
+        ledOptions.brightnessMaximum = 200;                      // WebConfig上の最大輝度上限 (0-255)
+        ledOptions.brightnessSteps = 20;                         // 輝度変更のステップ数
+
+        // --- B. イルミネーション（ケースRGB）および電力消灯マージンの自動設定 ---
+        // 11ページ目でいじっていた「8〜13番目」の消灯処理をWebConfigの構造体側から美しく制御します。
+        // ここを「AMBIENT（環境光）」や「LINKED」ではなく明示的に「NONE（無効）」で立ち上げることで、
+        // 該当ゾーンへの意図しないゴミデータの送信や電力の無駄消費を安全にシャットアウトします。
+        ledOptions.caseRGBType = CaseRGBTypeProto::CASE_RGB_TYPE_NONE; 
+        ledOptions.caseRGBIndex = 0;
+        ledOptions.caseRGBCount = 0;
+
+        // --- C. プレイヤーLED（PLED）および連射LEDの連動初期値 ---
+        ledOptions.pledType = PLEDTypeProto::PLED_TYPE_PWM;      // PLEDはハードウェアPWM（または物理ピン）駆動
+        // もしTurbo（連射）LEDにRGBリンクを使う場合の安全弁
+        turboOptions.turboLedType = PLEDTypeProto::PLED_TYPE_PWM; 
+
+        // --- D. アニメーション（初期エフェクト）の強制固定 ---
+        animationOptions.baseAnimationIndex = 1;                 // リセット直後は「Static Color（常時点灯）」で起動
+        animationOptions.brightness = 150;                       // 起動時の初期輝度 (150/255)
+        animationOptions.staticColorIndex = 2;                   // 初期カラー：Red（MINI Super イメージカラー）
+
+        // --- E. 【重要】Protobuf構造体への注入完了確定フラグの完全強制起立 ---
+        // これらをtrueにしないと、Nanopb（シリアライザ）が初期値を認識せず「記憶喪失バグ」を引き起こします。
+        ledOptions.has_dataPin = true;
+        ledOptions.has_ledFormat = true;
+        ledOptions.has_ledLayout = true;
+        ledOptions.has_ledsPerButton = true;
+        ledOptions.has_brightnessMaximum = true;
+        ledOptions.has_brightnessSteps = true;
+        ledOptions.has_caseRGBType = true;
+        ledOptions.has_caseRGBIndex = true;
+        ledOptions.has_caseRGBCount = true;
+        ledOptions.has_pledType = true;
+        
+        turboOptions.has_turboLedType = true;
+
+        animationOptions.has_baseAnimationIndex = true;
+        animationOptions.has_brightness = true;
+        animationOptions.has_staticColorIndex = true;
+    }
+    // =========================================================================
+
+    // 2. 【ここからバニラ合流】プロセッサ用ゲームパッドインスタンスの初期化
     Gamepad * gamepad = Storage::getInstance().GetProcessedGamepad();
     gamepad->auxState.playerID.enabled = true;
     gamepad->auxState.sensors.statusLight.enabled = true;
@@ -257,12 +313,14 @@ void NeoPicoLEDAddon::setup() {
         neoPLEDs = new NeoPicoPlayerLEDs();
     }
 
-	// Setup our LED matrix
+    // 3. LEDマトリックスおよびレイアウトの自動構築（上記で注入した初期値が安全に適用されます）
     uint8_t buttonCount = setupButtonPositions();
     vector<vector<Pixel>> pixels = createLEDLayout(static_cast<ButtonLayout>(ledOptions.ledLayout), ledOptions.ledsPerButton, buttonCount);
     matrix.setup(pixels, ledOptions.ledsPerButton);
     ledCount = matrix.getLedCount();
-	buttonLedCount = ledCount; // used in linkage
+    buttonLedCount = ledCount; 
+
+    // （以下、ws2812 PIO初期化やAnimation StationのConfigure等、100%バニラの処理を継続）
 
 	// Add Player LEDs to LED count
     if (ledOptions.pledType == PLED_TYPE_RGB && PLED_COUNT > 0)
@@ -610,10 +668,6 @@ void NeoPicoLEDAddon::process() {
 		} else if ( ledOptions.caseRGBType == CASE_RGB_TYPE_LINKED ) {
 			this->ambientLightLinkage(); //Custom mode
 		}
-	}
-	// ==== 9〜13番省電力消灯ゾーン（マスク処理） ====
-	for (int i = 8; i <= 13; i++) {
-		frame[i] = 0x00000000;
 	}
 
     neopico.SetFrame(frame);
