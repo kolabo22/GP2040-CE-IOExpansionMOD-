@@ -401,8 +401,10 @@ void WiiExtensionInput::reloadConfig() {
     setControllerAnalog(WII_EXTENSION_TURNTABLE, WiiAnalogs::WII_ANALOG_RIGHT_TRIGGER, wiiOptions.controllers.turntable.fader.axisType);
 
     // ==== MINI Super Dedicated Wii Profiles Injector ====
-    if (!wiiOptions.isConfigured) {
-        // A. ヌンチャク (右アナログスティック補助仕様)
+       // 🌟 wiiOptions.isConfigured の代わりに、バニラに実在するコントローラーAボタンの空チェックで未設定を完全判別します
+    		if (wiiOptions.controllers.classic.buttonA == 0) {
+        
+				// A. ヌンチャク (右アナログスティック補助仕様)
         setControllerAnalog(WII_EXTENSION_NUNCHUCK, WiiAnalogs::WII_ANALOG_LEFT_X, 3); // 3: RIGHT_STICK_X
         setControllerAnalog(WII_EXTENSION_NUNCHUCK, WiiAnalogs::WII_ANALOG_LEFT_Y, 4); // 4: RIGHT_STICK_Y
         setControllerButton(WII_EXTENSION_NUNCHUCK, WiiButtons::WII_BUTTON_Z, 1);     // 1: B1 (✖)
