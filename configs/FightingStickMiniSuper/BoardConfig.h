@@ -33,7 +33,25 @@
 
 #define TURBO_ENABLED 1
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
-#define TURBO_LED_PIN 15
+
+// 各種アドオン/周辺機器ピンをADDON管轄へ明示的リリース
+#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
+#define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // Player LED 1 (GP16)
+#define GPIO_PIN_22 GpioAction::ASSIGNED_TO_ADDON // Player LED 2 (GP22)
+#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON // Player LED 3 (GP23)
+#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON // Player LED 4 (GP24)
+#define GPIO_PIN_25 GpioAction::ASSIGNED_TO_ADDON // オンボードLED
+
+#define GPIO_PIN_00 GpioAction::ASSIGNED_TO_ADDON // I2C0 SDA (Wii)
+#define GPIO_PIN_01 GpioAction::ASSIGNED_TO_ADDON // I2C0 SCL (Wii)
+#define GPIO_PIN_18 GpioAction::ASSIGNED_TO_ADDON // I2C1 SDA (PCF8575)
+#define GPIO_PIN_19 GpioAction::ASSIGNED_TO_ADDON // I2C1 SCL (PCF8575)
+#define GPIO_PIN_20 GpioAction::ASSIGNED_TO_ADDON // UART1 TX (JQ8900)
+#define GPIO_PIN_21 GpioAction::ASSIGNED_TO_ADDON // UART1 RX (JQ8900)
+#define GPIO_PIN_26 GpioAction::ASSIGNED_TO_ADDON // Analog (Turbo VR)
+#define GPIO_PIN_27 GpioAction::ASSIGNED_TO_ADDON // RGB LED
+#define GPIO_PIN_28 GpioAction::ASSIGNED_TO_ADDON // USB0 D+
+#define GPIO_PIN_29 GpioAction::ASSIGNED_TO_ADDON // USB0 D-
 
 // Keyboard Mapping Configuration
 //                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |
@@ -57,25 +75,6 @@
 #define KEY_BUTTON_A2   HID_KEY_F2            // A2     | ~      | Capture | ~        | 14     | ~      |
 #define KEY_BUTTON_FN   -1                    // Hotkey Function                                        |
 
-// 各種アドオン/周辺機器ピンをADDON管轄へ明示的リリース
-#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
-#define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // Player LED 1 (GP16)
-#define GPIO_PIN_22 GpioAction::ASSIGNED_TO_ADDON // Player LED 2 (GP22)
-#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON // Player LED 3 (GP23)
-#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON // Player LED 4 (GP24)
-#define GPIO_PIN_25 GpioAction::ASSIGNED_TO_ADDON // オンボードLED
-
-#define GPIO_PIN_00 GpioAction::ASSIGNED_TO_ADDON // I2C0 SDA (Wii)
-#define GPIO_PIN_01 GpioAction::ASSIGNED_TO_ADDON // I2C0 SCL (Wii)
-#define GPIO_PIN_18 GpioAction::ASSIGNED_TO_ADDON // I2C1 SDA (PCF8575)
-#define GPIO_PIN_19 GpioAction::ASSIGNED_TO_ADDON // I2C1 SCL (PCF8575)
-#define GPIO_PIN_20 GpioAction::ASSIGNED_TO_ADDON // UART1 TX (JQ8900)
-#define GPIO_PIN_21 GpioAction::ASSIGNED_TO_ADDON // UART1 RX (JQ8900)
-#define GPIO_PIN_26 GpioAction::ASSIGNED_TO_ADDON // Analog (Turbo VR)
-#define GPIO_PIN_27 GpioAction::ASSIGNED_TO_ADDON // RGB LED
-#define GPIO_PIN_28 GpioAction::ASSIGNED_TO_ADDON // USB0 D+
-#define GPIO_PIN_29 GpioAction::ASSIGNED_TO_ADDON // USB0 D-
-
 // ====================================================================
 // 2. 周辺機器通信プロファイルの有効化（初期設定）
 // ====================================================================
@@ -95,19 +94,21 @@
 #define I2C1_PIN_SCL 19
 #define I2C1_SPEED 400000
 
+#define USB_PERIPHERAL_ENABLED 1
+#define USB_PIN_DP 28
+#define USB_PIN_VBUS_ENABLE -1
+
 #define UART1_ENABLED 1
 #define UART1_PIN_TX 20
 #define UART1_PIN_RX 21
 #define UART1_BAUDRATE 9600
 
-#define USB_PERIPHERAL_ENABLED 1
-#define USB_PIN_DP 28
-#define USB_PIN_VBUS_ENABLE -1
-
 // 各アドオン機能の初期ONマクロ
 #define WII_EXTENSION_ENABLED 1
 #define TURBO_ENABLED 1
 #define REACTIVE_LED_ENABLED 1
+
+#define TURBO_LED_PIN 15
 
 // ====================================================================
 // 3. 【16ページ完全同期】PCF8575 IOエクスパンダー 初期アサイン定数
@@ -153,6 +154,12 @@
 // 基本プロファイル
 // ====================================================================
 
+#define BOARD_LEDS_ENABLED 1
+#define RGB_LED_NUM 47
+
+// 10ページのバニラ名に完全同期
+#define CASE_RGB_INDEX 14
+#define CASE_RGB_COUNT 34
 
 #define HAS_DISPLAY 1
 #define DISPLAY_I2C_BLOCK i2c0 
@@ -166,5 +173,20 @@
 #define SPLASH_DURATION 7000
 #define DISPLAY_SAVER_TIMEOUT 600000
 #define DISPLAY_SAVER_MODE static_cast<DisplaySaverMode>(2) 
+
+#define BOARD_LEDS_PIN 27
+#define LED_BRIGHTNESS_MAXIMUM 80
+#define LED_BRIGHTNESS_STEPS 10
+#define LED_FORMAT LED_FORMAT_GRB
+#define LEDS_PER_PIXEL 1
+
+#define LEDS_BUTTON_B3   8
+#define LEDS_BUTTON_B4   7
+#define LEDS_BUTTON_R1   6
+#define LEDS_BUTTON_L1   5
+#define LEDS_BUTTON_B1   1
+#define LEDS_BUTTON_B2   2
+#define LEDS_BUTTON_R2   3
+#define LEDS_BUTTON_L2   4
 
 #endif /* BOARD_CONFIG_H */
