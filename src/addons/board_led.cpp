@@ -6,27 +6,12 @@
 #include "config.pb.h"
 
 bool BoardLedAddon::available() {
-    // 1. 参照元を非constにして取得（WebConfigデータ構造体）
-    OnBoardLedOptions& options = Storage::getInstance().getAddonOptions().onBoardLedOptions;
-
-    // 2. WebConfigに保存データがない（未設定リセット）場合のみ初期値をダイレクト上書き
-    if (!options.isConfigured) {
-        options.enabled = true;
-        // 初期モードを「モードインジケーター（USB接続/設定モード識別点滅）」に設定
-        options.mode = OnBoardLedMode::ON_BOARD_LED_MODE_MODE_INDICATOR; 
-    }
-
+    const OnBoardLedOptions& options = Storage::getInstance().getAddonOptions().onBoardLedOptions;
     return options.enabled && options.mode != OnBoardLedMode::ON_BOARD_LED_MODE_OFF; // Available only when it's not set to off
 }
 
 void BoardLedAddon::setup() {
-    // setupでも未設定時の値を完全に保証する
-    OnBoardLedOptions& options = Storage::getInstance().getAddonOptions().onBoardLedOptions;
-    if (!options.isConfigured) {
-        options.enabled = true;
-        options.mode = OnBoardLedMode::ON_BOARD_LED_MODE_MODE_INDICATOR;
-    }
-
+    const OnBoardLedOptions& options = Storage::getInstance().getAddonOptions().onBoardLedOptions;
     onBoardLedMode = options.mode;
     isConfigMode = DriverManager::getInstance().isConfigMode();
     timeSinceBlink = getMillis();
