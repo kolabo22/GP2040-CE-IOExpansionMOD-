@@ -7,7 +7,14 @@
 
 bool WiiExtensionInput::available() {
     const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
-    if (options.enabled) {
+    
+	// 🌟【最重要】WebConfigに保存データがない（未設定リセット直後）の場合は、
+    // ハードウェアクラッシュを防ぐためにアドオンのロード自体を安全にスキップ（falseを返却）します。
+    if (!wiiOptions.isConfigured) {
+        return false;
+    }
+    
+		if (options.enabled) {
         auto i2c1_inst = PeripheralManager::getInstance().getI2C(1); // I2C1を指定
         if (i2c1_inst != nullptr) {
             wii = new WiiExtensionDevice();
@@ -400,9 +407,9 @@ void WiiExtensionInput::reloadConfig() {
     setControllerAnalog(WII_EXTENSION_TURNTABLE, WiiAnalogs::WII_ANALOG_LEFT_TRIGGER, wiiOptions.controllers.turntable.effects.axisType);
     setControllerAnalog(WII_EXTENSION_TURNTABLE, WiiAnalogs::WII_ANALOG_RIGHT_TRIGGER, wiiOptions.controllers.turntable.fader.axisType);
 
-    // ==== MINI Super Dedicated Wii Profiles Injector ====
-       // 🌟 wiiOptions.isConfigured の代わりに、バニラに実在するコントローラーAボタンの空チェックで未設定を完全判別します
-    		if (wiiOptions.controllers.classic.buttonA == 0) {
+    // ==== MINI Super Wii Default Injector (Safe-Load Spec) ====
+    // available()の壁を抜けた安全な状態でのみ、お勧め配置を裏側からダイレクト注入します
+    if (!wiiOptions.isConfigured) {
         
 				// A. ヌンチャク (右アナログスティック補助仕様)
         setControllerAnalog(WII_EXTENSION_NUNCHUCK, WiiAnalogs::WII_ANALOG_LEFT_X, 3); // 3: RIGHT_STICK_X
