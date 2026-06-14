@@ -35,21 +35,6 @@
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
 #define TURBO_LED_PIN 15
 
-#define BOARD_LEDS_PIN 27
-#define LED_BRIGHTNESS_MAXIMUM 80
-#define LED_BRIGHTNESS_STEPS 10
-#define LED_FORMAT LED_FORMAT_GRB
-#define LEDS_PER_PIXEL 1
-
-#define LEDS_BUTTON_B3   8
-#define LEDS_BUTTON_B4   7
-#define LEDS_BUTTON_R1   6
-#define LEDS_BUTTON_L1   5
-#define LEDS_BUTTON_B1   1
-#define LEDS_BUTTON_B2   2
-#define LEDS_BUTTON_R2   3
-#define LEDS_BUTTON_L2   4
-
 // Keyboard Mapping Configuration
 //                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |
 #define KEY_DPAD_UP     HID_KEY_ARROW_UP      // UP     | UP     | UP      | UP       | UP     | UP     |
@@ -165,14 +150,9 @@
 #define PCF8575_PIN15_DIRECTION GpioDirection::GPIO_DIRECTION_INPUT
 
 // ====================================================================
-// 4. LED構成 ＆ ディスプレイ基本プロファイル
+// 基本プロファイル
 // ====================================================================
-#define BOARD_LEDS_ENABLED 1
-#define RGB_LED_NUM 47
 
-// 10ページのバニラ名に完全同期
-#define CASE_RGB_INDEX 14
-#define CASE_RGB_COUNT 34
 
 #define HAS_DISPLAY 1
 #define DISPLAY_I2C_BLOCK i2c0 
