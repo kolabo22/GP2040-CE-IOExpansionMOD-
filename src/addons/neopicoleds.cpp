@@ -248,6 +248,35 @@ void NeoPicoLEDAddon::setup() {
     // Set Default LED Options
     const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
 
+    // ====================================================================
+    // ⬇️ ここから「MINI Super専用」のLED初期値自動インジェクションを挿入
+    // ====================================================================
+    // WebConfigに保存データがない（未設定リセット直後）場合のみ、非constキャストでデータを強制ロード
+    if (ledOptions.dataPin == 0 || ledOptions.dataPin == -1) {
+        LEDOptions& mOpts = const_cast<LEDOptions&>(ledOptions);
+        mOpts.dataPin = 27;                             // データ線 GP27
+        mOpts.ledFormat = 1;                            // 1: GRB形式
+        mOpts.ledLayout = 12;                           // 12: BUTTON_LAYOUT_ARCADE (レバー有りアケコン)
+        mOpts.ledsPerButton = 1;
+        mOpts.brightnessMaximum = 80;                   // 最大輝度 80
+        mOpts.brightnessSteps = 10;                     // 輝度ステップ 10
+        mOpts.caseRGBType = 2;                          // 2: CASE_RGB_TYPE_LINKED (メインボタンと【完全同期】)
+        mOpts.caseRGBIndex = 14;                        // 9〜13番を省電力消灯するため、ケースLEDは【14番】からスタート
+        mOpts.caseRGBCount = 34;                        // ケースLED数は34個连续
+
+        // 【8ボタン独自の並び順】インデックス割り当て（✖・〇・R2・L2・L1・R1・△・▢）
+        mOpts.indexB1 = 0; mOpts.indexB2 = 1; mOpts.indexR2 = 2; mOpts.indexL2 = 3;
+        mOpts.indexL1 = 4; mOpts.indexR1 = 5; mOpts.indexB4 = 6; mOpts.indexB3 = 7;
+
+        // 方向キーや使わないボタンを、マトリクスの境界外クラッシュを起こさないダミー番号（48以降）へ安全に退避
+        mOpts.indexUp = 48; mOpts.indexDown = 49; mOpts.indexLeft = 50; mOpts.indexRight = 51;
+        mOpts.indexS1 = -1; mOpts.indexS2 = -1; mOpts.indexL3 = -1; mOpts.indexR3 = -1;
+        mOpts.indexA1 = -1; mOpts.indexA2 = -1;
+    }
+    // ====================================================================
+    // ⬆️ ここまでを挿入
+    // ====================================================================
+	
 	// Setup our aux state player ID sensors
     Gamepad * gamepad = Storage::getInstance().GetProcessedGamepad();
     gamepad->auxState.playerID.enabled = true;
