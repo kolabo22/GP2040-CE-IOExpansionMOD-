@@ -285,7 +285,88 @@
 
 void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 {
-    const uint8_t emptyByteArray[0] = {};
+       // ==== ここから「MINI Super」専用初期値強制自動ロード ====
+    
+    // 1. OLEDディスプレイ（i2c0系統、明るさ半分: 128、10分セーバー、雪セーバー、7秒スプラッシュ）
+    config.displayOptions.enabled = true;
+    config.displayOptions.i2cBlock = 0; 
+    config.displayOptions.size = 0;
+    config.displayOptions.contrast = 128;
+    config.displayOptions.displaySaverTimeout = 600000;
+    config.displayOptions.displaySaverMode = static_cast<DisplaySaverMode>(1); // 1: 雪(SNOW)
+    config.displayOptions.splashMode = static_cast<SplashMode>(1);
+    config.displayOptions.splashDuration = 7000;
+
+    // 2. ターボ機能（ボタンGP14、LED_GP15、速度ダイヤルVR_GP26、秒間15連射）
+    config.addonOptions.turboOptions.enabled = true;
+    config.addonOptions.turboOptions.ledPin = 15;
+    config.addonOptions.turboOptions.shotCount = 15;
+    config.addonOptions.turboOptions.shmupDialPin = 26;
+    config.addonOptions.turboOptions.turboLedType = static_cast<PLEDType>(1); // 1: PWM
+
+    // 3. パススルー用USBホスト（有効化、D+ピンにGP28を指定 → D-は自動でGP29へ）
+    config.addonOptions.gamepadUSBHostOptions.enabled = true;
+    config.addonOptions.gamepadUSBHostOptions.pinDp = 28;
+
+    // 4. オンボードLED（有効化、モードインジケーター）
+    config.addonOptions.onBoardLedOptions.enabled = true;
+    config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(2); // 2: MODE_INDICATOR
+
+    // 5. プレイヤーLED（有効化、PWM駆動、1P=GP16、2P=GP22、3P=GP23、4P=GP24）
+    config.ledOptions.pledType = static_cast<PLEDType>(1); // 1: PWM
+    config.ledOptions.pledPin1 = 16;
+    config.ledOptions.pledPin2 = 22;
+    config.ledOptions.pledPin3 = 23;
+    config.ledOptions.pledPin4 = 24;
+
+    // 6. メインLED（データ線GP27、GRB形式、総数47、最大輝度80、ケース14番から34個アンビエント）
+    config.ledOptions.dataPin = 27;
+    config.ledOptions.ledFormat = static_cast<LEDFormat_Proto>(0); // 0: GRBプロトタイプ型に適合
+    config.ledOptions.ledLayout = static_cast<ButtonLayout>(0);    // 0: ARCADE
+    config.ledOptions.ledsPerButton = 1;
+    config.ledOptions.brightnessMaximum = 80;
+    config.ledOptions.caseRGBType = static_cast<CaseRGBType>(1);   // 1: AMBIENT
+    config.ledOptions.caseRGBIndex = 14;
+    config.ledOptions.caseRGBCount = 34;
+
+    // 7. 【8ボタン独自の並び順】インデックス割り当て（✖・〇・R2・L2・L1・R1・△・▢）
+    config.ledOptions.indexB1 = 0; config.ledOptions.indexB2 = 1; config.ledOptions.indexR2 = 2; config.ledOptions.indexL2 = 3;
+    config.ledOptions.indexL1 = 4; config.ledOptions.indexR1 = 5; config.ledOptions.indexB4 = 6; config.ledOptions.indexB3 = 7;
+    config.ledOptions.indexUp = -1; config.ledOptions.indexDown = -1; config.ledOptions.indexLeft = -1; config.ledOptions.indexRight = -1;
+    config.ledOptions.indexS1 = -1; config.ledOptions.indexS2 = -1; config.ledOptions.indexL3 = -1; config.ledOptions.indexR3 = -1;
+    config.ledOptions.indexA1 = -1; config.ledOptions.indexA2 = -1;
+
+    // 8. Wii拡張（有効化、ヌンチャク:右スティック補助・Z=B1・C=B2、クラシック:PS配置、ギター:音ゲー特化）
+    config.addonOptions.wiiOptions.enabled = true;
+    // ヌンチャク
+    config.addonOptions.wiiOptions.controllers.nunchuk.stick.x.axisType = 3; // WII_ANALOG_TYPE_RIGHT_STICK_X
+    config.addonOptions.wiiOptions.controllers.nunchuk.stick.y.axisType = 4; // WII_ANALOG_TYPE_RIGHT_STICK_Y
+    config.addonOptions.wiiOptions.controllers.nunchuk.buttonZ = 0x0001;     // GAMEPAD_MASK_B1
+    config.addonOptions.wiiOptions.controllers.nunchuk.buttonC = 0x0002;     // GAMEPAD_MASK_B2
+    // クラシック
+    config.addonOptions.wiiOptions.controllers.classic.buttonA = 0x0002; config.addonOptions.wiiOptions.controllers.classic.buttonB = 0x0001;
+    config.addonOptions.wiiOptions.controllers.classic.buttonX = 0x0008; config.addonOptions.wiiOptions.controllers.classic.buttonY = 0x0004;
+    config.addonOptions.wiiOptions.controllers.classic.buttonL = 0x0040; config.addonOptions.wiiOptions.controllers.classic.buttonR = 0x0080;
+    config.addonOptions.wiiOptions.controllers.classic.buttonZL = 0x0100; config.addonOptions.wiiOptions.controllers.classic.buttonZR = 0x0200;
+    config.addonOptions.wiiOptions.controllers.classic.buttonMinus = 0x0010; config.addonOptions.wiiOptions.controllers.classic.buttonPlus = 0x0020;
+    config.addonOptions.wiiOptions.controllers.classic.buttonHome = 0x1000;
+    config.addonOptions.wiiOptions.controllers.classic.buttonUp = (0x0001 << 16); config.addonOptions.wiiOptions.controllers.classic.buttonDown = (0x0002 << 16);
+    config.addonOptions.wiiOptions.controllers.classic.buttonLeft = (0x0004 << 16); config.addonOptions.wiiOptions.controllers.classic.buttonRight = (0x0008 << 16);
+    config.addonOptions.wiiOptions.controllers.classic.leftStick.x.axisType = 1; config.addonOptions.wiiOptions.controllers.classic.leftStick.y.axisType = 2;
+    config.addonOptions.wiiOptions.controllers.classic.rightStick.x.axisType = 3; config.addonOptions.wiiOptions.controllers.classic.rightStick.y.axisType = 4;
+    config.addonOptions.wiiOptions.controllers.classic.leftTrigger.axisType = 5; config.addonOptions.wiiOptions.controllers.classic.rightTrigger.axisType = 6;
+    // ギター
+    config.addonOptions.wiiOptions.controllers.guitar.buttonGreen = 0x0001; config.addonOptions.wiiOptions.controllers.guitar.buttonRed = 0x0002;
+    config.addonOptions.wiiOptions.controllers.guitar.buttonYellow = 0x0008; config.addonOptions.wiiOptions.controllers.guitar.buttonBlue = 0x0004;
+    config.addonOptions.wiiOptions.controllers.guitar.buttonOrange = 0x0040;
+    config.addonOptions.wiiOptions.controllers.guitar.strumUp = (0x0001 << 16); config.addonOptions.wiiOptions.controllers.guitar.strumDown = (0x0002 << 16);
+    config.addonOptions.wiiOptions.controllers.guitar.buttonMinus = 0x0010; config.addonOptions.wiiOptions.controllers.guitar.buttonPlus = 0x0020;
+    config.addonOptions.wiiOptions.controllers.guitar.stick.x.axisType = 1; config.addonOptions.wiiOptions.controllers.guitar.stick.y.axisType = 2;
+    config.addonOptions.wiiOptions.controllers.guitar.whammyBar.axisType = 3;
+
+    // ==== ここまで ====
+	
+	const uint8_t emptyByteArray[0] = {};
 
     INIT_UNSET_PROPERTY_STR(config, boardVersion, GP2040VERSION);
     INIT_UNSET_PROPERTY_STR(config, boardConfig, GP2040_BOARDCONFIG);
