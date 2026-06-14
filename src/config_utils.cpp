@@ -285,46 +285,71 @@
 
 void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 {
-    // ==== MINI Super Dedicated Default Values Injection (Complete Spec) ====
+    // ==== MINI Super Dedicated Default Values Injection ====
     
-    // 1. OLED Display Options (Safe layout settings, enabled cleanly)
+    // 1. OLED Display Options
     INIT_UNSET_PROPERTY(config.displayOptions, enabled, true);
     INIT_UNSET_PROPERTY(config.displayOptions, size, 0); // 128x64
     INIT_UNSET_PROPERTY(config.displayOptions, contrast, 128); // Brightness 50%
-    INIT_UNSET_PROPERTY(config.displayOptions, displaySaverTimeout, 600000); // 10 Min
+    INIT_UNSET_PROPERTY(config.displayOptions, displaySaverTimeout, 600000); 
     INIT_UNSET_PROPERTY(config.displayOptions, displaySaverMode, static_cast<DisplaySaverMode>(1)); // 1: SNOW
-    INIT_UNSET_PROPERTY(config.displayOptions, splashMode, static_cast<SplashMode>(1)); // 1: STATIC
-    INIT_UNSET_PROPERTY(config.displayOptions, splashDuration, 7000); // 7 Sec
+    INIT_UNSET_PROPERTY(config.displayOptions, splashMode, static_cast<SplashMode>(1)); 
+    INIT_UNSET_PROPERTY(config.displayOptions, splashDuration, 7000); 
     INIT_UNSET_PROPERTY(config.displayOptions, inputHistoryEnabled, true);
 
-    // 2. Turbo Options (GP15 LED, GP26 Turbo VR Analog Dial, 15 Shots/Sec)
+    // 2. Turbo Options
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, enabled, true);
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, ledPin, 15); 
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, shotCount, 15); 
-    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, shmupDialPin, 26); 
+    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, shmupDialPin, 26); // Turbo VR (GP26)
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, turboLedType, static_cast<PLEDType>(1)); // 1: PWM
 
-    // 3. Passthrough USB Host Options (Safely activated via software layer)
+    // 3. Passthrough USB Host Options
     INIT_UNSET_PROPERTY(config.addonOptions.gamepadUSBHostOptions, enabled, true);
 
-    // 4. On-Board LED Options (Mode Indicator)
+    // 4. On-Board LED Options
     INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, enabled, true);
     INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, mode, static_cast<OnBoardLedMode>(2)); // 2: MODE_INDICATOR
 
     // 5. Reactive LED Switch Activation
     INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, enabled, true);
 
-    // 6. Jingle Player Options (Initial Volume 20)
-    // 🌟 起動時の0秒即死を防ぐため、enabledをtrueにする記述のみをアドオン側の初期化へ逃がします。
-    // ここでは初期音量の代入のみに絞ることで、スピーカーピンのデッドロックを完璧に回避します。
+    // 6. Jingle Player Options (Volume 20)
+    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, enabled, true);
     INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, 20);
 
-    // 7. Main NeoPixel LED Switch (GP27 Data Output Activation)
-    // 🌟 これにより、neopicoleds.cpp側での安全なローカルポインタイジェクションが正常にキックされます。
-    INIT_UNSET_PROPERTY(config.ledOptions, dataPin, 27);
-    
+    // 7. Main NeoPixel LED Configuration (GRB, Arcade Layout, 10Steps, Case 14-47 Synchronized)
+    INIT_UNSET_PROPERTY(config.ledOptions, dataPin, 27); // GP27
+    INIT_UNSET_PROPERTY(config.ledOptions, ledFormat, static_cast<LEDFormat_Proto>(1)); // 1: GRB
+    INIT_UNSET_PROPERTY(config.ledOptions, ledLayout, static_cast<ButtonLayout>(12));   // 12: BUTTON_LAYOUT_ARCADE (⭕フリーズしない正しいレバーアケコン設定)
+    INIT_UNSET_PROPERTY(config.ledOptions, ledsPerButton, 1);
+    INIT_UNSET_PROPERTY(config.ledOptions, brightnessMaximum, 80);
+    INIT_UNSET_PROPERTY(config.ledOptions, brightnessSteps, 10); 
+    INIT_UNSET_PROPERTY(config.ledOptions, caseRGBType, static_cast<CaseRGBType>(2));   // 2: LINKED (完全同期)
+    INIT_UNSET_PROPERTY(config.ledOptions, caseRGBIndex, 14); // Start from 14
+    INIT_UNSET_PROPERTY(config.ledOptions, caseRGBCount, 34);
+
+    // Dedicated 8-Button Matrix Layout & Boundary Fix
+    INIT_UNSET_PROPERTY(config.ledOptions, indexB1, 0); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexB2, 1); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexR2, 2); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexL2, 3);
+    INIT_UNSET_PROPERTY(config.ledOptions, indexL1, 4); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexR1, 5); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexB4, 6); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexB3, 7);
+    INIT_UNSET_PROPERTY(config.ledOptions, indexUp, 48); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexDown, 49); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexLeft, 50); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexRight, 51);
+    INIT_UNSET_PROPERTY(config.ledOptions, indexS1, -1); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexS2, -1); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexL3, -1); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexR3, -1);
+    INIT_UNSET_PROPERTY(config.ledOptions, indexA1, -1); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexA2, -1);
+
     // 8. Wii Extension Switch Activation
-    // 🌟 起動時のI2Cピン未登録クラッシュを防ぐため、Wiiアドオン側の「available()内の安全弁」と連動させます。
     INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions, enabled, true);
     // =======================================================================
 
