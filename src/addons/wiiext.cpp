@@ -6,12 +6,13 @@
 #include "config.pb.h"
 
 bool WiiExtensionInput::available() {
+    // お使いのMODブランチのバニラに実在する正しい変数名「options」で取得します
     const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
-    
-    // 🌟【文鎮化の永久追放】リセット直後はI2Cの物理ピン番号が登録されていません。
-    // ピンが未登録の状態（0 または -1）で wii->begin() が走るとマイコンが例外クラッシュして文鎮化するため、
-    // 未設定時はアドオンの起動自体を100%安全にスキップ（falseを返却）させ、デッドロックを完全に防ぎます。
-    if (wiiOptions.enabled == false || wiiOptions.controllers.classic.buttonA == 0) {
+
+    //【文鎮化の永久追放】変数名を「options」に完全適合させました。
+    // 設定リセット直後（データが完全に空の最も危険な状態）のときは、
+    // アドオンの起動自体を100%安全にスキップ（falseを返却）させ、物理初期化デッドロックを完全に防ぎます。
+    if (options.enabled == false || options.controllers.classic.buttonA == 0) {
         return false;
     }
     
