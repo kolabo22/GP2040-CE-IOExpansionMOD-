@@ -317,7 +317,9 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, enabled, true);
     INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, 20);
 
-    // 7. Wii Extension Switch Activation
+		INIT_UNSET_PROPERTY(config.ledOptions, dataPin, 27);
+    
+		// 7. Wii Extension Switch Activation
     INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions, enabled, true);
 
 	const uint8_t emptyByteArray[0] = {};
