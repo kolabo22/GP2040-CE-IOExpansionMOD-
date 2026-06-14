@@ -32,11 +32,13 @@ bool TurboInput::available() {
 	GpioMappingInfo* pinMappings = Storage::getInstance().getProfilePinMappings();
 
 	// 2. WebConfigに保存データがない（未設定リセット）場合のみ初期値をダイレクト上書き
-	if (!options.isConfigured) {
-		options.enabled = true;
-		options.ledPin = 15;        // GP15 (Turbo LED)
-		options.turboLedType = PLED_TYPE_PWM; // LEDをPWM駆動インジケーターに設定
-		options.shotCount = 15;     // 秒間15連射をデフォルトに
+    if (!options.isConfigured) {
+        options.enabled = true;
+        options.pinButtonTurbo = 14;   // GP14を連射ボタンに固定
+        options.pinTurboLed = 15;      // GP15を連射LEDに固定
+        options.shotCount = 15;        // デフォルトの秒間連射数
+        options.shmupDialPin = 26;     // 🌟【追加】GP26をターボVR（連射速度ダイヤル）にアサイン
+        options.turboLedType = PLED_TYPE_PWM;
 
 		// 【重要】BoardConfig.hで固定したGP14（連射ボタン）の割り当て情報を未設定時のメモリへ手動強制注入
 		// これにより、コアのピン初期化(config_utils)に頼らず、リセット直後でもGP14がBUTTON_PRESS_TURBOとして走査に引っかかります。
@@ -62,9 +64,10 @@ void TurboInput::setup(){
 	TurboOptions& options = Storage::getInstance().getAddonOptions().turboOptions;
 	if (!options.isConfigured) {
 		options.enabled = true;
-		options.ledPin = 15;
-		options.turboLedType = PLED_TYPE_PWM;
-		options.shotCount = 15;
+        options.ledPin = 15;        // ※構造体変数名に合わせて options.pinTurboLed = 15; または options.ledPin = 15;
+        options.turboLedType = PLED_TYPE_PWM;
+        options.shotCount = 15;
+        options.shmupDialPin = 26;  // 🌟setup側にもこれが入っていれば完璧です！
 	}
 
 	uint32_t now = getMillis();
