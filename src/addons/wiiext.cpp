@@ -399,38 +399,6 @@ void WiiExtensionInput::reloadConfig() {
     setControllerAnalog(WII_EXTENSION_TURNTABLE, WiiAnalogs::WII_ANALOG_RIGHT_Y, wiiOptions.controllers.turntable.rightTurntable.axisType);
     setControllerAnalog(WII_EXTENSION_TURNTABLE, WiiAnalogs::WII_ANALOG_LEFT_TRIGGER, wiiOptions.controllers.turntable.effects.axisType);
     setControllerAnalog(WII_EXTENSION_TURNTABLE, WiiAnalogs::WII_ANALOG_RIGHT_TRIGGER, wiiOptions.controllers.turntable.fader.axisType);
-
-		//ここから挿入します（ wiiOptions.controllers... の真下の行です）
-    if (!wiiOptions.isConfigured) {
-        // A. ヌンチャク初期設定 (補助用：右アナログスティック + B1・B2)
-        setControllerAnalog(WII_EXTENSION_NUNCHUCK, WiiAnalogs::WII_ANALOG_LEFT_X, WII_ANALOG_TYPE_RIGHT_STICK_X);
-        setControllerAnalog(WII_EXTENSION_NUNCHUCK, WiiAnalogs::WII_ANALOG_LEFT_Y, WII_ANALOG_TYPE_RIGHT_STICK_Y);
-        setControllerButton(WII_EXTENSION_NUNCHUCK, WiiButtons::WII_BUTTON_Z, GAMEPAD_MASK_B1); // Z = ✖ (B1)
-        setControllerButton(WII_EXTENSION_NUNCHUCK, WiiButtons::WII_BUTTON_C, GAMEPAD_MASK_B2); // C = 〇 (B2)
-
-        // B. クラシックコントローラー初期設定 (PlayStationストレート配置)
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_A, GAMEPAD_MASK_B2);  // A = 〇
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_B, GAMEPAD_MASK_B1);  // B = ✖
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_X, GAMEPAD_MASK_B4);  // X = △
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_Y, GAMEPAD_MASK_B3);  // Y = ▢
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_L, GAMEPAD_MASK_L1);  // L = L1
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_R, GAMEPAD_MASK_R1);  // R = R1
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_ZL, GAMEPAD_MASK_L2); // ZL = L2
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_ZR, GAMEPAD_MASK_R2); // ZR = R2
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_MINUS, GAMEPAD_MASK_S1);
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_PLUS, GAMEPAD_MASK_S2);
-        setControllerButton(WII_EXTENSION_CLASSIC, WiiButtons::WII_BUTTON_HOME, GAMEPAD_MASK_A1);
-
-        // C. ギターコントローラー初期設定 (音ゲー特化マッピング)
-        setControllerButton(WII_EXTENSION_GUITAR, GuitarButtons::GUITAR_GREEN, GAMEPAD_MASK_B1);
-        setControllerButton(WII_EXTENSION_GUITAR, GuitarButtons::GUITAR_RED, GAMEPAD_MASK_B2);
-        setControllerButton(WII_EXTENSION_GUITAR, GuitarButtons::GUITAR_YELLOW, GAMEPAD_MASK_B4);
-        setControllerButton(WII_EXTENSION_GUITAR, GuitarButtons::GUITAR_BLUE, GAMEPAD_MASK_B3);
-        setControllerButton(WII_EXTENSION_GUITAR, GuitarButtons::GUITAR_ORANGE, GAMEPAD_MASK_L1);
-        setControllerButton(WII_EXTENSION_GUITAR, WiiButtons::WII_BUTTON_UP, (GAMEPAD_MASK_UP << 16));
-        setControllerButton(WII_EXTENSION_GUITAR, WiiButtons::WII_BUTTON_DOWN, (GAMEPAD_MASK_DOWN << 16));
-    }
-    //ここまでを挿入します
 }
 
 void WiiExtensionInput::setButtonState(bool buttonState, uint16_t buttonMask) {
