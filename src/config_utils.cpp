@@ -286,41 +286,74 @@
 void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 {
     // ==== MINI Super Dedicated Default Values Injection ====
+    
+    // 1. OLED Display (i2c0, Brightness 50%, 10Min Timeout, Snow Saver, Status & History ALL ON)
     INIT_UNSET_PROPERTY(config.displayOptions, enabled, true);
-    INIT_UNSET_PROPERTY(config.displayOptions, size, 0);
-    INIT_UNSET_PROPERTY(config.displayOptions, contrast, 128);
-    INIT_UNSET_PROPERTY(config.displayOptions, displaySaverTimeout, 600000);
-    INIT_UNSET_PROPERTY(config.displayOptions, displaySaverMode, static_cast<DisplaySaverMode>(1)); // 1: SNOW
-    INIT_UNSET_PROPERTY(config.displayOptions, splashMode, static_cast<SplashMode>(1));
-    INIT_UNSET_PROPERTY(config.displayOptions, splashDuration, 7000);
+    INIT_UNSET_PROPERTY(config.displayOptions, size, 0); 
+    INIT_UNSET_PROPERTY(config.displayOptions, contrast, 128); 
+    INIT_UNSET_PROPERTY(config.displayOptions, displaySaverTimeout, 600000); 
+    INIT_UNSET_PROPERTY(config.displayOptions, displaySaverMode, static_cast<DisplaySaverMode>(1)); 
+    INIT_UNSET_PROPERTY(config.displayOptions, splashMode, static_cast<SplashMode>(1)); 
+    INIT_UNSET_PROPERTY(config.displayOptions, splashDuration, 7000); 
+    INIT_UNSET_PROPERTY(config.displayOptions, statusBarLayout, static_cast<StatusBarLayout>(0x0001)); 
+    INIT_UNSET_PROPERTY(config.displayOptions, inputHistoryEnabled, true);
 
+    // 2. Turbo Function (GP14 Button, GP15 LED, GP26 Turbo VR Analog Dial, 15 Shots/Sec)
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, enabled, true);
-    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, ledPin, 15);
-    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, shotCount, 15);
-    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, shmupDialPin, 26); // Turbo VR (GP26)
-    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, turboLedType, static_cast<PLEDType>(1)); // 1: PWM
+    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, ledPin, 15); 
+    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, shotCount, 15); 
+    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, shmupDialPin, 26); 
+    INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, turboLedType, static_cast<PLEDType>(1)); 
 
-    // USBホスト機能の有効化のみを指定（ピンはBoardConfig.hに追従）
+    // 3. Passthrough USB Host Peripheral Activation (D+:GP28 / D-:GP29)
     INIT_UNSET_PROPERTY(config.addonOptions.gamepadUSBHostOptions, enabled, true);
+    INIT_UNSET_PROPERTY(config.peripheralOptions.usbBlock, enabled, true);
+    INIT_UNSET_PROPERTY(config.peripheralOptions.usbBlock, pinDp, 28);
 
+    // 4. On-Board LED (GP25 Activation, Mode Indicator)
     INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, enabled, true);
-    INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, mode, static_cast<OnBoardLedMode>(2)); // 2: MODE_INDICATOR
+    INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, mode, static_cast<OnBoardLedMode>(2)); 
 
-    INIT_UNSET_PROPERTY(config.ledOptions, pledType, static_cast<PLEDType>(1)); // 1: PWM
-    INIT_UNSET_PROPERTY(config.ledOptions, pledPin1, 16);
-    INIT_UNSET_PROPERTY(config.ledOptions, pledPin2, 22);
-    INIT_UNSET_PROPERTY(config.ledOptions, pledPin3, 23);
-    INIT_UNSET_PROPERTY(config.ledOptions, pledPin4, 24);
+    // 5. Player LED Disable & Reactive LED Activation (GP16,22,23,24 for S1,S2,L3,R3 Fade In/Out)
+    INIT_UNSET_PROPERTY(config.ledOptions, pledType, static_cast<PLEDType>(0)); 
+    INIT_UNSET_PROPERTY(config.ledOptions, pledPin1, -1);
+    INIT_UNSET_PROPERTY(config.ledOptions, pledPin2, -1);
+    INIT_UNSET_PROPERTY(config.ledOptions, pledPin3, -1);
+    INIT_UNSET_PROPERTY(config.ledOptions, pledPin4, -1);
 
-    INIT_UNSET_PROPERTY(config.ledOptions, dataPin, 27);
-    INIT_UNSET_PROPERTY(config.ledOptions, ledFormat, static_cast<LEDFormat_Proto>(0)); // 0: GRB
-    INIT_UNSET_PROPERTY(config.ledOptions, ledLayout, static_cast<ButtonLayout>(0));    // 0: ARCADE
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, enabled, true);
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, pin00, 16);
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, action00, static_cast<GpioAction>(9)); 
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, mode00, static_cast<ReactiveLEDMode>(1)); 
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, activeMode00, static_cast<ReactiveLEDMode>(2)); 
+
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, pin01, 22);
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, action01, static_cast<GpioAction>(10)); 
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, mode01, static_cast<ReactiveLEDMode>(1)); 
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, activeMode01, static_cast<ReactiveLEDMode>(2)); 
+
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, pin02, 23);
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, action02, static_cast<GpioAction>(11)); 
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, mode02, static_cast<ReactiveLEDMode>(1)); 
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, activeMode02, static_cast<ReactiveLEDMode>(2)); 
+
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, pin03, 24);
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, action03, static_cast<GpioAction>(12)); 
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, mode03, static_cast<ReactiveLEDMode>(1)); 
+    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, activeMode03, static_cast<ReactiveLEDMode>(2)); 
+
+    // 6. Main NeoPixel LED Configuration (GP27, GRB, Arcade Layout, 10Steps, Case 14-47 Fully Linked)
+    INIT_UNSET_PROPERTY(config.ledOptions, dataPin, 27); 
+    INIT_UNSET_PROPERTY(config.ledOptions, ledFormat, static_cast<LEDFormat_Proto>(1)); 
+    INIT_UNSET_PROPERTY(config.ledOptions, ledLayout, static_cast<ButtonLayout>(12));   
     INIT_UNSET_PROPERTY(config.ledOptions, ledsPerButton, 1);
     INIT_UNSET_PROPERTY(config.ledOptions, brightnessMaximum, 80);
-    INIT_UNSET_PROPERTY(config.ledOptions, caseRGBType, static_cast<CaseRGBType>(1));   // 1: AMBIENT
-    INIT_UNSET_PROPERTY(config.ledOptions, caseRGBIndex, 14);
+    INIT_UNSET_PROPERTY(config.ledOptions, brightnessSteps, 10); 
+    INIT_UNSET_PROPERTY(config.ledOptions, caseRGBType, static_cast<CaseRGBType>(2));   
+    INIT_UNSET_PROPERTY(config.ledOptions, caseRGBIndex, 14); 
     INIT_UNSET_PROPERTY(config.ledOptions, caseRGBCount, 34);
 
+    // 7. Dedicated 8-Button Matrix Layout & D-Pad Boundary Fix (index 48-51)
     INIT_UNSET_PROPERTY(config.ledOptions, indexB1, 0); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexB2, 1); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexR2, 2); 
@@ -329,10 +362,10 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.ledOptions, indexR1, 5); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexB4, 6); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexB3, 7);
-    INIT_UNSET_PROPERTY(config.ledOptions, indexUp, -1); 
-    INIT_UNSET_PROPERTY(config.ledOptions, indexDown, -1); 
-    INIT_UNSET_PROPERTY(config.ledOptions, indexLeft, -1); 
-    INIT_UNSET_PROPERTY(config.ledOptions, indexRight, -1); // ⭕ イコールをコンマに修正
+    INIT_UNSET_PROPERTY(config.ledOptions, indexUp, 48); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexDown, 49); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexLeft, 50); 
+    INIT_UNSET_PROPERTY(config.ledOptions, indexRight, 51);
     INIT_UNSET_PROPERTY(config.ledOptions, indexS1, -1); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexS2, -1); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexL3, -1); 
@@ -340,37 +373,49 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.ledOptions, indexA1, -1); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexA2, -1);
 
+    // 8. Wii Extension Profiles (Nunchuk: Right Analog + B1/B2, Classic: PS Custom, Guitar: Rhythm Custom)
     INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions, enabled, true);
     // Wii Nunchuk
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.nunchuk.stick.x, axisType, 3); // RX
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.nunchuk.stick.y, axisType, 4); // RY
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.nunchuk, buttonZ, 0x0001);     // B1
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.nunchuk, buttonC, 0x0002);     // B2
+    config.addonOptions.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
+    config.addonOptions.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
+    config.addonOptions.wiiOptions.controllers.nunchuk.buttonZ = 1; 
+    config.addonOptions.wiiOptions.controllers.nunchuk.buttonC = 2; 
     // Wii Classic
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonA, 0x0002);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonB, 0x0001);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonX, 0x0008); // ⭕ 大文字に修正
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonY, 0x0004); // ⭕ 大文字に修正
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonL, 0x0040);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonR, 0x0080);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonZL, 0x0100);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonZR, 0x0200);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonMinus, 0x0010);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonPlus, 0x0020);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonHome, 0x1000);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonUp, (0x0001 << 16));
+    config.addonOptions.wiiOptions.controllers.classic.buttonA = 2;   
+    config.addonOptions.wiiOptions.controllers.classic.buttonB = 1;   
+    config.addonOptions.wiiOptions.controllers.classic.buttonX = 4;   
+    config.addonOptions.wiiOptions.controllers.classic.buttonY = 3;   
+    config.addonOptions.wiiOptions.controllers.classic.buttonL = 5;   
+    config.addonOptions.wiiOptions.controllers.classic.buttonR = 6;   
+    config.addonOptions.wiiOptions.controllers.classic.buttonZL = 7;  
+    config.addonOptions.wiiOptions.controllers.classic.buttonZR = 8;  
+    config.addonOptions.wiiOptions.controllers.classic.buttonMinus = 9; 
+    config.addonOptions.wiiOptions.controllers.classic.buttonPlus = 10; 
+    config.addonOptions.wiiOptions.controllers.classic.buttonHome = 13; 
+    config.addonOptions.wiiOptions.controllers.classic.leftStick.x.axisType = 1;
+    config.addonOptions.wiiOptions.controllers.classic.leftStick.y.axisType = 2;
+    config.addonOptions.wiiOptions.controllers.classic.rightStick.x.axisType = 3;
+    config.addonOptions.wiiOptions.controllers.classic.rightStick.y.axisType = 4;
     // Wii Guitar
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, buttonGreen, 0x0001);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, buttonRed, 0x0002);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, buttonYellow, 0x0008);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, buttonBlue, 0x0004);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, buttonOrange, 0x0040);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, strumUp, (0x0001 << 16));
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, strumDown, (0x0002 << 16));
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, buttonMinus, 0x0010);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.guitar, buttonPlus, 0x0020);
+    config.addonOptions.wiiOptions.controllers.guitar.buttonGreen = 1;  
+    config.addonOptions.wiiOptions.controllers.guitar.buttonRed = 2;    
+    config.addonOptions.wiiOptions.controllers.guitar.buttonYellow = 4; 
+    config.addonOptions.wiiOptions.controllers.guitar.buttonBlue = 3;   
+    config.addonOptions.wiiOptions.controllers.guitar.buttonOrange = 7; 
+    config.addonOptions.wiiOptions.controllers.guitar.buttonMinus = 5;
+    config.addonOptions.wiiOptions.controllers.guitar.buttonPlus = 6;
+    config.addonOptions.wiiOptions.controllers.guitar.buttonPedal = 9;
+    config.addonOptions.wiiOptions.controllers.guitar.strumUp = (0x0001 << 16); 
+    config.addonOptions.wiiOptions.controllers.guitar.strumDown = (0x0002 << 16); 
+    config.addonOptions.wiiOptions.controllers.guitar.stick.x.axisType = 1;
+    config.addonOptions.wiiOptions.controllers.guitar.stick.y.axisType = 2;
+    config.addonOptions.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
+
+    // 9. Jingle Player (Enabled, Initial Volume: 20)
+    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, enabled, true);
+    INIT_UNSET_PROPERTY(config.addonOptions.jinglePlayerOptions, volume, 20);
     // =======================================================
-	
+
 	const uint8_t emptyByteArray[0] = {};
 
     INIT_UNSET_PROPERTY_STR(config, boardVersion, GP2040VERSION);
