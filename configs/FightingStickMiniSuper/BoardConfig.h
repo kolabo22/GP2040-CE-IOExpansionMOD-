@@ -77,9 +77,6 @@
 // 2. 周辺機器通信プロファイルの有効化（初期設定）
 // ====================================================================
 #define DEFAULT_INPUT_MODE INPUT_MODE_GENERIC
-#define DEFAULT_SOCD_MODE SOCD_MODE_NEUTRAL
-#define DEFAULT_DPAD_MODE DPAD_MODE_DIGITAL
-#define DEBOUNCE_DELAY_IN_MS 5
 
 // 周辺機器通信マニュアル有効化
 #define I2C0_ENABLED 1
@@ -92,19 +89,10 @@
 #define I2C1_PIN_SCL 19
 #define I2C1_SPEED 400000
 
-#define USB_PERIPHERAL_ENABLED 1
-#define USB_PIN_DP 28
-#define USB_PIN_VBUS_ENABLE -1
-
 #define UART1_ENABLED 1
 #define UART1_PIN_TX 20
 #define UART1_PIN_RX 21
 #define UART1_BAUDRATE 9600
-
-// 各アドオン機能の初期ONマクロ
-#define WII_EXTENSION_ENABLED 1
-#define TURBO_ENABLED 1
-#define REACTIVE_LED_ENABLED 1
 
 // ====================================================================
 // 3. 【16ページ完全同期】PCF8575 IOエクスパンダー 初期アサイン定数
@@ -128,22 +116,5 @@
 #define PCF8575_PIN13_ACTION GpioAction::NONE
 #define PCF8575_PIN14_ACTION GpioAction::BUTTON_PRESS_E7
 #define PCF8575_PIN15_ACTION GpioAction::BUTTON_PRESS_E8
-
-// ====================================================================
-// 基本プロファイル
-// ====================================================================
-
-#define HAS_DISPLAY 1
-#define DISPLAY_I2C_BLOCK i2c0 
-#define DISPLAY_FLIP 0
-#define DISPLAY_INVERT 0
-#define BUTTON_LAYOUT BUTTON_LAYOUT_STICK
-#define BUTTON_LAYOUT_RIGHT BUTTON_LAYOUT_VEWLIX 
-
-#define SPLASH_MODE static_cast<SplashMode>(0)
-#define SPLASH_CHOICE static_cast<SplashChoice>(0)
-#define SPLASH_DURATION 7000
-#define DISPLAY_SAVER_TIMEOUT 600000
-#define DISPLAY_SAVER_MODE static_cast<DisplaySaverMode>(2) 
 
 #endif /* BOARD_CONFIG_H */
