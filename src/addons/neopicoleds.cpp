@@ -249,32 +249,25 @@ void NeoPicoLEDAddon::setup() {
     const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
 
     // ==== MINI Super Dedicated LED & Reactive Defaults ====
-    if (ledOptions.ledLayout == 0) { // Fires only when WebConfig is unconfigured
-        LEDFormat_Proto defaultFormat = static_cast<LEDFormat_Proto>(1); // 1: GRB
-        ButtonLayout defaultLayout = static_cast<ButtonLayout>(12);      // 12: ARCADE
-        CaseRGBType defaultCaseType = static_cast<CaseRGBType>(2);       // 2: LINKED (Synchronized)
+    if (ledOptions.ledLayout == 0) { 
+        LEDOptions* pOpts = (LEDOptions*)&ledOptions; // 安全なポインタキャスト
+        pOpts->ledFormat = static_cast<LEDFormat_Proto>(1); // 1: GRB
+        pOpts->ledLayout = static_cast<ButtonLayout>(12);   // 12: BUTTON_LAYOUT_ARCADE
+        pOpts->ledsPerButton = 1;
+        pOpts->brightnessMaximum = 80;
+        pOpts->brightnessSteps = 10;
+        pOpts->caseRGBType = static_cast<CaseRGBType>(2);   // 2: LINKED完全同期
+        pOpts->caseRGBIndex = 14; 
+        pOpts->caseRGBCount = 34;
+        pOpts->pledType = static_cast<PLEDType>(0);         // 0: NONE
 
-        LEDOptions& mOpts = const_cast<LEDOptions&>(ledOptions);
-        mOpts.ledFormat = defaultFormat;
-        mOpts.ledLayout = defaultLayout;
-        mOpts.ledsPerButton = 1;
-        mOpts.brightnessMaximum = 80;
-        mOpts.brightnessSteps = 10;
-        mOpts.caseRGBType = defaultCaseType;
-        mOpts.caseRGBIndex = 14; // Start from 14 (8-13 hidden/off)
-        mOpts.caseRGBCount = 34;
-        mOpts.pledType = static_cast<PLEDType>(0); // 0: PLED_TYPE_NONE
-
-        // Dedicated 8-Button Matrix Layout
-        mOpts.indexB1 = 0; mOpts.indexB2 = 1; mOpts.indexR2 = 2; mOpts.indexL2 = 3;
-        mOpts.indexL1 = 4; mOpts.indexR1 = 5; mOpts.indexB4 = 6; mOpts.indexB3 = 7;
-        
-        // Anti-Crash Boundary Fix For Unused Direction Keys
-        mOpts.indexUp = 48; mOpts.indexDown = 49; mOpts.indexLeft = 50; mOpts.indexRight = 51;
-        mOpts.indexS1 = -1; mOpts.indexS2 = -1; mOpts.indexL3 = -1; mOpts.indexR3 = -1;
-        mOpts.indexA1 = -1; mOpts.indexA2 = -1;
+        // 8ボタンチェーンアサイン
+        pOpts->indexB1 = 0; pOpts->indexB2 = 1; pOpts->indexR2 = 2; pOpts->indexL2 = 3;
+        pOpts->indexL1 = 4; pOpts->indexR1 = 5; pOpts->indexB4 = 6; pOpts->indexB3 = 7;
+        pOpts->indexUp = 48; pOpts->indexDown = 49; pOpts->indexLeft = 50; pOpts->indexRight = 51;
+        pOpts->indexS1 = -1; pOpts->indexS2 = -1; pOpts->indexL3 = -1; pOpts->indexR3 = -1;
+        pOpts->indexA1 = -1; pOpts->indexA2 = -1;
     }
-
 	
 	// Setup our aux state player ID sensors
     Gamepad * gamepad = Storage::getInstance().GetProcessedGamepad();
