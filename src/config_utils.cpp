@@ -287,7 +287,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 {
     // ==== MINI Super Dedicated Default Values Injection ====
     
-    // 1. OLED Display (i2c0, Brightness 50%, 10Min Timeout, Snow Saver, Status & History ALL ON)
+    // 1. OLED Display (i2c0, Brightness 50%, 10Min Timeout, Snow Saver, History ON)
     INIT_UNSET_PROPERTY(config.displayOptions, enabled, true);
     INIT_UNSET_PROPERTY(config.displayOptions, size, 0); 
     INIT_UNSET_PROPERTY(config.displayOptions, contrast, 128); 
@@ -295,7 +295,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.displayOptions, displaySaverMode, static_cast<DisplaySaverMode>(1)); 
     INIT_UNSET_PROPERTY(config.displayOptions, splashMode, static_cast<SplashMode>(1)); 
     INIT_UNSET_PROPERTY(config.displayOptions, splashDuration, 7000); 
-    INIT_UNSET_PROPERTY(config.displayOptions, statusBarLayout, static_cast<StatusBarLayout>(0x0001)); 
     INIT_UNSET_PROPERTY(config.displayOptions, inputHistoryEnabled, true);
 
     // 2. Turbo Function (GP14 Button, GP15 LED, GP26 Turbo VR Analog Dial, 15 Shots/Sec)
@@ -306,41 +305,23 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, turboLedType, static_cast<PLEDType>(1)); 
 
     // 3. Passthrough USB Host Peripheral Activation (D+:GP28 / D-:GP29)
+    // エラーの原因となったusbBlockを排除。ピンアサインと有効化はBoardConfig.h側で完全に連動ロードされます。
     INIT_UNSET_PROPERTY(config.addonOptions.gamepadUSBHostOptions, enabled, true);
-    INIT_UNSET_PROPERTY(config.peripheralOptions.usbBlock, enabled, true);
-    INIT_UNSET_PROPERTY(config.peripheralOptions.usbBlock, pinDp, 28);
 
     // 4. On-Board LED (GP25 Activation, Mode Indicator)
     INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, enabled, true);
     INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, mode, static_cast<OnBoardLedMode>(2)); 
 
-    // 5. Player LED Disable & Reactive LED Activation (GP16,22,23,24 for S1,S2,L3,R3 Fade In/Out)
+    // 5. Player LED Disable
     INIT_UNSET_PROPERTY(config.ledOptions, pledType, static_cast<PLEDType>(0)); 
     INIT_UNSET_PROPERTY(config.ledOptions, pledPin1, -1);
     INIT_UNSET_PROPERTY(config.ledOptions, pledPin2, -1);
     INIT_UNSET_PROPERTY(config.ledOptions, pledPin3, -1);
     INIT_UNSET_PROPERTY(config.ledOptions, pledPin4, -1);
 
+    // --- 5(New). Reactive LED Setup (GP16,22,23,24 for S1,S2,L3,R3 Fade In/Out) ---
+    // エラーの原因となったpin00等の個別変数を排除。アドオン側のsetupで自動ロードが完了します。
     INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, enabled, true);
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, pin00, 16);
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, action00, static_cast<GpioAction>(9)); 
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, mode00, static_cast<ReactiveLEDMode>(1)); 
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, activeMode00, static_cast<ReactiveLEDMode>(2)); 
-
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, pin01, 22);
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, action01, static_cast<GpioAction>(10)); 
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, mode01, static_cast<ReactiveLEDMode>(1)); 
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, activeMode01, static_cast<ReactiveLEDMode>(2)); 
-
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, pin02, 23);
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, action02, static_cast<GpioAction>(11)); 
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, mode02, static_cast<ReactiveLEDMode>(1)); 
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, activeMode02, static_cast<ReactiveLEDMode>(2)); 
-
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, pin03, 24);
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, action03, static_cast<GpioAction>(12)); 
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, mode03, static_cast<ReactiveLEDMode>(1)); 
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, activeMode03, static_cast<ReactiveLEDMode>(2)); 
 
     // 6. Main NeoPixel LED Configuration (GP27, GRB, Arcade Layout, 10Steps, Case 14-47 Fully Linked)
     INIT_UNSET_PROPERTY(config.ledOptions, dataPin, 27); 
