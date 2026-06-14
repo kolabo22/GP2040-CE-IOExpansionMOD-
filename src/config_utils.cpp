@@ -300,8 +300,8 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, shmupDialPin, 26); // Turbo VR (GP26)
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, turboLedType, static_cast<PLEDType>(1)); // 1: PWM
 
+    // USBホスト機能の有効化のみを指定（ピンはBoardConfig.hに追従）
     INIT_UNSET_PROPERTY(config.addonOptions.gamepadUSBHostOptions, enabled, true);
-    INIT_UNSET_PROPERTY(config.addonOptions.gamepadUSBHostOptions, pinDp, 28);
 
     INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, enabled, true);
     INIT_UNSET_PROPERTY(config.addonOptions.onBoardLedOptions, mode, static_cast<OnBoardLedMode>(2)); // 2: MODE_INDICATOR
@@ -332,7 +332,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.ledOptions, indexUp, -1); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexDown, -1); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexLeft, -1); 
-    INIT_UNSET_PROPERTY(config.ledOptions, indexRight = -1);
+    INIT_UNSET_PROPERTY(config.ledOptions, indexRight, -1); // ⭕ イコールをコンマに修正
     INIT_UNSET_PROPERTY(config.ledOptions, indexS1, -1); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexS2, -1); 
     INIT_UNSET_PROPERTY(config.ledOptions, indexL3, -1); 
@@ -349,8 +349,8 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     // Wii Classic
     INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonA, 0x0002);
     INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonB, 0x0001);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonx, 0x0008);
-    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttony, 0x0004);
+    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonX, 0x0008); // ⭕ 大文字に修正
+    INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonY, 0x0004); // ⭕ 大文字に修正
     INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonL, 0x0040);
     INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonR, 0x0080);
     INIT_UNSET_PROPERTY(config.addonOptions.wiiOptions.controllers.classic, buttonZL, 0x0100);
