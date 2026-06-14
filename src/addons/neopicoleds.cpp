@@ -245,8 +245,40 @@ bool NeoPicoLEDAddon::available() {
 }
 
 void NeoPicoLEDAddon::setup() {
-    // Set Default LED Options
-    const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
+	// Set Default LED Options
+	const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
+
+    // ==== MINI Super Dedicated LED & Reactive Defaults (Anti-Freeze Spec) ====
+    // 【文鎮化の完全解決】危険な const_cast による直接上書きを100%排除しました。
+    // 代わりに、システムが標準で持っている安全なコピー（mutableOpts）の手法を使用し、
+    // メモリ保護ロックを回避しながら、リセット直後のArcade配列を安全に確定ロードさせます。
+    if (ledOptions.ledLayout == 0) { // Fires only when WebConfig is unconfigured
+        LEDOptions mutableOpts = ledOptions; // Copy to local stack memory safely
+        
+        mutableOpts.ledFormat = static_cast<LEDFormat_Proto>(1); // 1: GRB
+        mutableOpts.ledLayout = static_cast<ButtonLayout>(12);   // 12: BUTTON_LAYOUT_ARCADE
+        mutableOpts.ledsPerButton = 1;
+        mutableOpts.brightnessMaximum = 80;
+        mutableOpts.brightnessSteps = 10;
+        mutableOpts.caseRGBType = static_cast<CaseRGBType>(2);   // 2: LINKED (Synchronized)
+        mutableOpts.caseRGBIndex = 14;                           // Start from 14 (8-13 hidden/off)
+        mutableOpts.caseRGBCount = 34;
+        mutableOpts.pledType = static_cast<PLEDType>(0);         // 0: PLED_TYPE_NONE
+
+        // Dedicated 8-Button Matrix Layout
+        mutableOpts.indexB1 = 0; mutableOpts.indexB2 = 1; mutableOpts.indexR2 = 2; mutableOpts.indexL2 = 3;
+        mutableOpts.indexL1 = 4; mutableOpts.indexR1 = 5; mutableOpts.indexB4 = 6; mutableOpts.indexB3 = 7;
+        
+        // Anti-Crash Boundary Fix For Unused Direction Keys
+        mutableOpts.indexUp = 48; mutableOpts.indexDown = 49; mutableOpts.indexLeft = 50; mutableOpts.indexRight = 51;
+        mutableOpts.indexS1 = -1; mutableOpts.indexS2 = -1; mutableOpts.indexL3 = -1; mutableOpts.indexR3 = -1;
+        mutableOpts.indexA1 = -1; mutableOpts.indexA2 = -1;
+
+        // Save the modified safe struct data back via official storage manager
+        Storage::getInstance().setLEDOptions(mutableOpts);
+    }
+    // ====================================================================
+
 
 	// Setup our aux state player ID sensors
     Gamepad * gamepad = Storage::getInstance().GetProcessedGamepad();
@@ -612,6 +644,11 @@ void NeoPicoLEDAddon::process() {
 		}
 	}
 
+	// ==== 9〜13番省電力消灯ゾーン（マスク処理） ====
+	for (int i = 8; i <= 13; i++) {
+		frame[i] = 0x00000000;
+	}
+	
     neopico.SetFrame(frame);
     neopico.Show();
     this->nextRunTime = make_timeout_time_ms(intervalMS);
