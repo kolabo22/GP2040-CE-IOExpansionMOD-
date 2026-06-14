@@ -93,32 +93,11 @@ PLEDAnimationState getXInputAnimationPWM(uint16_t ledState)
 }
 
 bool PlayerLEDAddon::available() {
-	// 参照元を非constにして取得
-	LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
-
-	// WebConfig未設定（リセット直後）時のみ、アドオンの有効化フラグをチェック前に強制注入
-	if (!ledOptions.isConfigured) {
-		ledOptions.pledType = PLED_TYPE_PWM; // 初期駆動モードをPWMに固定
-		ledOptions.pledPin1 = 16;            // GP16 (Player LED 1)
-		ledOptions.pledPin2 = 22;            // GP22 (Player LED 2)
-		ledOptions.pledPin3 = 23;            // GP23 (Player LED 3)
-		ledOptions.pledPin4 = 24;            // GP24 (Player LED 4)
-	}
-
-	return ledOptions.pledType != PLED_TYPE_NONE;
+	return Storage::getInstance().getLedOptions().pledType != PLED_TYPE_NONE;
 }
 
 void PlayerLEDAddon::setup() {
-	// setupでも未設定時の値を完全に保証する
-	LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
-	if (!ledOptions.isConfigured) {
-		ledOptions.pledType = PLED_TYPE_PWM;
-		ledOptions.pledPin1 = 16;
-		ledOptions.pledPin2 = 22;
-		ledOptions.pledPin3 = 23;
-		ledOptions.pledPin4 = 24;
-	}
-
+	const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
 	turnOffWhenSuspended = ledOptions.turnOffWhenSuspended;
 
 	Gamepad * gamepad = Storage::getInstance().GetProcessedGamepad();
@@ -199,3 +178,4 @@ void PWMPlayerLEDs::display()
 		if (pledPins[i] > -1)
 			pwm_set_gpio_level(pledPins[i], ledLevels[i]);
 }
+
