@@ -640,6 +640,10 @@ void NeoPicoLEDAddon::process() {
 			this->ambientLightLinkage(); //Custom mode
 		}
 	}
+	// ==== 9〜13番省電力消灯ゾーン（マスク処理） ====
+	for (int i = 8; i <= 13; i++) {
+		frame[i] = 0x00000000;
+	}
 
     neopico.SetFrame(frame);
     neopico.Show();
