@@ -6,65 +6,69 @@
 #include "config.pb.h"
 
 bool WiiExtensionInput::available() {
-    // お使いのMODブランチのバニラに実在する正しい変数名「options」で取得します
+    // 拡張IOエクスパンダーMODブランチのバニラに準拠した変数名「options」で取得します
     const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
 
-    //【文鎮化の永久追放】変数名を「options」に完全適合させました。
-    // 設定リセット直後（データが完全に空の最も危険な状態）のときは、
-    // アドオンの起動自体を100%安全にスキップ（falseを返却）させ、物理初期化デッドロックを完全に防ぎます。
-    if (options.enabled == false || options.controllers.classic.buttonA == 0) {
+    // 【文鎮化・インジェクション遮断バグの永久追放】
+    // ボード定義（BoardConfig.h）側で WII_EXTENSION_ENABLED が強制有効化されているか、
+    // WebConfig側で明示的に有効（enabled == true）な場合であれば、起動処理を正常に通します。
+    // 旧コードにあった「classic.buttonA == 0 のときに終了する判定」を完全削除したため、
+    // 設定リセット直後（データが空のとき）でも、10ページ目の自動プロファイル注入処理まで確実に到達します。
+    #ifdef WII_EXTENSION_ENABLED
+    bool shouldEnable = true;
+    #else
+    bool shouldEnable = options.enabled;
+    #endif
+
+    if (!shouldEnable) {
         return false;
     }
-    
-		if (options.enabled) {
-        auto i2c1_inst = PeripheralManager::getInstance().getI2C(1); // I2C1を指定
-        if (i2c1_inst != nullptr) {
+
+    // 周辺機器管理からI2C1インスタンスを安全に確保（デッドロック防止のため begin() は setup() へ保留）
+    auto i2c1_inst = PeripheralManager::getInstance().getI2C(1); 
+    if (i2c1_inst != nullptr) {
+        if (wii == nullptr) { // 二重生成防止の安全弁
             wii = new WiiExtensionDevice();
-            wii->setI2C(i2c1_inst);
-            wii->setAddress(0x52);
-            wii->begin(); // 起動時に刺さっていればここで認識完了、刺さっていなければスルーされる
-            return true;
         }
+        wii->setI2C(i2c1_inst);
+        wii->setAddress(0x52);
+        return true;
     }
     return false;
 }
 
 void WiiExtensionInput::setup() {
-    const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
     nextTimer = getMillis();
-
-#if WII_EXTENSION_DEBUG==true
+    #if WII_EXTENSION_DEBUG==true
     stdio_init_all();
-#endif
-
+    #endif
     uIntervalMS = 0;
-
     currentConfig = NULL;
     
-    //wii = new WiiExtensionDevice(
-    //    i2c,
-    //    WII_EXTENSION_I2C_ADDR);
-    wii->begin();
-    wii->start();
+    // available()で安全に確保されたwiiデバイスの物理初期化をここで安全に開始
+    if (wii != nullptr) {
+        wii->begin();
+        wii->start();
+    }
 
+    // 【重要】ここで 10ページ目の「MINI Super Dedicated Wii Profiles Injector」を確実にキック！
+    // リセット直後であっても、ここでヌンチャク・クラコン・ギターの初期値アサインが100%自動注入されます。
     reloadConfig();
 
-    // Run during setup to catch boot selection mode
-    wii->poll();
-
+    // 起動時に刺さっていればここで認識
+    if (wii != nullptr) {
+        wii->poll();
+    }
     update();
 }
 
 void WiiExtensionInput::process() {
     uint32_t now = getMillis();
-
     if (nextTimer < now) {
         if (wii->extensionType == WII_EXTENSION_NONE) {
-            // 再試行の間隔を5秒以上に伸ばし、カクつきの頻度を激減させる
+            // 再試行の間隔を5秒以上に伸ばし、スタッター（画面や入力のカクつき）の頻度を激減させる
             static uint32_t lastRetry = 0;
             if (now - lastRetry > 5000) { 
-                // begin()の前に、I2Cバスがビジーでないか一瞬だけ確認するなどの
-                // 軽いチェックを入れるのが理想ですが、まずは間隔をあけるのが一番効きます
                 wii->begin();
                 wii->start();
                 lastRetry = now;
@@ -76,25 +80,23 @@ void WiiExtensionInput::process() {
                 currentConfig = NULL;
             }
         }
-
         update();
         nextTimer = now + uIntervalMS;
     }
 
-    // 入力処理（ここはNONEならスキップされるのでスタッターに関係なし）
+    // 入力処理（NONEの時はスキップされるのでパフォーマンスに影響なし）
     if (currentConfig != NULL) {
-        // ...既存の処理...
         queueAnalogChange(WiiAnalogs::WII_ANALOG_LEFT_X, leftX, lastLeftX);
         queueAnalogChange(WiiAnalogs::WII_ANALOG_LEFT_Y, leftY, lastLeftY);
         queueAnalogChange(WiiAnalogs::WII_ANALOG_RIGHT_X, rightX, lastRightX);
         queueAnalogChange(WiiAnalogs::WII_ANALOG_RIGHT_Y, rightY, lastRightY);
         queueAnalogChange(WiiAnalogs::WII_ANALOG_LEFT_TRIGGER, triggerLeft, lastTriggerLeft);
         queueAnalogChange(WiiAnalogs::WII_ANALOG_RIGHT_TRIGGER, triggerRight, lastTriggerRight);
+        
         updateAnalogState();
-
+        
         setButtonState(buttonC, WiiButtons::WII_BUTTON_C);
         setButtonState(buttonZ, WiiButtons::WII_BUTTON_Z);
-
         setButtonState(buttonA, WiiButtons::WII_BUTTON_A);
         setButtonState(buttonB, WiiButtons::WII_BUTTON_B);
         setButtonState(buttonX, WiiButtons::WII_BUTTON_X);
@@ -106,14 +108,13 @@ void WiiExtensionInput::process() {
         setButtonState(buttonSelect, WiiButtons::WII_BUTTON_MINUS);
         setButtonState(buttonStart, WiiButtons::WII_BUTTON_PLUS);
         setButtonState(buttonHome, WiiButtons::WII_BUTTON_HOME);
-
         setButtonState(dpadUp, WiiButtons::WII_BUTTON_UP);
         setButtonState(dpadDown, WiiButtons::WII_BUTTON_DOWN);
         setButtonState(dpadLeft, WiiButtons::WII_BUTTON_LEFT);
         setButtonState(dpadRight, WiiButtons::WII_BUTTON_RIGHT);
-
+        
         updateMotionState();
-
+        
         if (lastLeftX != leftX) lastLeftX = leftX;
         if (lastLeftY != leftY) lastLeftY = leftY;
         if (lastRightX != rightX) lastRightX = rightX;
