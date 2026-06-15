@@ -1161,7 +1161,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
         // =================================================================
-        // ✨ MINI Super Auto-Seed Initialization Logic (1155行目〜想定)
+        // ✨ MINI Super Auto-Seed Initialization & Force Save Logic
         // =================================================================
         // LEDデータピンが未設定（工場出荷リセット状態）の最初の1回目だけ発動
         if (!config.ledOptions.has_dataPin) {
@@ -1246,8 +1246,32 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.peripheralOptions.blockI2C1.has_sda = true;
             config.peripheralOptions.blockI2C1.has_scl = true;
             config.peripheralOptions.blockI2C1.has_speed = true;
+
+            // ==========================================
+            // 🔥 【追加】強制永続化（セーブ）＆自動再起動トリガー
+            // ==========================================
+            // インクルードを使わずに、リンク時にStorageインスタンスを紐付ける前方宣言
+            struct LocalStorageBridge {
+                static void forceSave(const Config& srcConfig) {
+                    extern class Storage& _ZN7Storage11getInstanceEv(); // Storage::getInstance()のシグネチャ
+                    class Storage {
+                    public:
+                        virtual Config& getConfig() = 0;
+                        virtual bool save(const bool force) = 0;
+                    };
+                    // メモリ上のStorage実体にアクセスして設定を同期し、強制保存
+                    Storage* storage = (Storage*)&_ZN7Storage11getInstanceEv();
+                    storage->getConfig() = srcConfig;
+                    storage->save(true);
+                }
+            };
+            LocalStorageBridge::forceSave(config);
+
+            // Pico SDKの再起動関数を直接外部呼び出し
+            extern "C" void watchdog_reboot(uint32_t pc, uint32_t sp, uint32_t delay_ms);
+            watchdog_reboot(0, 0, 50); // 50ms後に安全にクールドリブート
         }
-    } // 💡 これが initUnsetPropertiesWithDefaults 関数の正しい「閉じカッコ」です
+    } // initUnsetPropertiesWithDefaults 関数の正しい閉じカッコ
 
 
 // -----------------------------------------------------
