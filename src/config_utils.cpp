@@ -1165,7 +1165,9 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 }
 
 #include "hardware/watchdog.h"
-#include "storage.h"
+
+// 💡 正しいヘッダーのパスを指定してStorageクラスをインクルードします
+#include "headers/storagemanager.h"
 
 void injectMiniSuperDefaultStorage(Config& config) {
     // Detect factory reset state via uninitialized LED data pin flag
@@ -1185,14 +1187,12 @@ void injectMiniSuperDefaultStorage(Config& config) {
         config.gamepadOptions.has_debounceDelay = true;
 
         // ==========================================
-        // 2. CORE GPIO MAPPINGS (New Array Structure)
+        // 2. CORE GPIO MAPPINGS
         // ==========================================
-        // Reset all 30 pins to NONE first
         for (uint16_t pin = 0; pin < 30; pin++) {
             config.gpioMappings.pins[pin].action = GpioAction::NONE;
         }
         
-        // Map physical pins according to the backup data
         config.gpioMappings.pins[2].action  = static_cast<GpioAction>(1);  // BUTTON_PRESS_UP
         config.gpioMappings.pins[3].action  = static_cast<GpioAction>(2);  // BUTTON_PRESS_DOWN
         config.gpioMappings.pins[4].action  = static_cast<GpioAction>(4);  // BUTTON_PRESS_RIGHT
@@ -1224,20 +1224,17 @@ void injectMiniSuperDefaultStorage(Config& config) {
         config.ledOptions.caseRGBIndex = 14;
         config.ledOptions.caseRGBCount = 34;
 
-        // LED index mappings for 8 buttons
         config.ledOptions.indexB1 = 0; config.ledOptions.indexB2 = 1;
         config.ledOptions.indexR2 = 2; config.ledOptions.indexL2 = 3;
         config.ledOptions.indexL1 = 4; config.ledOptions.indexR1 = 5;
         config.ledOptions.indexB4 = 6; config.ledOptions.indexB3 = 7;
         
-        // Set unassigned elements to -1
         config.ledOptions.indexUp = -1;    config.ledOptions.indexDown = -1;
         config.ledOptions.indexLeft = -1;  config.ledOptions.indexRight = -1;
         config.ledOptions.indexS1 = -1;    config.ledOptions.indexS2 = -1;
         config.ledOptions.indexL3 = -1;    config.ledOptions.indexR3 = -1;
         config.ledOptions.indexA1 = -1;    config.ledOptions.indexA2 = -1;
 
-        // Enable nanopb has_ flags for LED properties
         config.ledOptions.has_dataPin = true;           config.ledOptions.has_ledFormat = true;
         config.ledOptions.has_ledLayout = true;         config.ledOptions.has_ledsPerButton = true;
         config.ledOptions.has_brightnessMaximum = true; config.ledOptions.has_brightnessSteps = true;
@@ -1271,9 +1268,8 @@ void injectMiniSuperDefaultStorage(Config& config) {
         config.addonOptions.onBoardLedOptions.has_mode = true;
 
         // ==========================================
-        // 5. PERIPHERAL I2C PINS (PeripheralManager)
+        // 5. PERIPHERAL I2C PINS
         // ==========================================
-        // I2C0: Wii Extension (GP0: SDA / GP1: SCL)
         config.peripheralOptions.blockI2C0.enabled = true;
         config.peripheralOptions.blockI2C0.sda = 0;
         config.peripheralOptions.blockI2C0.scl = 1;
@@ -1283,7 +1279,6 @@ void injectMiniSuperDefaultStorage(Config& config) {
         config.peripheralOptions.blockI2C0.has_scl = true;
         config.peripheralOptions.blockI2C0.has_speed = true;
 
-        // I2C1: PCF8575 IO Expander (GP18: SDA / GP19: SCL)
         config.peripheralOptions.blockI2C1.enabled = true;
         config.peripheralOptions.blockI2C1.sda = 18;
         config.peripheralOptions.blockI2C1.scl = 19;
@@ -1296,7 +1291,11 @@ void injectMiniSuperDefaultStorage(Config& config) {
         // ==========================================
         // 6. FORCE SAVE & COLD REBOOT
         // ==========================================
-        Storage::getInstance().save(config); 
+        // 💡 変更点: 引数で渡されたconfigはすでに参照(Config&)なので、Storageクラス内の実体を一度ディープコピー(代入)し、
+        // 引数なしのsave()を実行することで、確定した設定を安全にフラッシュへ書き込ませます。
+        Storage::getInstance().getConfig() = config; 
+        Storage::getInstance().save(true); // force save
+
         watchdog_reboot(0, 0, 0); 
     }
 }
