@@ -255,16 +255,16 @@ void NeoPicoLEDAddon::setup() {
     // =========================================================================
     if (!ledOptions.has_dataPin || ledOptions.dataPin == 255 || ledOptions.dataPin == -1) {
         
-        // --- A. 物理LED基本仕様の強制固定（型名をバニラ仕様へ完全適合） ---
+        // --- A. 物理LED基本仕様の強制固定（明示的なstatic_castにより型エラーを完全防止） ---
         ledOptions.dataPin = 27;                                          // LEDデータ信号：GP27
-        ledOptions.ledFormat = LEDFormat::LED_FORMAT_GRB;                 // GRB形式
-        ledOptions.ledLayout = ButtonLayout::BUTTON_LAYOUT_ARCADE;        // 12: BUTTON_LAYOUT_ARCADE
+        ledOptions.ledFormat = static_cast<LEDFormat_Proto>(1);           // 1: LED_FORMAT_GRB
+        ledOptions.ledLayout = static_cast<ButtonLayout_Proto>(12);       // 12: BUTTON_LAYOUT_ARCADE
         ledOptions.ledsPerButton = 1;                                     // ボタンあたり1Pixel
         ledOptions.brightnessMaximum = 80;                                // 最大輝度上限：80
         ledOptions.brightnessSteps = 10;                                  // 輝度ステップ数：10
 
         // --- B. イルミネーション（ケースRGB）完全同期仕様設定 ---
-        ledOptions.caseRGBType = CaseRGBType::CASE_RGB_TYPE_LINKED;       // LINKED (入力完全同期)
+        ledOptions.caseRGBType = static_cast<CaseRGBType_Proto>(2);       // 2: CASE_RGB_TYPE_LINKED
         ledOptions.caseRGBIndex = 14;                                     // 14番目のLEDから開始
         ledOptions.caseRGBCount = 34;                                     // ケースRGB総数：34個 (14〜47番目)
 
@@ -276,8 +276,8 @@ void NeoPicoLEDAddon::setup() {
         ledOptions.indexA1 = -1;  ledOptions.indexA2 = -1;
 
         // --- D. プレイヤーLED (PLED) および連射LEDのPWM固定 ---
-        ledOptions.pledType = PLEDType::PLED_TYPE_PWM;                    // PLED：ハードウェアPWM
-        initTurboOptions.turboLedType = PLEDType::PLED_TYPE_PWM;          // 連射LED：ハードウェアPWM
+        ledOptions.pledType = static_cast<PLEDType_Proto>(1);             // 1: PLED_TYPE_PWM
+        initTurboOptions.turboLedType = static_cast<PLEDType_Proto>(1);   // 1: PLED_TYPE_PWM
 
         // --- E. 初期起動エフェクトの強制固定 ---
         initAnimationOptions.baseAnimationIndex = 1;                       // 起動時は常時点灯 (Static)
@@ -317,11 +317,10 @@ void NeoPicoLEDAddon::setup() {
     ledCount = matrix.getLedCount();
     buttonLedCount = ledCount; 
 
-    // 後半のバニラ処理へ安全に合流（二重定義競合の原因を回避）
+    // 追加カウント処理
     if (ledOptions.pledType == PLED_TYPE_RGB && PLED_COUNT > 0)
         ledCount += PLED_COUNT;
 
-    // 後半で「const TurboOptions& turboOptions = ...」が再宣言されるため、ここでは競合しない一時変数名を使用
     const TurboOptions& internalTurboOpt = Storage::getInstance().getAddonOptions().turboOptions;
     if (internalTurboOpt.turboLedType == PLED_TYPE_RGB)
         ledCount += 1;
@@ -334,7 +333,6 @@ void NeoPicoLEDAddon::setup() {
     neopico.Off(); 
 
     Animation::format = static_cast<LEDFormat>(ledOptions.ledFormat);
-
     
 	// Configure Animation Station
     const AnimationOptions & animationOptions = Storage::getInstance().getAnimationOptions();
