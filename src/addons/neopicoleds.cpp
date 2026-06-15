@@ -245,83 +245,59 @@ bool NeoPicoLEDAddon::available() {
 }
 
 void NeoPicoLEDAddon::setup() {
-    // 1. 各種設定Optionsへの非const参照を取得（書き換え可能にするため）
+    // 1. 各種設定Optionsへの非const参照を取得
     LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
-    AnimationOptions& animationOptions = Storage::getInstance().getAnimationOptions();
-    TurboOptions& turboOptions = Storage::getInstance().getAddonOptions().turboOptions;
+    AnimationOptions& initAnimationOptions = Storage::getInstance().getAnimationOptions();
+    TurboOptions& initTurboOptions = Storage::getInstance().getAddonOptions().turboOptions;
 
     // =========================================================================
     // ==== 【MINI Super 専用】WebConfig設定リセット時（データ空）の自動初期値注入 ====
     // =========================================================================
-    // 設定リセット直後（dataPinが未設定または異常値）のときに一度だけ理想のピン・LED配置を強制注入します。
     if (!ledOptions.has_dataPin || ledOptions.dataPin == 255 || ledOptions.dataPin == -1) {
         
-        // --- A. 物理LED基本仕様の強制固定 ---
-        ledOptions.dataPin = 27;                                          // LEDデータ信号ピン：GP27
-        ledOptions.ledFormat = LEDFormatProto::LED_FORMAT_GRB;            // 1: GRB形式に固定
-        ledOptions.ledLayout = ButtonLayoutProto::BUTTON_LAYOUT_ARCADE;   // 12: BUTTON_LAYOUT_ARCADE
+        // --- A. 物理LED基本仕様の強制固定（型名をバニラ仕様へ完全適合） ---
+        ledOptions.dataPin = 27;                                          // LEDデータ信号：GP27
+        ledOptions.ledFormat = LEDFormat::LED_FORMAT_GRB;                 // GRB形式
+        ledOptions.ledLayout = ButtonLayout::BUTTON_LAYOUT_ARCADE;        // 12: BUTTON_LAYOUT_ARCADE
         ledOptions.ledsPerButton = 1;                                     // ボタンあたり1Pixel
-        ledOptions.brightnessMaximum = 80;                                // 最大輝度上限を80に抑制
-        ledOptions.brightnessSteps = 10;                                  // 輝度変更ステップ数：10
+        ledOptions.brightnessMaximum = 80;                                // 最大輝度上限：80
+        ledOptions.brightnessSteps = 10;                                  // 輝度ステップ数：10
 
-        // --- B. イルミネーション（ケースRGB）および同期仕様設定 ---
-        ledOptions.caseRGBType = CaseRGBTypeProto::CASE_RGB_TYPE_LINKED;  // 2: LINKED (完全同期)
-        ledOptions.caseRGBIndex = 14;                                     // 14番目のLEDからケースRGB開始
-        ledOptions.caseRGBCount = 34;                                     // ケースRGBの総数：34個 (14〜47番目)
+        // --- B. イルミネーション（ケースRGB）完全同期仕様設定 ---
+        ledOptions.caseRGBType = CaseRGBType::CASE_RGB_TYPE_LINKED;       // LINKED (入力完全同期)
+        ledOptions.caseRGBIndex = 14;                                     // 14番目のLEDから開始
+        ledOptions.caseRGBCount = 34;                                     // ケースRGB総数：34個 (14〜47番目)
 
-        // --- C. 専有8ボタンマトリックス配置＆バウンダリ修正仕様の完全固定 ---
-        ledOptions.indexB1 = 0;
-        ledOptions.indexB2 = 1;
-        ledOptions.indexR2 = 2;
-        ledOptions.indexL2 = 3;
-        ledOptions.indexL1 = 4;
-        ledOptions.indexR1 = 5;
-        ledOptions.indexB4 = 6;
-        ledOptions.indexB3 = 7;
-        ledOptions.indexUp = 48;
-        ledOptions.indexDown = 49;
-        ledOptions.indexLeft = 50;
-        ledOptions.indexRight = 51;
-        ledOptions.indexS1 = -1;
-        ledOptions.indexS2 = -1;
-        ledOptions.indexL3 = -1;
-        ledOptions.indexR3 = -1;
-        ledOptions.indexA1 = -1;
-        ledOptions.indexA2 = -1;
+        // --- C. 専有8ボタンマトリックス配置＆バウンダリ修正の自動流し込み ---
+        ledOptions.indexB1 = 0;   ledOptions.indexB2 = 1;   ledOptions.indexR2 = 2;   ledOptions.indexL2 = 3;
+        ledOptions.indexL1 = 4;   ledOptions.indexR1 = 5;   ledOptions.indexB4 = 6;   ledOptions.indexB3 = 7;
+        ledOptions.indexUp = 48;  ledOptions.indexDown = 49; ledOptions.indexLeft = 50; ledOptions.indexRight = 51;
+        ledOptions.indexS1 = -1;  ledOptions.indexS2 = -1;  ledOptions.indexL3 = -1;  ledOptions.indexR3 = -1;
+        ledOptions.indexA1 = -1;  ledOptions.indexA2 = -1;
 
-        // --- D. プレイヤーLED (PLED) および連射LEDの連動初期値 ---
-        ledOptions.pledType = PLEDTypeProto::PLED_TYPE_PWM;              // PLEDはハードウェアPWM駆動
-        turboOptions.turboLedType = PLEDTypeProto::PLED_TYPE_PWM;         // 連射LEDもPWMに固定
+        // --- D. プレイヤーLED (PLED) および連射LEDのPWM固定 ---
+        ledOptions.pledType = PLEDType::PLED_TYPE_PWM;                    // PLED：ハードウェアPWM
+        initTurboOptions.turboLedType = PLEDType::PLED_TYPE_PWM;          // 連射LED：ハードウェアPWM
 
-        // --- E. 初期起動アニメーション（エフェクト）の強制固定 ---
-        animationOptions.baseAnimationIndex = 1;                          // 起動時は「Static Color (常時点灯)」
-        animationOptions.brightness = 80;                                 // 起動時の輝度 (80/255)
-        animationOptions.staticColorIndex = 2;                            // 初期カラー：Red (MINI Superカラー)
+        // --- E. 初期起動エフェクトの強制固定 ---
+        initAnimationOptions.baseAnimationIndex = 1;                       // 起動時は常時点灯 (Static)
+        initAnimationOptions.brightness = 80;                              // 起動時初期輝度：80
+        initAnimationOptions.staticColorIndex = 2;                         // イメージカラー：Red
 
-        // --- F. 【重要】Protobuf構造体への注入完了確定フラグの完全強制起立 ---
-        // これらをtrueにしないと、Nanopbが変更を認識せず保存時にデフォルト値に戻る「記憶喪失バグ」が起きます。
-        ledOptions.has_dataPin = true;
-        ledOptions.has_ledFormat = true;
-        ledOptions.has_ledLayout = true;
-        ledOptions.has_ledsPerButton = true;
-        ledOptions.has_brightnessMaximum = true;
-        ledOptions.has_brightnessSteps = true;
-        ledOptions.has_caseRGBType = true;
-        ledOptions.has_caseRGBIndex = true;
-        ledOptions.has_caseRGBCount = true;
-        ledOptions.has_pledType = true;
-
+        // --- F. Protobuf構造体へのhasフラグの完全強制起立 ---
+        ledOptions.has_dataPin = true;           ledOptions.has_ledFormat = true;
+        ledOptions.has_ledLayout = true;          ledOptions.has_ledsPerButton = true;
+        ledOptions.has_brightnessMaximum = true;  ledOptions.has_brightnessSteps = true;
+        ledOptions.has_caseRGBType = true;        ledOptions.has_caseRGBIndex = true;
+        ledOptions.has_caseRGBCount = true;        ledOptions.has_pledType = true;
         ledOptions.has_indexB1 = true; ledOptions.has_indexB2 = true; ledOptions.has_indexR2 = true; ledOptions.has_indexL2 = true;
         ledOptions.has_indexL1 = true; ledOptions.has_indexR1 = true; ledOptions.has_indexB4 = true; ledOptions.has_indexB3 = true;
         ledOptions.has_indexUp = true; ledOptions.has_indexDown = true; ledOptions.has_indexLeft = true; ledOptions.has_indexRight = true;
         ledOptions.has_indexS1 = true; ledOptions.has_indexS2 = true; ledOptions.has_indexL3 = true; ledOptions.has_indexR3 = true;
         ledOptions.has_indexA1 = true; ledOptions.has_indexA2 = true;
-        
-        turboOptions.has_turboLedType = true;
-
-        animationOptions.has_baseAnimationIndex = true;
-        animationOptions.has_brightness = true;
-        animationOptions.has_staticColorIndex = true;
+        initTurboOptions.has_turboLedType = true;
+        initAnimationOptions.has_baseAnimationIndex = true; initAnimationOptions.has_brightness = true;
+        initAnimationOptions.has_staticColorIndex = true;
     }
     // =========================================================================
 
@@ -341,23 +317,24 @@ void NeoPicoLEDAddon::setup() {
     ledCount = matrix.getLedCount();
     buttonLedCount = ledCount; 
 
-    // 4. 追加カウント処理
+    // 後半のバニラ処理へ安全に合流（二重定義競合の原因を回避）
     if (ledOptions.pledType == PLED_TYPE_RGB && PLED_COUNT > 0)
         ledCount += PLED_COUNT;
 
-    if (turboOptions.turboLedType == PLED_TYPE_RGB)
+    // 後半で「const TurboOptions& turboOptions = ...」が再宣言されるため、ここでは競合しない一時変数名を使用
+    const TurboOptions& internalTurboOpt = Storage::getInstance().getAddonOptions().turboOptions;
+    if (internalTurboOpt.turboLedType == PLED_TYPE_RGB)
         ledCount += 1;
 
     if (ledOptions.caseRGBType != CASE_RGB_TYPE_NONE ) {
         ledCount += (int)ledOptions.caseRGBCount;
     }
 
-    // PIOセットアップ（上記で注入したGP27や計算された総ledCountが安全に使用されます）
     neopico.Setup(ledOptions.dataPin, ledCount, static_cast<LEDFormat>(ledOptions.ledFormat), pio0, 0);
     neopico.Off(); 
 
     Animation::format = static_cast<LEDFormat>(ledOptions.ledFormat);
-    // （ここから7ページ目の Configure Animation Station 処理へ継続）
+
     
 	// Configure Animation Station
     const AnimationOptions & animationOptions = Storage::getInstance().getAnimationOptions();
