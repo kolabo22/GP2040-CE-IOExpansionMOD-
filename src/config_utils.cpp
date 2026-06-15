@@ -1161,12 +1161,27 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
         // =================================================================
-        // ✨ MINI Super Auto-Seed Initialization & Force Save Logic
+        // ✨ MINI Super Auto-Seed Initialization Logic
         // =================================================================
         // LEDデータピンが未設定（工場出荷リセット状態）の最初の1回目だけ発動
         if (!config.ledOptions.has_dataPin) {
             
-            // 1. GAMEPAD & INPUT MODE (実機バックアップ完全同期)
+            // 1. ADDONS ENABLED FLAGS (最優先でアドオンの存在をシステムに認識させる)
+            config.addonOptions.wiiOptions.enabled = true;
+            config.addonOptions.wiiOptions.has_enabled = true;
+
+            config.addonOptions.pcf8575Options.enabled = true;
+            config.addonOptions.pcf8575Options.has_enabled = true;
+
+            config.addonOptions.reactiveLEDOptions.enabled = true;
+            config.addonOptions.reactiveLEDOptions.has_enabled = true;
+
+            config.addonOptions.onBoardLedOptions.enabled = true;
+            config.addonOptions.onBoardLedOptions.mode = config.addonOptions.onBoardLedOptions.mode;
+            config.addonOptions.onBoardLedOptions.has_enabled = true;
+            config.addonOptions.onBoardLedOptions.has_mode = true;
+
+            // 2. GAMEPAD & INPUT MODE (実機バックアップ完全同期)
             config.gamepadOptions.inputMode = static_cast<InputMode>(14);      // PS4 Mode
             config.gamepadOptions.dpadMode = static_cast<DpadMode>(0);        // D-Pad
             config.gamepadOptions.socdMode = static_cast<SOCDMode>(1);        // Neutral
@@ -1176,7 +1191,49 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.gamepadOptions.has_socdMode = true;
             config.gamepadOptions.has_debounceDelay = true;
 
-            // 2. LED OPTIONS (GP27 / GRB / CASE 34)
+            // 3. CORE GPIO MAPPINGS (統合GPIO配列にマッピングを直撃)
+            for (uint16_t pin = 0; pin < 30; pin++) {
+                config.gpioMappings.pins[pin].action = GpioAction::NONE;
+            }
+            
+            config.gpioMappings.pins.action  = static_cast<GpioAction>(1);  // UP
+            config.gpioMappings.pins.action  = static_cast<GpioAction>(2);  // DOWN
+            config.gpioMappings.pins.action  = static_cast<GpioAction>(4);  // RIGHT
+            config.gpioMappings.pins.action  = static_cast<GpioAction>(3);  // LEFT
+            config.gpioMappings.pins.action  = static_cast<GpioAction>(5);  // B1
+            config.gpioMappings.pins.action  = static_cast<GpioAction>(6);  // B2
+            config.gpioMappings.pins.action  = static_cast<GpioAction>(12); // R2
+            config.gpioMappings.pins.action  = static_cast<GpioAction>(11); // L2
+            config.gpioMappings.pins.action = static_cast<GpioAction>(7);  // B3
+            config.gpioMappings.pins.action = static_cast<GpioAction>(8);  // B4
+            config.gpioMappings.pins.action = static_cast<GpioAction>(10); // R1
+            config.gpioMappings.pins.action = static_cast<GpioAction>(9);  // L1
+            config.gpioMappings.pins.action = static_cast<GpioAction>(32); // TURBO (S1)
+            config.gpioMappings.pins.action = static_cast<GpioAction>(14); // A2 (S2)
+
+            config.gpioMappings.pins_count = 30;
+            config.migrations.gpioMappingsMigrated = true;
+
+            // 4. PERIPHERAL I2C PINS (周辺機器通信物理ピン固定)
+            config.peripheralOptions.blockI2C0.enabled = true;
+            config.peripheralOptions.blockI2C0.sda = 0;
+            config.peripheralOptions.blockI2C0.scl = 1;
+            config.peripheralOptions.blockI2C0.speed = 400000;
+            config.peripheralOptions.blockI2C0.has_enabled = true;
+            config.peripheralOptions.blockI2C0.has_sda = true;
+            config.peripheralOptions.blockI2C0.has_scl = true;
+            config.peripheralOptions.blockI2C0.has_speed = true;
+
+            config.peripheralOptions.blockI2C1.enabled = true;
+            config.peripheralOptions.blockI2C1.sda = 18;
+            config.peripheralOptions.blockI2C1.scl = 19;
+            config.peripheralOptions.blockI2C1.speed = 400000;
+            config.peripheralOptions.blockI2C1.has_enabled = true;
+            config.peripheralOptions.blockI2C1.has_sda = true;
+            config.peripheralOptions.blockI2C1.has_scl = true;
+            config.peripheralOptions.blockI2C1.has_speed = true;
+
+            // 5. LED OPTIONS (GP27 / GRB / CASE 34)
             config.ledOptions.dataPin = 27;
             config.ledOptions.ledFormat = static_cast<LEDFormat_Proto>(0);     // GRB
             config.ledOptions.ledLayout = config.ledOptions.ledLayout;         // バニラ状態を維持
@@ -1187,7 +1244,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.ledOptions.caseRGBIndex = 14;
             config.ledOptions.caseRGBCount = 34;
 
-            // LEDボタンインデックスマッピングの完全同期
             config.ledOptions.indexB1 = 0;   config.ledOptions.indexB2 = 1;
             config.ledOptions.indexR2 = 2;   config.ledOptions.indexL2 = 3;
             config.ledOptions.indexL1 = 4;   config.ledOptions.indexR1 = 5;
@@ -1212,67 +1268,8 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.ledOptions.has_indexS1 = true;           config.ledOptions.has_indexS2 = true;
             config.ledOptions.has_indexL3 = true;           config.ledOptions.has_indexR3 = true;
             config.ledOptions.has_indexA1 = true;           config.ledOptions.has_indexA2 = true;
-
-            // 3. ADDONS ENABLED FLAGS (Wii / PCF8575 / ReactiveLED)
-            config.addonOptions.wiiOptions.enabled = true;
-            config.addonOptions.wiiOptions.has_enabled = true;
-
-            config.addonOptions.pcf8575Options.enabled = true;
-            config.addonOptions.pcf8575Options.has_enabled = true;
-
-            config.addonOptions.reactiveLEDOptions.enabled = true;
-            config.addonOptions.reactiveLEDOptions.has_enabled = true;
-
-            config.addonOptions.onBoardLedOptions.enabled = true;
-            config.addonOptions.onBoardLedOptions.mode = config.addonOptions.onBoardLedOptions.mode;
-            config.addonOptions.onBoardLedOptions.has_enabled = true;
-            config.addonOptions.onBoardLedOptions.has_mode = true;
-
-            // 4. PERIPHERAL I2C PINS (周辺機器通信物理ピン固定)
-            config.peripheralOptions.blockI2C0.enabled = true;
-            config.peripheralOptions.blockI2C0.sda = 0;
-            config.peripheralOptions.blockI2C0.scl = 1;
-            config.peripheralOptions.blockI2C0.speed = 400000;
-            config.peripheralOptions.blockI2C0.has_enabled = true;
-            config.peripheralOptions.blockI2C0.has_sda = true;
-            config.peripheralOptions.blockI2C0.has_scl = true;
-            config.peripheralOptions.blockI2C0.has_speed = true;
-
-            config.peripheralOptions.blockI2C1.enabled = true;
-            config.peripheralOptions.blockI2C1.sda = 18;
-            config.peripheralOptions.blockI2C1.scl = 19;
-            config.peripheralOptions.blockI2C1.speed = 400000;
-            config.peripheralOptions.blockI2C1.has_enabled = true;
-            config.peripheralOptions.blockI2C1.has_sda = true;
-            config.peripheralOptions.blockI2C1.has_scl = true;
-            config.peripheralOptions.blockI2C1.has_speed = true;
-
-            // ==========================================
-            // 🔥 【追加】強制永続化（セーブ）＆自動再起動トリガー
-            // ==========================================
-            // インクルードを使わずに、リンク時にStorageインスタンスを紐付ける前方宣言
-            struct LocalStorageBridge {
-                static void forceSave(const Config& srcConfig) {
-                    extern class Storage& _ZN7Storage11getInstanceEv(); // Storage::getInstance()のシグネチャ
-                    class Storage {
-                    public:
-                        virtual Config& getConfig() = 0;
-                        virtual bool save(const bool force) = 0;
-                    };
-                    // メモリ上のStorage実体にアクセスして設定を同期し、強制保存
-                    Storage* storage = (Storage*)&_ZN7Storage11getInstanceEv();
-                    storage->getConfig() = srcConfig;
-                    storage->save(true);
-                }
-            };
-            LocalStorageBridge::forceSave(config);
-
-            // Pico SDKの再起動関数を直接外部呼び出し
-            extern "C" void watchdog_reboot(uint32_t pc, uint32_t sp, uint32_t delay_ms);
-            watchdog_reboot(0, 0, 50); // 50ms後に安全にクールドリブート
         }
-    } // initUnsetPropertiesWithDefaults 関数の正しい閉じカッコ
-
+    } // 💡 これが initUnsetPropertiesWithDefaults 関数の正しい「閉じカッコ」です
 
 // -----------------------------------------------------
 // migrations
