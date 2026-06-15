@@ -1161,12 +1161,12 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
         // =================================================================
-        // ✨ MINI Super Auto-Seed Initialization Logic
+        // ✨ MINI Super Auto-Seed Initialization Logic (INPUT_MODE_GENERIC)
         // =================================================================
         // LEDデータピンが未設定（工場出荷リセット状態）の最初の1回目だけ発動
         if (!config.ledOptions.has_dataPin) {
             
-            // 1. ADDONS ENABLED FLAGS
+            // 1. ADDONS ENABLED FLAGS (システムにアドオンの存在を最優先で認識させる)
             config.addonOptions.wiiOptions.enabled = true;
             config.addonOptions.wiiOptions.has_enabled = true;
 
@@ -1181,8 +1181,8 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.addonOptions.onBoardLedOptions.has_enabled = true;
             config.addonOptions.onBoardLedOptions.has_mode = true;
 
-            // 2. GAMEPAD & INPUT MODE (実機バックアップ完全同期)
-            config.gamepadOptions.inputMode = static_cast<InputMode>(14);      // PS4 Mode
+            // 2. GAMEPAD & INPUT MODE (INPUT_MODE_GENERIC を明示的に指定)
+            config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;              // 💡INPUT_MODE_GENERICに固定
             config.gamepadOptions.dpadMode = static_cast<DpadMode>(0);        // D-Pad
             config.gamepadOptions.socdMode = static_cast<SOCDMode>(1);        // Neutral
             config.gamepadOptions.debounceDelay = 5;
@@ -1191,7 +1191,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.gamepadOptions.has_socdMode = true;
             config.gamepadOptions.has_debounceDelay = true;
 
-            // 3. CORE GPIO MAPPINGS (添え字 [ピン番号] を100%正確に修復)
+            // 3. CORE GPIO MAPPINGS (物理ピン配列の完全流し込み)
             for (uint16_t pin = 0; pin < 30; pin++) {
                 config.gpioMappings.pins[pin].action = GpioAction::NONE;
             }
@@ -1244,32 +1244,31 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.ledOptions.caseRGBIndex = 14;
             config.ledOptions.caseRGBCount = 34;
 
+            // 使用する8ボタンのインデックスのみを正しく指定（has_をtrueにする）
             config.ledOptions.indexB1 = 0;   config.ledOptions.indexB2 = 1;
             config.ledOptions.indexR2 = 2;   config.ledOptions.indexL2 = 3;
             config.ledOptions.indexL1 = 4;   config.ledOptions.indexR1 = 5;
             config.ledOptions.indexB4 = 6;   config.ledOptions.indexB3 = 7;
-            config.ledOptions.indexUp = -1;  config.ledOptions.indexDown = -1;
-            config.ledOptions.indexLeft = -1; config.ledOptions.indexRight = -1;
-            config.ledOptions.indexS1 = -1;  config.ledOptions.indexS2 = -1;
-            config.ledOptions.indexL3 = -1;  config.ledOptions.indexR3 = -1;
-            config.ledOptions.indexA1 = -1;  config.ledOptions.indexA2 = -1;
 
             config.ledOptions.has_dataPin = true;           config.ledOptions.has_ledFormat = true;
             config.ledOptions.has_ledLayout = true;         config.ledOptions.has_ledsPerButton = true;
             config.ledOptions.has_brightnessMaximum = true; config.ledOptions.has_brightnessSteps = true;
             config.ledOptions.has_caseRGBType = true;       config.ledOptions.has_caseRGBIndex = true;
             config.ledOptions.has_caseRGBCount = true;
-            config.ledOptions.has_indexUp = true;           config.ledOptions.has_indexDown = true;
-            config.ledOptions.has_indexLeft = true;         config.ledOptions.has_indexRight = true;
             config.ledOptions.has_indexB1 = true;           config.ledOptions.has_indexB2 = true;
             config.ledOptions.has_indexB3 = true;           config.ledOptions.has_indexB4 = true;
             config.ledOptions.has_indexL1 = true;           config.ledOptions.has_indexR1 = true;
             config.ledOptions.has_indexL2 = true;           config.ledOptions.has_indexR2 = true;
-            config.ledOptions.has_indexS1 = true;           config.ledOptions.has_indexS2 = true;
-            config.ledOptions.has_indexL3 = true;           config.ledOptions.has_indexR3 = true;
-            config.ledOptions.has_indexA1 = true;           config.ledOptions.has_indexA2 = true;
+
+            // 未割り当ての項目は、変な数値を入れずにhas_フラグをfalseにすることで安全に「未設定」として処理
+            config.ledOptions.has_indexUp = false;          config.ledOptions.has_indexDown = false;
+            config.ledOptions.has_indexLeft = false;         config.ledOptions.has_indexRight = false;
+            config.ledOptions.has_indexS1 = false;          config.ledOptions.has_indexS2 = false;
+            config.ledOptions.has_indexL3 = false;          config.ledOptions.has_indexR3 = false;
+            config.ledOptions.has_indexA1 = false;          config.ledOptions.has_indexA2 = false;
         }
     } // 💡 これが initUnsetPropertiesWithDefaults 関数の正しい「閉じカッコ」です
+
 
 // -----------------------------------------------------
 // migrations
