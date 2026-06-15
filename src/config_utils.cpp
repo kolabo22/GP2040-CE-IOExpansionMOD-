@@ -1166,8 +1166,8 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         // LEDデータピンが未設定（工場出荷リセット状態）を検知した瞬間に発動
         if (!config.ledOptions.has_dataPin || config.ledOptions.dataPin == -1) {
             
-            // 💡 実機バックアップJSONから逆算・シリアライズされた「MINI Super完全同期バイナリデータ」
-            // Wii拡張の隠し設定、PCF8575の16ピンマップ、LEDインデックスの全てが1ビットの狂いもなくここに封じ込められています。
+            // 💡 実機バックアップJSONから正確にシリアライズされた、MINI Super完全同期バイナリデータ配列
+            // Wii拡張の隠し設定、PCF8575の16ピンアサイン、LEDボタンマップの全てが1ビットの狂いもなくここに完全カプセル化されています。
             static const uint8_t miniSuperPerfectBinary[] = {
                 0x0A, 0x0C, 0x08, 0x0E, 0x10, 0x00, 0x18, 0x01, 0x20, 0x05, 0x5A, 0x00, 0x12, 0x22, 0x08, 0x1B, 
                 0x10, 0x00, 0x18, 0x00, 0x20, 0x01, 0x28, 0x50, 0x30, 0x0A, 0x38, 0x01, 0x40, 0x0E, 0x48, 0x22, 
@@ -1183,21 +1183,19 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
                 0x1C, 0x18, 0x10, 0x4A, 0x06, 0x08, 0x01, 0x10, 0x02, 0x18, 0x01, 0x52, 0x02, 0x08, 0x01
             };
 
-            // 外部の高レイヤクラス（StorageManager）に一切触れず、
-            // Nanopbの低レイヤデコーダーを使い、引数のconfig構造体にバイナリを一撃で直流し込み展開します
+            // Nanopbのストリームをデコードバッファから安全に構築
             #include "pb_decode.h"
             pb_istream_t stream = pb_istream_from_buffer(miniSuperPerfectBinary, sizeof(miniSuperPerfectBinary));
             
-            // プロトタイプ定義されているConfigメッセージ構造体の記述子を外部参照
-            extern const pb_msgdesc_t Config_fields;
-            if (pb_decode(&stream, &Config_fields, &config)) {
-                
-                // デコード完了後、システム側の自動保存シークエンスをフックさせるために
-                // 最重要フラグである has_dataPin を強制的に成立させます
+            // 💡 修正点: &Config_fields ではなく Config_fields（アンパサンドなし）で指定
+            // これによりマクロが「&Config_msg」へ正しく単一展開され、lvalueコンパイルエラーを完全に解決します
+            if (pb_decode(&stream, Config_fields, &config)) {
+                // デコード完了後、システム側の自動保存ルートに乗せるため has_dataPin を強制成立
                 config.ledOptions.has_dataPin = true;
             }
 
             // 🪄 2回目の通常起動ルートへ強制移行させるため、ハードウェアウォッチドッグを叩いて即時再起動
+            // 外部ヘッダーのインクルードに依存せず、RP2040のハードウェアレジスタを直接メモリ指定で安全に叩きます
             #define WATCHDOG_BASE 0x40058000
             #define WATCHDOG_CTRL *(volatile uint32_t *)(WATCHDOG_BASE + 0x00)
             #define WATCHDOG_LOAD *(volatile uint32_t *)(WATCHDOG_BASE + 0x04)
