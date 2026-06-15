@@ -250,56 +250,6 @@ void NeoPicoLEDAddon::setup() {
     AnimationOptions& initAnimationOptions = Storage::getInstance().getAnimationOptions();
     TurboOptions& initTurboOptions = Storage::getInstance().getAddonOptions().turboOptions;
 
-    // =========================================================================
-    // ==== 【MINI Super 専用】WebConfig設定リセット時（データ空）の自動初期値注入 ====
-    // =========================================================================
-    if (!ledOptions.has_dataPin || ledOptions.dataPin == 255 || ledOptions.dataPin == -1) {
-        
-        // --- A. 物理LED基本仕様の強制固定（コンパイラ準拠の型指定） ---
-        ledOptions.dataPin = 27;                                          // LEDデータ信号：GP27
-        ledOptions.ledFormat = static_cast<LEDFormat_Proto>(1);           // 1: LED_FORMAT_GRB (_Protoが必要)
-        ledOptions.ledLayout = static_cast<ButtonLayout>(12);             // 12: BUTTON_LAYOUT_ARCADE (コンパイラ指摘通り)
-        ledOptions.ledsPerButton = 1;                                     // ボタンあたり1Pixel
-        ledOptions.brightnessMaximum = 80;                                // 最大輝度上限：80
-        ledOptions.brightnessSteps = 10;                                  // 輝度ステップ数：10
-
-        // --- B. イルミネーション（ケースRGB）完全同期仕様設定 ---
-        ledOptions.caseRGBType = static_cast<CaseRGBType>(2);             // 2: CASE_RGB_TYPE_LINKED
-        ledOptions.caseRGBIndex = 14;                                     // 14番目のLEDから開始
-        ledOptions.caseRGBCount = 34;                                     // ケースRGB総数：34個 (14〜47番目)
-
-        // --- C. 専有8ボタンマトリックス配置＆バウンダリ修正の自動流し込み ---
-        ledOptions.indexB1 = 0;   ledOptions.indexB2 = 1;   ledOptions.indexR2 = 2;   ledOptions.indexL2 = 3;
-        ledOptions.indexL1 = 4;   ledOptions.indexR1 = 5;   ledOptions.indexB4 = 6;   ledOptions.indexB3 = 7;
-        ledOptions.indexUp = 48;  ledOptions.indexDown = 49; ledOptions.indexLeft = 50; ledOptions.indexRight = 51;
-        ledOptions.indexS1 = -1;  ledOptions.indexS2 = -1;  ledOptions.indexL3 = -1;  ledOptions.indexR3 = -1;
-        ledOptions.indexA1 = -1;  ledOptions.indexA2 = -1;
-
-        // --- D. プレイヤーLED (PLED) および連射LEDのPWM固定 ---
-        ledOptions.pledType = static_cast<PLEDType>(1);                   // 1: PLED_TYPE_PWM
-        initTurboOptions.turboLedType = static_cast<PLEDType>(1);         // 1: PLED_TYPE_PWM
-
-        // --- E. 初期起動エフェクトの強制固定 ---
-        initAnimationOptions.baseAnimationIndex = 1;                       // 起動時は常時点灯 (Static)
-        initAnimationOptions.brightness = 80;                              // 起動時初期輝度：80
-        initAnimationOptions.staticColorIndex = 2;                         // イメージカラー：Red
-
-        // --- F. Protobuf構造体へのhasフラグの完全強制起立 ---
-        ledOptions.has_dataPin = true;           ledOptions.has_ledFormat = true;
-        ledOptions.has_ledLayout = true;          ledOptions.has_ledsPerButton = true;
-        ledOptions.has_brightnessMaximum = true;  ledOptions.has_brightnessSteps = true;
-        ledOptions.has_caseRGBType = true;        ledOptions.has_caseRGBIndex = true;
-        ledOptions.has_caseRGBCount = true;        ledOptions.has_pledType = true;
-        ledOptions.has_indexB1 = true; ledOptions.has_indexB2 = true; ledOptions.has_indexR2 = true; ledOptions.has_indexL2 = true;
-        ledOptions.has_indexL1 = true; ledOptions.has_indexR1 = true; ledOptions.has_indexB4 = true; ledOptions.has_indexB3 = true;
-        ledOptions.has_indexUp = true; ledOptions.has_indexDown = true; ledOptions.has_indexLeft = true; ledOptions.has_indexRight = true;
-        ledOptions.has_indexS1 = true; ledOptions.has_indexS2 = true; ledOptions.has_indexL3 = true; ledOptions.has_indexR3 = true;
-        ledOptions.has_indexA1 = true; ledOptions.has_indexA2 = true;
-        initTurboOptions.has_turboLedType = true;
-        initAnimationOptions.has_baseAnimationIndex = true; initAnimationOptions.has_brightness = true;
-        initAnimationOptions.has_staticColorIndex = true;
-    }
-    // =========================================================================
 
     // 2. 【ここからバニラ合流】プロセッサ用ゲームパッドインスタンスの初期化
     Gamepad * gamepad = Storage::getInstance().GetProcessedGamepad();
