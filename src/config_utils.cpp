@@ -1161,12 +1161,22 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
         // =================================================================
-        // ✨ MINI Super Auto-Seed Initialization Logic (INPUT_MODE_GENERIC)
+        // ✨ MINI Super Auto-Seed Initialization Logic (Final Overwrite)
         // =================================================================
-        // LEDデータピンが未設定（工場出荷リセット状態）の最初の1回目だけ発動
-        if (!config.ledOptions.has_dataPin) {
+        // すべてのデフォルト値が適用された「直後」に割り込み、値をMINI Super仕様に強制書き換え
+        if (config.ledOptions.dataPin == -1 || !config.ledOptions.has_dataPin) {
             
-            // 1. ADDONS ENABLED FLAGS (システムにアドオンの存在を最優先で認識させる)
+            // 1. INPUT MODE & GAMEPAD OPTIONS
+            config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;
+            config.gamepadOptions.dpadMode = static_cast<DpadMode>(0);
+            config.gamepadOptions.socdMode = static_cast<SOCDMode>(1);
+            config.gamepadOptions.debounceDelay = 5;
+            config.gamepadOptions.has_inputMode = true;
+            config.gamepadOptions.has_dpadMode = true;
+            config.gamepadOptions.has_socdMode = true;
+            config.gamepadOptions.has_debounceDelay = true;
+
+            // 2. ADDONS ENABLED FLAGS
             config.addonOptions.wiiOptions.enabled = true;
             config.addonOptions.wiiOptions.has_enabled = true;
 
@@ -1177,44 +1187,32 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.addonOptions.reactiveLEDOptions.has_enabled = true;
 
             config.addonOptions.onBoardLedOptions.enabled = true;
-            config.addonOptions.onBoardLedOptions.mode = config.addonOptions.onBoardLedOptions.mode;
+            config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(2);
             config.addonOptions.onBoardLedOptions.has_enabled = true;
             config.addonOptions.onBoardLedOptions.has_mode = true;
 
-            // 2. GAMEPAD & INPUT MODE (INPUT_MODE_GENERIC を明示的に指定)
-            config.gamepadOptions.inputMode = INPUT_MODE_GENERIC;              // 💡INPUT_MODE_GENERICに固定
-            config.gamepadOptions.dpadMode = static_cast<DpadMode>(0);        // D-Pad
-            config.gamepadOptions.socdMode = static_cast<SOCDMode>(1);        // Neutral
-            config.gamepadOptions.debounceDelay = 5;
-            config.gamepadOptions.has_inputMode = true;
-            config.gamepadOptions.has_dpadMode = true;
-            config.gamepadOptions.has_socdMode = true;
-            config.gamepadOptions.has_debounceDelay = true;
-
-            // 3. CORE GPIO MAPPINGS (物理ピン配列の完全流し込み)
+            // 3. CORE GPIO MAPPINGS (統合ピン配列を上書き)
             for (uint16_t pin = 0; pin < 30; pin++) {
                 config.gpioMappings.pins[pin].action = GpioAction::NONE;
             }
-            
-            config.gpioMappings.pins[2].action  = static_cast<GpioAction>(1);  // GP2: UP
-            config.gpioMappings.pins[3].action  = static_cast<GpioAction>(2);  // GP3: DOWN
-            config.gpioMappings.pins[4].action  = static_cast<GpioAction>(4);  // GP4: RIGHT
-            config.gpioMappings.pins[5].action  = static_cast<GpioAction>(3);  // GP5: LEFT
-            config.gpioMappings.pins[6].action  = static_cast<GpioAction>(5);  // GP6: B1
-            config.gpioMappings.pins[7].action  = static_cast<GpioAction>(6);  // GP7: B2
-            config.gpioMappings.pins[8].action  = static_cast<GpioAction>(12); // GP8: R2
-            config.gpioMappings.pins[9].action  = static_cast<GpioAction>(11); // GP9: L2
-            config.gpioMappings.pins[10].action = static_cast<GpioAction>(7);  // GP10: B3
-            config.gpioMappings.pins[11].action = static_cast<GpioAction>(8);  // GP11: B4
-            config.gpioMappings.pins[12].action = static_cast<GpioAction>(10); // GP12: R1
-            config.gpioMappings.pins[13].action = static_cast<GpioAction>(9);  // GP13: L1
-            config.gpioMappings.pins[14].action = static_cast<GpioAction>(32); // GP14: TURBO
-            config.gpioMappings.pins[17].action = static_cast<GpioAction>(14); // GP17: A2 (S2)
-
+            config.gpioMappings.pins[2].action  = static_cast<GpioAction>(1);  // UP
+            config.gpioMappings.pins[3].action  = static_cast<GpioAction>(2);  // DOWN
+            config.gpioMappings.pins[4].action  = static_cast<GpioAction>(4);  // RIGHT
+            config.gpioMappings.pins[5].action  = static_cast<GpioAction>(3);  // LEFT
+            config.gpioMappings.pins[6].action  = static_cast<GpioAction>(5);  // B1
+            config.gpioMappings.pins[7].action  = static_cast<GpioAction>(6);  // B2
+            config.gpioMappings.pins[8].action  = static_cast<GpioAction>(12); // R2
+            config.gpioMappings.pins[9].action  = static_cast<GpioAction>(11); // L2
+            config.gpioMappings.pins[10].action = static_cast<GpioAction>(7);  // B3
+            config.gpioMappings.pins[11].action = static_cast<GpioAction>(8);  // B4
+            config.gpioMappings.pins[12].action = static_cast<GpioAction>(10); // R1
+            config.gpioMappings.pins[13].action = static_cast<GpioAction>(9);  // L1
+            config.gpioMappings.pins[14].action = static_cast<GpioAction>(32); // TURBO
+            config.gpioMappings.pins[17].action = static_cast<GpioAction>(14); // A2 (S2)
             config.gpioMappings.pins_count = 30;
             config.migrations.gpioMappingsMigrated = true;
 
-            // 4. PERIPHERAL I2C PINS (周辺機器通信物理ピン固定)
+            // 4. PERIPHERAL I2C PINS
             config.peripheralOptions.blockI2C0.enabled = true;
             config.peripheralOptions.blockI2C0.sda = 0;
             config.peripheralOptions.blockI2C0.scl = 1;
@@ -1236,15 +1234,12 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             // 5. LED OPTIONS (GP27 / GRB / CASE 34)
             config.ledOptions.dataPin = 27;
             config.ledOptions.ledFormat = static_cast<LEDFormat_Proto>(0);     // GRB
-            config.ledOptions.ledLayout = config.ledOptions.ledLayout;
             config.ledOptions.ledsPerButton = 1;
             config.ledOptions.brightnessMaximum = 80;
             config.ledOptions.brightnessSteps = 10;
-            config.ledOptions.caseRGBType = config.ledOptions.caseRGBType;
             config.ledOptions.caseRGBIndex = 14;
             config.ledOptions.caseRGBCount = 34;
 
-            // 使用する8ボタンのインデックスのみを正しく指定（has_をtrueにする）
             config.ledOptions.indexB1 = 0;   config.ledOptions.indexB2 = 1;
             config.ledOptions.indexR2 = 2;   config.ledOptions.indexL2 = 3;
             config.ledOptions.indexL1 = 4;   config.ledOptions.indexR1 = 5;
@@ -1260,7 +1255,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.ledOptions.has_indexL1 = true;           config.ledOptions.has_indexR1 = true;
             config.ledOptions.has_indexL2 = true;           config.ledOptions.has_indexR2 = true;
 
-            // 未割り当ての項目は、変な数値を入れずにhas_フラグをfalseにすることで安全に「未設定」として処理
             config.ledOptions.has_indexUp = false;          config.ledOptions.has_indexDown = false;
             config.ledOptions.has_indexLeft = false;         config.ledOptions.has_indexRight = false;
             config.ledOptions.has_indexS1 = false;          config.ledOptions.has_indexS2 = false;
