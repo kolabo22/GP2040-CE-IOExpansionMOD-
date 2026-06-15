@@ -2750,7 +2750,7 @@ bool ConfigUtils::fromJSON(Config& config, const char* data, size_t dataLen)
     return true;
 }
 #include "hardware/watchdog.h"
-#include "storage.h"
+
 
 void injectMiniSuperDefaultStorage(Config& config) {
     // 💡 判定の鍵：LEDデータピンの初期設定フラグ（has_dataPin）がまだ立っていない＝「工場出荷リセット状態」と判定
