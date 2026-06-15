@@ -1161,9 +1161,9 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
 
         // =================================================================
-        // 🛠️ MINI Super Auto-Seed Initialization Logic
-        // ==========================================
-        // LEDのデータピンが未設定（工場出荷リセット状態）の場合のみ発動
+        // ✨ MINI Super Auto-Seed Initialization Logic (1155行目〜想定)
+        // =================================================================
+        // LEDデータピンが未設定（工場出荷リセット状態）の最初の1回目だけ発動
         if (!config.ledOptions.has_dataPin) {
             
             // 1. GAMEPAD & INPUT MODE (実機バックアップ完全同期)
@@ -1171,7 +1171,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.gamepadOptions.dpadMode = static_cast<DpadMode>(0);        // D-Pad
             config.gamepadOptions.socdMode = static_cast<SOCDMode>(1);        // Neutral
             config.gamepadOptions.debounceDelay = 5;
-            
             config.gamepadOptions.has_inputMode = true;
             config.gamepadOptions.has_dpadMode = true;
             config.gamepadOptions.has_socdMode = true;
@@ -1180,15 +1179,15 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             // 2. LED OPTIONS (GP27 / GRB / CASE 34)
             config.ledOptions.dataPin = 27;
             config.ledOptions.ledFormat = static_cast<LEDFormat_Proto>(0);     // GRB
-            config.ledOptions.ledLayout = config.ledOptions.ledLayout;         // バニラ維持
+            config.ledOptions.ledLayout = config.ledOptions.ledLayout;         // バニラ状態を維持
             config.ledOptions.ledsPerButton = 1;
             config.ledOptions.brightnessMaximum = 80;
             config.ledOptions.brightnessSteps = 10;
-            config.ledOptions.caseRGBType = config.ledOptions.caseRGBType;     // バニラ維持
+            config.ledOptions.caseRGBType = config.ledOptions.caseRGBType;     // バニラ状態を維持
             config.ledOptions.caseRGBIndex = 14;
             config.ledOptions.caseRGBCount = 34;
 
-            // LEDボタンインデックスの完全同期
+            // LEDボタンインデックスマッピングの完全同期
             config.ledOptions.indexB1 = 0;   config.ledOptions.indexB2 = 1;
             config.ledOptions.indexR2 = 2;   config.ledOptions.indexL2 = 3;
             config.ledOptions.indexL1 = 4;   config.ledOptions.indexR1 = 5;
@@ -1214,7 +1213,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.ledOptions.has_indexL3 = true;           config.ledOptions.has_indexR3 = true;
             config.ledOptions.has_indexA1 = true;           config.ledOptions.has_indexA2 = true;
 
-            // 3. ADDONS ENABLED FLAGS
+            // 3. ADDONS ENABLED FLAGS (Wii / PCF8575 / ReactiveLED)
             config.addonOptions.wiiOptions.enabled = true;
             config.addonOptions.wiiOptions.has_enabled = true;
 
@@ -1229,7 +1228,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.addonOptions.onBoardLedOptions.has_enabled = true;
             config.addonOptions.onBoardLedOptions.has_mode = true;
 
-            // 4. PERIPHERAL I2C PINS
+            // 4. PERIPHERAL I2C PINS (周辺機器通信物理ピン固定)
             config.peripheralOptions.blockI2C0.enabled = true;
             config.peripheralOptions.blockI2C0.sda = 0;
             config.peripheralOptions.blockI2C0.scl = 1;
@@ -1248,16 +1247,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.peripheralOptions.blockI2C1.has_scl = true;
             config.peripheralOptions.blockI2C1.has_speed = true;
         }
-
-					 // initUnsetPropertiesWithDefaults 関数の最末尾、最後のマクロ処理が終わった直後
-    				injectMiniSuperDefaultStorage(config);
-    } // 💡 initUnsetPropertiesWithDefaults 関数の閉じカッコ
-	
-
-#include "hardware/watchdog.h"
-
-// 💡 正しいヘッダーのパスを指定してStorageクラスをインクルードします
-#include "headers/storagemanager.h"
+    } // 💡 これが initUnsetPropertiesWithDefaults 関数の正しい「閉じカッコ」です
 
 
 // -----------------------------------------------------
