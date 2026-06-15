@@ -6,28 +6,20 @@
 #include "config.pb.h"
 
 bool WiiExtensionInput::available() {
-    // 拡張IOエクスパンダーMODブランチのバニラに準拠した変数名「options」で取得します
-    const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
-
-    // 【文鎮化・インジェクション遮断バグの永久追放】
-    // ボード定義（BoardConfig.h）側で WII_EXTENSION_ENABLED が強制有効化されているか、
-    // WebConfig側で明示的に有効（enabled == true）な場合であれば、起動処理を正常に通します。
-    // 旧コードにあった「classic.buttonA == 0 のときに終了する判定」を完全削除したため、
-    // 設定リセット直後（データが空のとき）でも、10ページ目の自動プロファイル注入処理まで確実に到達します。
+    // 【警告の解消】#ifdefの外側から内側にスコープを移動し、未使用警告を完全シャットアウト
     #ifdef WII_EXTENSION_ENABLED
     bool shouldEnable = true;
     #else
+    const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
     bool shouldEnable = options.enabled;
     #endif
 
-    if (!shouldEnable) {
-        return false;
-    }
+    if (!shouldEnable) return false;
 
-    // 周辺機器管理からI2C1インスタンスを安全に確保（デッドロック防止のため begin() は setup() へ保留）
+    // 周辺機器管理からI2C1インスタンスを安全に確保
     auto i2c1_inst = PeripheralManager::getInstance().getI2C(1); 
     if (i2c1_inst != nullptr) {
-        if (wii == nullptr) { // 二重生成防止の安全弁
+        if (wii == nullptr) {
             wii = new WiiExtensionDevice();
         }
         wii->setI2C(i2c1_inst);
