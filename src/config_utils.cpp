@@ -1169,137 +1169,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 // 💡 正しいヘッダーのパスを指定してStorageクラスをインクルードします
 #include "headers/storagemanager.h"
 
-void injectMiniSuperDefaultStorage(Config& config) {
-    // Detect factory reset state via uninitialized LED data pin flag
-    if (!config.ledOptions.has_dataPin) {
-        
-        // ==========================================
-        // 1. GAMEPAD & INPUT MODE
-        // ==========================================
-        config.gamepadOptions.inputMode = static_cast<InputMode>(14);      // INPUT_MODE_PS4
-        config.gamepadOptions.dpadMode = static_cast<DpadMode>(0);        // DPAD_MODE_DIGITAL
-        config.gamepadOptions.socdMode = static_cast<SOCDMode>(1);        // SOCD_MODE_NEUTRAL
-        config.gamepadOptions.debounceDelay = 5;
-        
-        config.gamepadOptions.has_inputMode = true;
-        config.gamepadOptions.has_dpadMode = true;
-        config.gamepadOptions.has_socdMode = true;
-        config.gamepadOptions.has_debounceDelay = true;
-
-        // ==========================================
-        // 2. CORE GPIO MAPPINGS
-        // ==========================================
-        for (uint16_t pin = 0; pin < 30; pin++) {
-            config.gpioMappings.pins[pin].action = GpioAction::NONE;
-        }
-        
-        config.gpioMappings.pins[2].action  = static_cast<GpioAction>(1);  // BUTTON_PRESS_UP
-        config.gpioMappings.pins[3].action  = static_cast<GpioAction>(2);  // BUTTON_PRESS_DOWN
-        config.gpioMappings.pins[4].action  = static_cast<GpioAction>(4);  // BUTTON_PRESS_RIGHT
-        config.gpioMappings.pins[5].action  = static_cast<GpioAction>(3);  // BUTTON_PRESS_LEFT
-        config.gpioMappings.pins[6].action  = static_cast<GpioAction>(5);  // BUTTON_PRESS_B1
-        config.gpioMappings.pins[7].action  = static_cast<GpioAction>(6);  // BUTTON_PRESS_B2
-        config.gpioMappings.pins[8].action  = static_cast<GpioAction>(12); // BUTTON_PRESS_R2
-        config.gpioMappings.pins[9].action  = static_cast<GpioAction>(11); // BUTTON_PRESS_L2
-        config.gpioMappings.pins[10].action = static_cast<GpioAction>(7);  // BUTTON_PRESS_B3
-        config.gpioMappings.pins[11].action = static_cast<GpioAction>(8);  // BUTTON_PRESS_B4
-        config.gpioMappings.pins[12].action = static_cast<GpioAction>(10); // BUTTON_PRESS_R1
-        config.gpioMappings.pins[13].action = static_cast<GpioAction>(9);  // BUTTON_PRESS_L1
-        config.gpioMappings.pins[14].action = static_cast<GpioAction>(32); // BUTTON_PRESS_TURBO
-        config.gpioMappings.pins[17].action = static_cast<GpioAction>(14); // BUTTON_PRESS_FN (S2)
-
-        config.gpioMappings.pins_count = 30;
-        config.migrations.gpioMappingsMigrated = true;
-
-        // ==========================================
-        // 3. LED OPTIONS (GP27 / GRB)
-        // ==========================================
-        config.ledOptions.dataPin = 27;
-        config.ledOptions.ledFormat = static_cast<LEDFormat_Proto>(0);     // LED_FORMAT_GRB
-        config.ledOptions.ledLayout = static_cast<ButtonLayout_Proto>(0);  // BUTTON_LAYOUT_ARCADE
-        config.ledOptions.ledsPerButton = 1;
-        config.ledOptions.brightnessMaximum = 80;
-        config.ledOptions.brightnessSteps = 10;
-        config.ledOptions.caseRGBType = static_cast<CaseRGBType_Proto>(1);
-        config.ledOptions.caseRGBIndex = 14;
-        config.ledOptions.caseRGBCount = 34;
-
-        config.ledOptions.indexB1 = 0; config.ledOptions.indexB2 = 1;
-        config.ledOptions.indexR2 = 2; config.ledOptions.indexL2 = 3;
-        config.ledOptions.indexL1 = 4; config.ledOptions.indexR1 = 5;
-        config.ledOptions.indexB4 = 6; config.ledOptions.indexB3 = 7;
-        
-        config.ledOptions.indexUp = -1;    config.ledOptions.indexDown = -1;
-        config.ledOptions.indexLeft = -1;  config.ledOptions.indexRight = -1;
-        config.ledOptions.indexS1 = -1;    config.ledOptions.indexS2 = -1;
-        config.ledOptions.indexL3 = -1;    config.ledOptions.indexR3 = -1;
-        config.ledOptions.indexA1 = -1;    config.ledOptions.indexA2 = -1;
-
-        config.ledOptions.has_dataPin = true;           config.ledOptions.has_ledFormat = true;
-        config.ledOptions.has_ledLayout = true;         config.ledOptions.has_ledsPerButton = true;
-        config.ledOptions.has_brightnessMaximum = true; config.ledOptions.has_brightnessSteps = true;
-        config.ledOptions.has_caseRGBType = true;       config.ledOptions.has_caseRGBIndex = true;
-        config.ledOptions.has_caseRGBCount = true;
-        config.ledOptions.has_indexUp = true;           config.ledOptions.has_indexDown = true;
-        config.ledOptions.has_indexLeft = true;         config.ledOptions.has_indexRight = true;
-        config.ledOptions.has_indexB1 = true;           config.ledOptions.has_indexB2 = true;
-        config.ledOptions.has_indexB3 = true;           config.ledOptions.has_indexB4 = true;
-        config.ledOptions.has_indexL1 = true;           config.ledOptions.has_indexR1 = true;
-        config.ledOptions.has_indexL2 = true;           config.ledOptions.has_indexR2 = true;
-        config.ledOptions.has_indexS1 = true;           config.ledOptions.has_indexS2 = true;
-        config.ledOptions.has_indexL3 = true;           config.ledOptions.has_indexR3 = true;
-        config.ledOptions.has_indexA1 = true;           config.ledOptions.has_indexA2 = true;
-
-        // ==========================================
-        // 4. ADDONS ENABLED FLAGS
-        // ==========================================
-        config.addonOptions.wiiOptions.enabled = true;
-        config.addonOptions.wiiOptions.has_enabled = true;
-
-        config.addonOptions.pcf8575Options.enabled = true;
-        config.addonOptions.pcf8575Options.has_enabled = true;
-
-        config.addonOptions.reactiveLEDOptions.enabled = true;
-        config.addonOptions.reactiveLEDOptions.has_enabled = true;
-
-        config.addonOptions.onBoardLedOptions.enabled = true;
-        config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(2);
-        config.addonOptions.onBoardLedOptions.has_enabled = true;
-        config.addonOptions.onBoardLedOptions.has_mode = true;
-
-        // ==========================================
-        // 5. PERIPHERAL I2C PINS
-        // ==========================================
-        config.peripheralOptions.blockI2C0.enabled = true;
-        config.peripheralOptions.blockI2C0.sda = 0;
-        config.peripheralOptions.blockI2C0.scl = 1;
-        config.peripheralOptions.blockI2C0.speed = 400000;
-        config.peripheralOptions.blockI2C0.has_enabled = true;
-        config.peripheralOptions.blockI2C0.has_sda = true;
-        config.peripheralOptions.blockI2C0.has_scl = true;
-        config.peripheralOptions.blockI2C0.has_speed = true;
-
-        config.peripheralOptions.blockI2C1.enabled = true;
-        config.peripheralOptions.blockI2C1.sda = 18;
-        config.peripheralOptions.blockI2C1.scl = 19;
-        config.peripheralOptions.blockI2C1.speed = 400000;
-        config.peripheralOptions.blockI2C1.has_enabled = true;
-        config.peripheralOptions.blockI2C1.has_sda = true;
-        config.peripheralOptions.blockI2C1.has_scl = true;
-        config.peripheralOptions.blockI2C1.has_speed = true;
-
-        // ==========================================
-        // 6. FORCE SAVE & COLD REBOOT
-        // ==========================================
-        // 💡 変更点: 引数で渡されたconfigはすでに参照(Config&)なので、Storageクラス内の実体を一度ディープコピー(代入)し、
-        // 引数なしのsave()を実行することで、確定した設定を安全にフラッシュへ書き込ませます。
-        Storage::getInstance().getConfig() = config; 
-        Storage::getInstance().save(true); // force save
-
-        watchdog_reboot(0, 0, 0); 
-    }
-}
-
 
 // -----------------------------------------------------
 // migrations
@@ -2899,6 +2768,140 @@ void injectMiniSuperDefaultStorage(Config& config) {
         // 6. SAVE & SYSTEM REBOOT
         // ==========================================
         Storage::getInstance().save(config); 
+        watchdog_reboot(0, 0, 0); 
+    }
+}
+
+// =================================================================
+// 💡 重複や型エラー、古いオプション（pinOptions等）を完璧に修正した確定版
+// =================================================================
+void injectMiniSuperDefaultStorage(Config& config) {
+    // Detect factory reset state via uninitialized LED data pin flag
+    if (!config.ledOptions.has_dataPin) {
+        
+        // ==========================================
+        // 1. GAMEPAD & INPUT MODE
+        // ==========================================
+        config.gamepadOptions.inputMode = static_cast<InputMode>(14);      // PS4 Mode
+        config.gamepadOptions.dpadMode = static_cast<DpadMode>(0);
+        config.gamepadOptions.socdMode = static_cast<SOCDMode>(1);
+        config.gamepadOptions.debounceDelay = 5;
+        
+        config.gamepadOptions.has_inputMode = true;
+        config.gamepadOptions.has_dpadMode = true;
+        config.gamepadOptions.has_socdMode = true;
+        config.gamepadOptions.has_debounceDelay = true;
+
+        // ==========================================
+        // 2. CORE GPIO MAPPINGS (pins[pin].action)
+        // ==========================================
+        for (uint16_t pin = 0; pin < 30; pin++) {
+            config.gpioMappings.pins[pin].action = GpioAction::NONE;
+        }
+        
+        config.gpioMappings.pins[2].action  = static_cast<GpioAction>(1);  // UP
+        config.gpioMappings.pins[3].action  = static_cast<GpioAction>(2);  // DOWN
+        config.gpioMappings.pins[4].action  = static_cast<GpioAction>(4);  // RIGHT
+        config.gpioMappings.pins[5].action  = static_cast<GpioAction>(3);  // LEFT
+        config.gpioMappings.pins[6].action  = static_cast<GpioAction>(5);  // B1
+        config.gpioMappings.pins[7].action  = static_cast<GpioAction>(6);  // B2
+        config.gpioMappings.pins[8].action  = static_cast<GpioAction>(12); // R2
+        config.gpioMappings.pins[9].action  = static_cast<GpioAction>(11); // L2
+        config.gpioMappings.pins[10].action = static_cast<GpioAction>(7);  // B3
+        config.gpioMappings.pins[11].action = static_cast<GpioAction>(8);  // B4
+        config.gpioMappings.pins[12].action = static_cast<GpioAction>(10); // R1
+        config.gpioMappings.pins[13].action = static_cast<GpioAction>(9);  // L1
+        config.gpioMappings.pins[14].action = static_cast<GpioAction>(32); // TURBO (S1)
+        config.gpioMappings.pins[17].action = static_cast<GpioAction>(14); // A2 (S2)
+
+        config.gpioMappings.pins_count = 30;
+        config.migrations.gpioMappingsMigrated = true;
+
+        // ==========================================
+        // 3. LED OPTIONS (GP27 / GRB)
+        // ==========================================
+        config.ledOptions.dataPin = 27;
+        config.ledOptions.ledFormat = static_cast<LEDFormat>(0);     // 💡 _Protoを削り、現行の型名に修正
+        config.ledOptions.ledLayout = static_cast<ButtonLayout>(0);  // 💡 現行の型名に修正
+        config.ledOptions.ledsPerButton = 1;
+        config.ledOptions.brightnessMaximum = 80;
+        config.ledOptions.brightnessSteps = 10;
+        config.ledOptions.caseRGBType = static_cast<CaseRGBType>(1); // 💡 現行の型名に修正
+        config.ledOptions.caseRGBIndex = 14;
+        config.ledOptions.caseRGBCount = 34;
+
+        config.ledOptions.indexB1 = 0; config.ledOptions.indexB2 = 1;
+        config.ledOptions.indexR2 = 2; config.ledOptions.indexL2 = 3;
+        config.ledOptions.indexL1 = 4; config.ledOptions.indexR1 = 5;
+        config.ledOptions.indexB4 = 6; config.ledOptions.indexB3 = 7;
+        
+        config.ledOptions.indexUp = -1;    config.ledOptions.indexDown = -1;
+        config.ledOptions.indexLeft = -1;  config.ledOptions.indexRight = -1;
+        config.ledOptions.indexS1 = -1;    config.ledOptions.indexS2 = -1;
+        config.ledOptions.indexL3 = -1;    config.ledOptions.indexR3 = -1;
+        config.ledOptions.indexA1 = -1;    config.ledOptions.indexA2 = -1;
+
+        config.ledOptions.has_dataPin = true;           config.ledOptions.has_ledFormat = true;
+        config.ledOptions.has_ledLayout = true;         config.ledOptions.has_ledsPerButton = true;
+        config.ledOptions.has_brightnessMaximum = true; config.ledOptions.has_brightnessSteps = true;
+        config.ledOptions.has_caseRGBType = true;       config.ledOptions.has_caseRGBIndex = true;
+        config.ledOptions.has_caseRGBCount = true;
+        config.ledOptions.has_indexUp = true;           config.ledOptions.has_indexDown = true;
+        config.ledOptions.has_indexLeft = true;         config.ledOptions.has_indexRight = true;
+        config.ledOptions.has_indexB1 = true;           config.ledOptions.has_indexB2 = true;
+        config.ledOptions.has_indexB3 = true;           config.ledOptions.has_indexB4 = true;
+        config.ledOptions.has_indexL1 = true;           config.ledOptions.has_indexR1 = true;
+        config.ledOptions.has_indexL2 = true;           config.ledOptions.has_indexR2 = true;
+        config.ledOptions.has_indexS1 = true;           config.ledOptions.has_indexS2 = true;
+        config.ledOptions.has_indexL3 = true;           config.ledOptions.has_indexR3 = true;
+        config.ledOptions.has_indexA1 = true;           config.ledOptions.has_indexA2 = true;
+
+        // ==========================================
+        // 4. ADDONS ENABLED FLAGS
+        // ==========================================
+        config.addonOptions.wiiOptions.enabled = true;
+        config.addonOptions.wiiOptions.has_enabled = true;
+
+        config.addonOptions.pcf8575Options.enabled = true;
+        config.addonOptions.pcf8575Options.has_enabled = true;
+
+        config.addonOptions.reactiveLEDOptions.enabled = true;
+        config.addonOptions.reactiveLEDOptions.has_enabled = true;
+
+        config.addonOptions.onBoardLedOptions.enabled = true; // 💡 boardLedOptionsからonBoardLedOptionsに修正
+        config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(2);
+        config.addonOptions.onBoardLedOptions.has_enabled = true;
+        config.addonOptions.onBoardLedOptions.has_mode = true;
+
+        // ==========================================
+        // 5. PERIPHERAL I2C PINS
+        // ==========================================
+        config.peripheralOptions.blockI2C0.enabled = true;
+        config.peripheralOptions.blockI2C0.sda = 0;
+        config.peripheralOptions.blockI2C0.scl = 1;
+        config.peripheralOptions.blockI2C0.speed = 400000;
+        config.peripheralOptions.blockI2C0.has_enabled = true;
+        config.peripheralOptions.blockI2C0.has_sda = true;
+        config.peripheralOptions.blockI2C0.has_scl = true;
+        config.peripheralOptions.blockI2C0.has_speed = true;
+
+        config.peripheralOptions.blockI2C1.enabled = true;
+        config.peripheralOptions.blockI2C1.sda = 18;
+        config.peripheralOptions.blockI2C1.scl = 19;
+        config.peripheralOptions.blockI2C1.speed = 400000;
+        config.peripheralOptions.blockI2C1.has_enabled = true;
+        config.peripheralOptions.blockI2C1.has_sda = true;
+        config.peripheralOptions.blockI2C1.has_scl = true;
+        config.peripheralOptions.blockI2C1.has_speed = true;
+
+        // ==========================================
+        // 6. SAFE SAVE & AUTO COLD REBOOT
+        // ==========================================
+        // 💡 前回のヘッダー解析を元に、引数なしの正式なsave(true)メソッドに完全適合
+        Storage::getInstance().getConfig() = config; 
+        Storage::getInstance().save(true); 
+
+        #include "hardware/watchdog.h"
         watchdog_reboot(0, 0, 0); 
     }
 }
