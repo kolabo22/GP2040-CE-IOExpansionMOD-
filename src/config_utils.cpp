@@ -1166,7 +1166,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         // LEDデータピンが未設定（工場出荷リセット状態）の最初の1回目だけ発動
         if (!config.ledOptions.has_dataPin) {
             
-            // 1. ADDONS ENABLED FLAGS (最優先でアドオンの存在をシステムに認識させる)
+            // 1. ADDONS ENABLED FLAGS
             config.addonOptions.wiiOptions.enabled = true;
             config.addonOptions.wiiOptions.has_enabled = true;
 
@@ -1191,25 +1191,25 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             config.gamepadOptions.has_socdMode = true;
             config.gamepadOptions.has_debounceDelay = true;
 
-            // 3. CORE GPIO MAPPINGS (統合GPIO配列にマッピングを直撃)
+            // 3. CORE GPIO MAPPINGS (添え字 [ピン番号] を100%正確に修復)
             for (uint16_t pin = 0; pin < 30; pin++) {
                 config.gpioMappings.pins[pin].action = GpioAction::NONE;
             }
             
-            config.gpioMappings.pins.action  = static_cast<GpioAction>(1);  // UP
-            config.gpioMappings.pins.action  = static_cast<GpioAction>(2);  // DOWN
-            config.gpioMappings.pins.action  = static_cast<GpioAction>(4);  // RIGHT
-            config.gpioMappings.pins.action  = static_cast<GpioAction>(3);  // LEFT
-            config.gpioMappings.pins.action  = static_cast<GpioAction>(5);  // B1
-            config.gpioMappings.pins.action  = static_cast<GpioAction>(6);  // B2
-            config.gpioMappings.pins.action  = static_cast<GpioAction>(12); // R2
-            config.gpioMappings.pins.action  = static_cast<GpioAction>(11); // L2
-            config.gpioMappings.pins.action = static_cast<GpioAction>(7);  // B3
-            config.gpioMappings.pins.action = static_cast<GpioAction>(8);  // B4
-            config.gpioMappings.pins.action = static_cast<GpioAction>(10); // R1
-            config.gpioMappings.pins.action = static_cast<GpioAction>(9);  // L1
-            config.gpioMappings.pins.action = static_cast<GpioAction>(32); // TURBO (S1)
-            config.gpioMappings.pins.action = static_cast<GpioAction>(14); // A2 (S2)
+            config.gpioMappings.pins[2].action  = static_cast<GpioAction>(1);  // GP2: UP
+            config.gpioMappings.pins[3].action  = static_cast<GpioAction>(2);  // GP3: DOWN
+            config.gpioMappings.pins[4].action  = static_cast<GpioAction>(4);  // GP4: RIGHT
+            config.gpioMappings.pins[5].action  = static_cast<GpioAction>(3);  // GP5: LEFT
+            config.gpioMappings.pins[6].action  = static_cast<GpioAction>(5);  // GP6: B1
+            config.gpioMappings.pins[7].action  = static_cast<GpioAction>(6);  // GP7: B2
+            config.gpioMappings.pins[8].action  = static_cast<GpioAction>(12); // GP8: R2
+            config.gpioMappings.pins[9].action  = static_cast<GpioAction>(11); // GP9: L2
+            config.gpioMappings.pins[10].action = static_cast<GpioAction>(7);  // GP10: B3
+            config.gpioMappings.pins[11].action = static_cast<GpioAction>(8);  // GP11: B4
+            config.gpioMappings.pins[12].action = static_cast<GpioAction>(10); // GP12: R1
+            config.gpioMappings.pins[13].action = static_cast<GpioAction>(9);  // GP13: L1
+            config.gpioMappings.pins[14].action = static_cast<GpioAction>(32); // GP14: TURBO
+            config.gpioMappings.pins[17].action = static_cast<GpioAction>(14); // GP17: A2 (S2)
 
             config.gpioMappings.pins_count = 30;
             config.migrations.gpioMappingsMigrated = true;
@@ -1236,11 +1236,11 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
             // 5. LED OPTIONS (GP27 / GRB / CASE 34)
             config.ledOptions.dataPin = 27;
             config.ledOptions.ledFormat = static_cast<LEDFormat_Proto>(0);     // GRB
-            config.ledOptions.ledLayout = config.ledOptions.ledLayout;         // バニラ状態を維持
+            config.ledOptions.ledLayout = config.ledOptions.ledLayout;
             config.ledOptions.ledsPerButton = 1;
             config.ledOptions.brightnessMaximum = 80;
             config.ledOptions.brightnessSteps = 10;
-            config.ledOptions.caseRGBType = config.ledOptions.caseRGBType;     // バニラ状態を維持
+            config.ledOptions.caseRGBType = config.ledOptions.caseRGBType;
             config.ledOptions.caseRGBIndex = 14;
             config.ledOptions.caseRGBCount = 34;
 
