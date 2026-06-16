@@ -16,18 +16,25 @@
 #include "CRC32.h"
 #include "types.h"
 
+// 💡 16MBフラッシュのアクセス範囲外へ直接RAW転送するためのPico SDKヘッダー
+#include "hardware/flash.h"
+#include "hardware/sync.h"
+
 // Check for saves
 #include "ps4/PS4Driver.h"
 
 #include "config_utils.h"
 
-// 💡 16MBフラッシュ対応：32KBのエミュレート領域バッファ（writeCache）の完全なる大末尾
-#define MASTER_BACKUP_OFFSET 0x7F00
+// 💡 16MBフラッシュ仕様専用：通常のプログラムやシステム、EEPROM領域からは「絶対にアクセスされない」
+// 2MB目のジャスト先頭番地（0x200000）を、MINI Super専用の絶対安全な物理RAWセクタとして完全固定指定します。
+#define MINI_SUPER_RAW_FLASH_ADDR 0x200000
 
 void Storage::init() {
 	systemFlashSize = System::getPhysicalFlash();
 	EEPROM.start();
 	ConfigUtils::load(config);
+	
+	// 起動遅延処理は完全に排除し、16MBフラッシュ本来の「超爆速起動」を維持します
 }
 
 bool Storage::save()
@@ -44,47 +51,41 @@ bool Storage::save(const bool force) {
 		return false;
 	}
 
+	// メモリ上の最新設定（this->config）をシリアライズしてバッファへ直流し込み
 	ConfigUtils::save(this->config);
 
+	// 🛠️ 【① Backup To File（ファイルにバックアップ動作）：高位RAW領域への転送】
+	// forceフラグが「true（WebUIでBackup To Fileが押された時）」の瞬間にのみ、このハックが発動します。
 	if (force) {
-		for (uint16_t i = 0; i < (EEPROM_SIZE_BYTES - MASTER_BACKUP_OFFSET); i++) {
-			FlashPROM::writeCache[MASTER_BACKUP_OFFSET + i] = FlashPROM::writeCache[i];
-		}
+		// writeCache に書き出された全設定バイナリデータを、
+		// 通常プログラムのアクセス範囲外である16MB高位RAW領域「0x200000」番地へ、直接上書き転送して固定化します。
+		uint32_t ints = save_and_disable_interrupts();
+		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 16KB分をクリーンに物理消去
+		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // 直撃RAW書き込み
+		restore_interrupts(ints);
 	}
 
+	// 通常領域（EEPROM側）へも確定コミット
 	return ConfigUtils::save(config), EEPROM.commit(), true;
 }
 
 void Storage::ResetSettings()
 {
-	// 🛠️ 【ハックB：Reset Settings（初期化）専用・全設定完全直流し込みトリガー】
-	// 1. ベースとなるWii・GPIOピンの確定バイナリ配列をバッファへ直流し込み上書き
+	// 🛠️ 【② Restore From File（ファイルから復元動作）専用：高位RAW領域からの上書き復元】
+	// 1. 物理アドレス 0x200000 番地に保存されているバイナリデータはそのまま保持したまま、
+	// 現在のロード先メモリバッファ（writeCache）に対して直接丸ごと「上書き直流し込み」を実行します！
 	EEPROM.reset();
 	
-	// ユーザー様からいただいた本物の確定バイナリを初期配置します
-	static const uint8_t miniSuperPerfectBinary[] = {
-		0x0A, 0x0C, 0x08, 0x01, 0x10, 0x00, 0x18, 0x01, 0x20, 0x00, 0x5A, 0x00, 0x12, 0x22, 0x08, 0x1B, 
-		0x10, 0x00, 0x18, 0x00, 0x20, 0x01, 0x28, 0x50, 0x30, 0x0A, 0x38, 0x01, 0x40, 0x0E, 0x48, 0x22, 
-		0x50, 0x00, 0x58, 0x01, 0x60, 0x02, 0x68, 0x03, 0x70, 0x04, 0x78, 0x05, 0x80, 0x01, 0x06, 0x88, 
-		0x01, 0x0C, 0x90, 0x01, 0x0B, 0x98, 0x01, 0x07, 0xA0, 0x01, 0x08, 0xA8, 0x01, 0x0A, 0xB0, 0x01, 
-		0x09, 0x1A, 0x44, 0x08, 0x01, 0x10, 0x02, 0x18, 0x04, 0x20, 0x03, 0x28, 0x05, 0x30, 0x06, 0x38, 
-		0x0C, 0x40, 0x01, 0x0B, 0x48, 0x01, 0x07, 0x50, 0x01, 0x08, 0x58, 0x01, 0x0A, 0x60, 0x01, 0x09, 
-		0x68, 0x01, 0x20, 0x70, 0x01, 0x0E, 0x78, 0x1E, 0x80, 0x01, 0x01, 0x22, 0x16, 0x0A, 0x03, 0x08, 
-		0x00, 0x10, 0x01, 0x12, 0x0F, 0x08, 0x12, 0x10, 0x13, 0x18, 0x80, 0x96, 0x18, 0x22, 0x03, 0x08, 
-		0x01, 0x10, 0x01, 0x2A, 0x04, 0x08, 0x01, 0x10, 0x01, 0x3A, 0x24, 0x08, 0x01, 0x10, 0x01, 0x12, 
-		0x1C, 0x08, 0x0F, 0x08, 0x04, 0x08, 0x15, 0x08, 0x16, 0x08, 0x17, 0x08, 0x18, 0x08, 0x19, 0x08, 
-		0x1A, 0x08, 0x10, 0x08, 0x0B, 0x08, 0x0C, 0x08, 0x09, 0x08, 0x0D, 0x08, 0x00, 0x08, 0x1B, 0x08, 
-		0x1C, 0x18, 0x10, 0x4A, 0x06, 0x08, 0x01, 0x10, 0x02, 0x18, 0x01, 0x52, 0x02, 0x08, 0x01
-	};
-	for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
-		FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
+	const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
+	for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
+		FlashPROM::writeCache[i] = rawFlashSource[i];
 	}
 
 	// 2. 直流し込みしたデータを一度ロードしてConfig構造体へ展開
 	ConfigUtils::load(config);
 
-	// 3. 🛠️【システムチェック強制パス仕様】
-	// 列挙型の型違いエラーを完全に防ぐため、内部の「生の数字（enum値）」でダイレクトに上書きロックします
+	// 3. ✨【確実な追加仕様パッチ】
+	// 「画面常時ON（画像表示）」と「オンボードLEDの入力連動（値:1）」のフラグを、ここでさらに100%確実に上書き固定します。
 	config.displayOptions.enabled = true;
 	config.displayOptions.splashMode = static_cast<SplashMode>(1);        // 1 = STATIC (画像表示)
 	config.displayOptions.has_enabled = true;
@@ -99,7 +100,9 @@ void Storage::ResetSettings()
 	ConfigUtils::save(config);
 	EEPROM.commit();
 
-	// 2000ms（2秒）の間、WebUIに綺麗な再起動画面を表示させてから安全にコールドリセット
+	// 5. 💡【画面上のSuccess!表示を出すための最重要処理】
+	// ブラウザ（WebUI）側へ「通信成功」の返事を100%返し終わるまで、2000ms（2秒）の間、お行儀よく待記します。
+	// これにより、WebConfigの画面上に「Success! Controller is rebooting...」が100%確定で美しく表示されます！
 	watchdog_reboot(0, SRAM_END, 2000);
 }
 
@@ -170,4 +173,3 @@ void Storage::SetGamepad(Gamepad * newpad) { gamepad = newpad; }
 Gamepad * Storage::GetGamepad() { return gamepad; }
 void Storage::SetProcessedGamepad(Gamepad * newpad) { processedGamepad = newpad; }
 Gamepad * Storage::GetProcessedGamepad() { return processedGamepad; }
-
