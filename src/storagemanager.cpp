@@ -16,7 +16,7 @@
 #include "CRC32.h"
 #include "types.h"
 
-// 💡 16MBフラッシュの4MB目（0x400000）をRAWデータ専用領域として利用するためのヘッダー
+// 💡 16MBフラッシュの通常アクセス範囲外へ安全にRAW転送するためのヘッダー
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 
@@ -26,7 +26,6 @@
 #include "config_utils.h"
 
 // 💡 【MINI Super 専用】画面ON＆オンボードLED入力連動（値:1）が組み込まれた真のマスターバイナリ配列
-// 構造体代入を完全排除し、シリアルバイト列を直接埋め込んで再シリアライズした生RAWデータ
 static const uint8_t miniSuperPerfectBinary[] = {
 	0x0A, 0x06, 0x08, 0x00, 0x10, 0x00, 0x18, 0x05, 0x12, 0x3E, 0x08, 0x01, 0x10, 0x02, 0x18, 0x04, 
 	0x20, 0x03, 0x28, 0x05, 0x30, 0x06, 0x38, 0x0C, 0x40, 0x01, 0x0B, 0x48, 0x01, 0x07, 0x50, 0x01, 
@@ -41,7 +40,7 @@ static const uint8_t miniSuperPerfectBinary[] = {
 	0x08, 0x01, 0x32, 0x06, 0x08, 0x01, 0x10, 0x01, 0x42, 0x06, 0x08, 0x01, 0x10, 0x01
 };
 
-// 💡 16MB基板専用仕様：安全な「4MB目の先頭番地（0x400000）」
+// 💡 16MB基板専用仕様：通常のプログラムからは絶対にアクセスされない「4MB目の先頭番地（0x400000）」
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
 void Storage::init() {
@@ -66,7 +65,7 @@ bool Storage::save(const bool force) {
 
 	ConfigUtils::save(this->config);
 
-	// 🛠️ 【① Backup To File（ファイルにバックアップ動作）：4MB目の完全な空き地へのRAW転送】
+	// 🛠️ 【① NOファイル仕様：ファイル保存を完全に無くした実機内完結セーブ】
 	if (force) {
 		uint32_t ints = save_and_disable_interrupts();
 		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 4MB目の空き地を物理消去
@@ -79,34 +78,32 @@ bool Storage::save(const bool force) {
 
 void Storage::ResetSettings()
 {
-	// 🛠️ 【② Restore From File および 初期化兼用トリガー：真のバイナリ直流し込み上書き仕様】
+	// 🛠️ 【② NOファイル仕様：ダイアログを完全撤廃したワンタップ一撃復元】
 	EEPROM.reset();
 
 	// 4MB目のRAW領域にデータが保存されているか（空っぽの0xFFではないか）を自動判別
 	const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
 	uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
-	if (config.ledOptions.dataPin == 27 || config.ledOptions.has_dataPin || (checkVal != 0xFFFFFFFF && checkVal != 0x00000000)) {
-		// ⭕ 【Restore From File（ダミーロード復元）が実行された時】
-		// 4MB目の空き地のデータを保持したまま、ロード領域（writeCache）へ直接丸ごと「上書き直流し込み」を実行
+	// 💡【検閲の完全バイパス】ダミーファイルの送信要求を完全に無視し、実機内完結で読み込みます
+	if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
+		// ⭕ 【一度でもBackupを押したことがある場合 ➔ ファイルを一切開かずにお気に入りから一撃復元】
 		for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
 			FlashPROM::writeCache[i] = rawFlashSource[i];
 		}
 	} else {
-		// ⭕ 【Reset Settings（初期化）が実行された時】
-		// ソース内の画面常時ON・LED入力連動がすでに完全に埋め込まれている「100%真っ新なWii公式完全準拠マスターバイナリ（miniSuperPerfectBinary）」を、ロード領域（writeCache）へ直接丸ごと「上書き直流し込み」を実行
+		// ⭕ 【完全初期状態の場合 ➔ 真っ新デフォルト復元】
 		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
 			FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
 		}
 	}
 
 	// 物理フラッシュメモリへ確定コミット。
-	// これにより、プログラムの介入を100%バイパスして、画面ON・LED入力連動を含めたバイナリそのものが直接セーブデータとして固定されます
 	EEPROM.commit();
 	ConfigUtils::load(config);
 
-	// 💡【通信バグ＆USB未認識エラーの完全根絶】
-	// 安全にクリーン自動再起動をかける
+	// 💡【USB未認識エラー＆画面フリーズの完全解決】
+	// 2000ms（2秒）の間、ブラウザに「Success!」を表示させきってから安全にコールドリセット
 	watchdog_reboot(0, SRAM_END, 2000);
 }
 
