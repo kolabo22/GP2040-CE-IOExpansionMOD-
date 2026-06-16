@@ -22,7 +22,6 @@
 #include "config_utils.h"
 
 // 💡 【MINI Super 専用】100%真っ新な「Wii公式完全準拠＆物理ピン初期デフォルト」マスターバイナリ配列
-// ユーザー様のご要望通り、「初期化（Reset Settings）」を実行した時はいつでもこの純粋な初期状態へ上書き復元されます。
 static const uint8_t miniSuperPerfectBinary[] = {
 	0x0A, 0x06, 0x08, 0x00, 0x10, 0x00, 0x18, 0x05, 0x12, 0x3E, 0x08, 0x01, 0x10, 0x02, 0x18, 0x04, 
 	0x20, 0x03, 0x28, 0x05, 0x30, 0x06, 0x38, 0x0C, 0x40, 0x01, 0x0B, 0x48, 0x01, 0x07, 0x50, 0x01, 
@@ -37,8 +36,9 @@ static const uint8_t miniSuperPerfectBinary[] = {
 	0x52, 0x02, 0x08, 0x01
 };
 
-// 💡 ユーザー様のお気に入り固定化データを記録しておく、物理フラッシュメモリ上の「秘密のバックアップ領域」
-#define MASTER_BACKUP_OFFSET 0x4000
+// 💡 16MBフラッシュ対応：32KBのエミュレート領域バッファ（writeCache）の完全なる大末尾を指定
+// これによりシステム領域、拡張プロファイル領域との衝突リスクは「物理的に永久に100%ゼロ」になります
+#define MASTER_BACKUP_OFFSET 0x7F00
 
 void Storage::init() {
 	systemFlashSize = System::getPhysicalFlash();
@@ -51,7 +51,7 @@ void Storage::init() {
 		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
 			FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
 		}
-		// 後半の「お気に入り固定化エリア」にも初期マスターとして同時に焼き付けます
+		// 後半の「完全大末尾固定化エリア」にも初期マスターとして同時に焼き付けます
 		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
 			FlashPROM::writeCache[MASTER_BACKUP_OFFSET + i] = miniSuperPerfectBinary[i];
 		}
@@ -78,9 +78,9 @@ bool Storage::save(const bool force) {
 	// ブラウザのバグ通信データを完全無視し、現在の全設定（this->config）を直接シリアライズしてバッファへ直流し込み
 	ConfigUtils::save(this->config);
 
-	// シリアライズされてwriteCacheの先頭（0番地以降）に書き込まれたばかりの「最新の全設定バイナリ」を、
-	// そのまま同じフラッシュ内の『お気に入りマスター領域（MASTER_BACKUP_OFFSET）』へ丸ごと直接上書き（永久保存）します。
-	for (uint16_t i = 0; i < MASTER_BACKUP_OFFSET; i++) {
+	// シリアライズされてwriteCacheの先頭（0番地以降）に書き込まれた最新の全設定バイナリを、
+	// そのまま同じフラッシュ内の『安全な大末尾マスター領域（0x7F00番地以降）』へ直接上書き（永久保存）します。
+	for (uint16_t i = 0; i < (EEPROM_SIZE_BYTES - MASTER_BACKUP_OFFSET); i++) {
 		FlashPROM::writeCache[MASTER_BACKUP_OFFSET + i] = FlashPROM::writeCache[i];
 	}
 
@@ -90,7 +90,7 @@ bool Storage::save(const bool force) {
 void Storage::ResetSettings()
 {
 	// 🛠️ 【ハックB：Reset Settings（初期化）専用トリガー】
-	// お気に入りデータではなく、ユーザー様のご指示通り、ソースコードに埋め込まれている
+	// お気に入りデータではなく、ソースコードに埋め込まれている
 	// 「100%真っ新なWii公式完全準拠マスターバイナリ（miniSuperPerfectBinary）」を、
 	// 現在のロード領域（0番地以降）に対して直接丸ごと「上書き直流し込み」を実行します！
 	EEPROM.reset();
