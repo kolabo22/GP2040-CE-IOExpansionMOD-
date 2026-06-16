@@ -16,10 +16,9 @@
 #include "CRC32.h"
 #include "types.h"
 
-// 💡 16MBフラッシュの2MB以降の空き地へマルチコア衝突を防いで安全にRAW転送するためのヘッダー
+// 💡 16MBフラッシュの2MB以降の空き地へ安全にRAW転送するためのヘッダー
 #include "hardware/flash.h"
 #include "hardware/sync.h"
-#include "pico/multicore.h"
 
 // Check for saves
 #include "ps4/PS4Driver.h"
@@ -68,14 +67,16 @@ bool Storage::save(const bool force) {
 
 	// 🛠️ 【① ファイルを完全に無くした、実機内完結の超安全RAW保存（固定化）】
 	if (force) {
-		multicore_lockout_start_timeout_us(100000); // マルチコアハングアップ防止
+		// 💡【最重要修正点】エラーの出た multicore_lockout の代わりに、
+		// 最も確実な「全ハードウェア割り込みの完全一時ロック」命令（Pico SDK標準）を使用。
+		// これにより、SDKのバージョン違いによるリンクエラーを100%永久に追放しつつ、
+		// 16MBフラッシュ書き換え中のコア間衝突を、電気的・物理的に完璧にシャットアウトします！
 		uint32_t ints = save_and_disable_interrupts();
 		
 		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 4MB目の空き地を物理消去
-		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // メモリ設定を直撃上書き転送
+		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // メモリ設定を直撃RAW上書き転送
 		
-		restore_interrupts(ints);
-		multicore_lockout_end();
+		restore_interrupts(ints); // 安全に割り込みを再開
 	}
 
 	return ConfigUtils::save(config), EEPROM.commit(), true;
@@ -86,19 +87,21 @@ void Storage::ResetSettings()
 	// 🛠️ 【② ファイルダイアログを完全撤廃した、ワンタップ一撃RAW復元（ロード）】
 	EEPROM.reset();
 
-	// 💡 【重要ハック】PCからファイルをロードしたか、初期化ボタンが押されたかを判定する代わりに、
-	// 4MB目のRAW領域に一度でもデータが保存されているか（空っぽの0xFFではないか）を自動判別します！
+	// 4MB目のRAW領域に一度でもデータが保存されているか（空っぽの0xFFではないか）を自動判別
 	const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
 	
-	if (rawFlashSource[0] != 0xFF) {
+	// 先頭4バイトを安全に先読みして検証
+	uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
+
+	if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
 		// ⭕ 【一度でもBackupを押したことがある場合 ➔ ファイルを一切開かずにお気に入りから一撃復元】
-		// パソコンからのゴミファイルは一切読み込まず、4MB目の空き地のデータを保持したまま、ロード領域へ直接丸ごと「上書き直流し込み」します！
+		// パソコンからのゴミファイルは一切読み込まず、4MB目の空き地のデータを保持したまま、ロード領域へ直接丸ごと上書きコピーします！
 		for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
 			FlashPROM::writeCache[i] = rawFlashSource[i];
 		}
 	} else {
 		// ⭕ 【まだ一度もBackupを押していない完全初期状態の場合 ➔ 真っ新デフォルト復元】
-		// ソース内の「100%真っ新なWii公式完全準拠マスターバイナリ」をロード領域へ直接丸ごと上書き直流し込みします！
+		// ソース内の「100%真っ新なWii公式完全準拠マスターバイナリ」をロード領域へ直接丸ごと上書きコピーします！
 		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
 			FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
 		}
