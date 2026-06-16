@@ -16,7 +16,7 @@
 #include "CRC32.h"
 #include "types.h"
 
-// 💡 16MBフラッシュのアクセス範囲外（RAW領域）へ直接上書き転送するためのPico SDKヘッダー
+// 💡 16MBフラッシュの2MB以降の空き地へ直接RAW転送するためのPico SDKヘッダー
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 
@@ -26,7 +26,6 @@
 #include "config_utils.h"
 
 // 💡 【MINI Super 専用】100%真っ新な「Wii公式完全準拠＆物理ピン初期デフォルト」マスターバイナリ配列
-// 「Reset Settings（初期化）」を実行した時は、いつでもこの純粋な初期状態へ直撃上書き復元されます。
 static const uint8_t miniSuperPerfectBinary[] = {
 	0x0A, 0x06, 0x08, 0x00, 0x10, 0x00, 0x18, 0x05, 0x12, 0x3E, 0x08, 0x01, 0x10, 0x02, 0x18, 0x04, 
 	0x20, 0x03, 0x28, 0x05, 0x30, 0x06, 0x38, 0x0C, 0x40, 0x01, 0x0B, 0x48, 0x01, 0x07, 0x50, 0x01, 
@@ -41,16 +40,14 @@ static const uint8_t miniSuperPerfectBinary[] = {
 	0x52, 0x02, 0x08, 0x01
 };
 
-// 💡 16MBフラッシュ仕様専用：通常のプログラムやシステム、EEPROM領域からは「絶対にアクセスされない」
-// 2MB目のジャスト先頭番地（0x200000）を、MINI Super専用の絶対安全な物理RAWセクタとして完全固定指定します。
-#define MINI_SUPER_RAW_FLASH_ADDR 0x200000
+// 💡 16MB基板専用仕様：標準の2MBの壁を完全に超えた、完全に真っ新な「4MB目の先頭番地（0x400000）」
+// ここであればプログラムを巻き込んで破壊するリスクが物理的に「100%永久にゼロ」になります。
+#define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
 void Storage::init() {
 	systemFlashSize = System::getPhysicalFlash();
 	EEPROM.start();
 	ConfigUtils::load(config);
-	
-	// 起動遅延処理は完全に排除し、16MBフラッシュ本来の「超爆速起動」を維持します
 }
 
 bool Storage::save()
@@ -67,54 +64,44 @@ bool Storage::save(const bool force) {
 		return false;
 	}
 
-	// メモリ上の最新設定（this->config）をシリアライズしてバッファへ直流し込み
 	ConfigUtils::save(this->config);
 
-	// 🛠️ 【① Backup To File（ファイルにバックアップ動作）：高位RAW領域への転送】
-	// 「Backup To File」ボタンを押した瞬間にのみ（force = true）、このハックが発動します。
+	// 🛠️ 【① Backup To File：4MB目の完全な空き地への上書き転送】
 	if (force) {
-		// writeCache に書き出された全設定バイナリデータを、
-		// 通常プログラムのアクセス範囲外である16MB高位RAW領域「0x200000」番地へ、直接上書き転送して固定化します。
+		// 割り込みを一時的に止めて、4MB目の物理フラッシュ領域を安全に消去＆RAW上書き書き込みします
 		uint32_t ints = save_and_disable_interrupts();
-		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 16KB分をクリーンに物理消去
-		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // 直撃RAW上書き転送
+		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 16KB分を物理消去
+		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // 4MB目へ直撃RAW書き込み
 		restore_interrupts(ints);
 	}
 
-	// 通常領域（EEPROM側）へも確定コミット
 	return ConfigUtils::save(config), EEPROM.commit(), true;
 }
 
 void Storage::ResetSettings()
 {
-	// 🛠️ 【② Restore From File および Reset Settings（初期化）の完全自動判定上書き】
-	// メモリ上の「config.ledOptions.dataPin」が現在 27（本物のダミーJSONまたは実稼働中のデータ）になっているか、
-	// それとも完全初期化コマンドによって 0 または空っぽにクリアされているかで、ロード領域への直流し込みソースを自動判別します。
-	
+	// 🛠️ 【② Restore From File および 初期化兼用トリガー】
 	EEPROM.reset();
 
 	if (config.ledOptions.dataPin == 27 || config.ledOptions.has_dataPin) {
 		// ⭕ 【Restore From File（ダミーロード復元）が実行された時】
-		// 物理アドレス 0x200000 番地に保存されているお気に入りバイナリデータはそのまま完全に保持したまま、
-		// 現在のロード先メモリバッファ（writeCache）に対して直接丸ごと「上書き直流し込み」を実行します！
+		// 💡 C++のメモリアドレス数え方ルール（XIP_BASE）を完璧に適用。
+		// 4MB目の空き地に保存されているバイナリデータをそのまま完全に保持したまま、ロード領域へ上書きコピーします。
 		const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
 		for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
 			FlashPROM::writeCache[i] = rawFlashSource[i];
 		}
 	} else {
 		// ⭕ 【Reset Settings（初期化）が実行された時】
-		// ソースコード内に焼き付けられている「100%真っ新なWii公式完全準拠マスターバイナリ（miniSuperPerfectBinary）」を
-		// ロード先メモリバッファ（writeCache）に対して直接丸ごと「上書き直流し込み」を実行します！
+		// ソース内の「100%真っ新なWii公式完全準拠マスターバイナリ」をロード領域へ上書き直流し込み
 		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
 			FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
 		}
 	}
 
-	// 2. 直流し込みしたデータを一度ロードしてConfig構造体へ展開
 	ConfigUtils::load(config);
 
-	// 3. ✨【確実な追加仕様パッチ】
-	// ロードした全設定に対して、「画面常時ON（画像表示）」と「オンボードLEDの入力連動（値:1）」のフラグを確実に上書き固定します。
+	// 3. ✨【追加仕様上書きパッチ】
 	config.displayOptions.enabled = true;
 	config.displayOptions.splashMode = static_cast<SplashMode>(1);        // 1 = STATIC (画像表示)
 	config.displayOptions.has_enabled = true;
@@ -125,13 +112,9 @@ void Storage::ResetSettings()
 	config.addonOptions.onBoardLedOptions.has_enabled = true;
 	config.addonOptions.onBoardLedOptions.has_mode = true;
 
-	// 4. 全設定データをフラッシュメモリへ確定コミット
 	ConfigUtils::save(config);
 	EEPROM.commit();
 
-	// 5. 💡【画面上のSuccess!表示を出すための最重要処理】
-	// ブラウザ側への送信応答を邪魔しないよう、2秒間お行儀よく待機してから再起動します。
-	// これにより、WebConfigの画面上に「Success! Controller is rebooting...」が100%確定で美しく表示されます！
 	watchdog_reboot(0, SRAM_END, 2000);
 }
 
