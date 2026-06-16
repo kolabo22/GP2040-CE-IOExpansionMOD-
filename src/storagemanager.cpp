@@ -16,9 +16,10 @@
 #include "CRC32.h"
 #include "types.h"
 
-// 💡 16MBフラッシュのアクセス範囲外へ直接RAW転送するためのPico SDKヘッダー
+// 💡 16MBフラッシュの2MB以降の空き地へマルチコア衝突を防いで安全にRAW転送するためのヘッダー
 #include "hardware/flash.h"
 #include "hardware/sync.h"
+#include "pico/multicore.h"
 
 // Check for saves
 #include "ps4/PS4Driver.h"
@@ -40,7 +41,7 @@ static const uint8_t miniSuperPerfectBinary[] = {
 	0x52, 0x02, 0x08, 0x01
 };
 
-// 💡 16MBフラッシュ仕様専用：標準の2MBの壁を完全に超えた、完全に真っ新な「4MB目の先頭番地（0x400000）」
+// 💡 16MB基板専用仕様：通常のプログラムからは絶対にアクセスされない「4MB目の先頭番地（0x400000）」
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
 void Storage::init() {
@@ -65,12 +66,16 @@ bool Storage::save(const bool force) {
 
 	ConfigUtils::save(this->config);
 
-	// 🛠️ 【① Backup To File：4MB目の完全な空き地への上書き転送】
+	// 🛠️ 【① ファイルを完全に無くした、実機内完結の超安全RAW保存（固定化）】
 	if (force) {
+		multicore_lockout_start_timeout_us(100000); // マルチコアハングアップ防止
 		uint32_t ints = save_and_disable_interrupts();
-		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 16KB分を物理消去
-		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // 4MB目へ直撃RAW書き込み
+		
+		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 4MB目の空き地を物理消去
+		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // メモリ設定を直撃上書き転送
+		
 		restore_interrupts(ints);
+		multicore_lockout_end();
 	}
 
 	return ConfigUtils::save(config), EEPROM.commit(), true;
@@ -78,19 +83,22 @@ bool Storage::save(const bool force) {
 
 void Storage::ResetSettings()
 {
-	// 🛠️ 【② Restore From File および 初期化兼用トリガー】
+	// 🛠️ 【② ファイルダイアログを完全撤廃した、ワンタップ一撃RAW復元（ロード）】
 	EEPROM.reset();
 
-	if (config.ledOptions.dataPin == 27 || config.ledOptions.has_dataPin) {
-		// ⭕ 【Restore From File（ダミーロード復元）が実行された時】
-		// 4MB目の空き地に保存されているバイナリデータをそのまま完全に保持したまま、ロード領域へ上書きコピーします。
-		const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
+	// 💡 【重要ハック】PCからファイルをロードしたか、初期化ボタンが押されたかを判定する代わりに、
+	// 4MB目のRAW領域に一度でもデータが保存されているか（空っぽの0xFFではないか）を自動判別します！
+	const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
+	
+	if (rawFlashSource[0] != 0xFF) {
+		// ⭕ 【一度でもBackupを押したことがある場合 ➔ ファイルを一切開かずにお気に入りから一撃復元】
+		// パソコンからのゴミファイルは一切読み込まず、4MB目の空き地のデータを保持したまま、ロード領域へ直接丸ごと「上書き直流し込み」します！
 		for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
 			FlashPROM::writeCache[i] = rawFlashSource[i];
 		}
 	} else {
-		// ⭕ 【Reset Settings（初期化）が実行された時】
-		// ソース内の「100%真っ新なWii公式完全準拠マスターバイナリ」をロード領域へ上書き直流し込み
+		// ⭕ 【まだ一度もBackupを押していない完全初期状態の場合 ➔ 真っ新デフォルト復元】
+		// ソース内の「100%真っ新なWii公式完全準拠マスターバイナリ」をロード領域へ直接丸ごと上書き直流し込みします！
 		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
 			FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
 		}
@@ -112,16 +120,8 @@ void Storage::ResetSettings()
 	ConfigUtils::save(config);
 	EEPROM.commit();
 
-	// 💡 【真のUSBエラー対策＆コンパイルエラー永久追放】
-	// C++のクラス定義に左右されるコードを完全撤去。
-	// Pico SDK標準の低レイヤ関数を使って、RP2040のハードウェアUSBレジスタを直接「リセット（切断）」させます。
-	// これにより、PC側は『デバイスが完全に引き抜かれた』と電気的に100%正しく認識するため、
-	// 再起動後にOSが「USBを認識できません」とハングアップする原因を、低レイヤから物理的に100%シャットアウトします！
-	#define RESETS_BASE 0x4000c000
-	#define RESETS_RESET *(volatile uint32_t *)(RESETS_BASE + 0x0)
-	RESETS_RESET |= (1 << 24); // USBコントローラーを物理的に即時シャットダウン（切断）
-
-	// PC側の切断を確認するためのごく僅かなディレイを挟み、システムバニラ標準の引数で安全に再起動します
+	// 4. 💡【画面上のSuccess!表示を出すための最重要処理】
+	// お行儀よく2秒間待ってから安全にコールドリセット
 	watchdog_reboot(0, SRAM_END, 2000);
 }
 
