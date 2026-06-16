@@ -55,13 +55,11 @@ bool Storage::save(const bool force) {
 	ConfigUtils::save(this->config);
 
 	// 🛠️ 【① Backup To File（ファイルにバックアップ動作）：高位RAW領域への転送】
-	// forceフラグが「true（WebUIでBackup To Fileが押された時）」の瞬間にのみ、このハックが発動します。
+	// 「Backup To File」ボタンを押すたびに、現在の最新データを 0x200000 へ何度でも自由に変更・上書きアップデートします。
 	if (force) {
-		// writeCache に書き出された全設定バイナリデータを、
-		// 通常プログラムのアクセス範囲外である16MB高位RAW領域「0x200000」番地へ、直接上書き転送して固定化します。
 		uint32_t ints = save_and_disable_interrupts();
 		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 16KB分をクリーンに物理消去
-		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // 直撃RAW書き込み
+		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // 直撃RAW上書き転送
 		restore_interrupts(ints);
 	}
 
@@ -71,9 +69,9 @@ bool Storage::save(const bool force) {
 
 void Storage::ResetSettings()
 {
-	// 🛠️ 【② Restore From File（ファイルから復元動作）専用：高位RAW領域からの上書き復元】
-	// 1. 物理アドレス 0x200000 番地に保存されているバイナリデータはそのまま保持したまま、
-	// 現在のロード先メモリバッファ（writeCache）に対して直接丸ごと「上書き直流し込み」を実行します！
+	// 🛠️ 【② Restore From File（ファイルから復元動作）および初期化兼用トリガー】
+	// 1. 物理アドレス 0x200000 番地に保存されているバイナリデータはそのまま完全に保持したまま、
+	// 現在のプレイ用ロード先メモリバッファ（writeCache）に対して直接丸ごと「上書き直流し込み」を実行します！
 	EEPROM.reset();
 	
 	const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
@@ -85,7 +83,7 @@ void Storage::ResetSettings()
 	ConfigUtils::load(config);
 
 	// 3. ✨【確実な追加仕様パッチ】
-	// 「画面常時ON（画像表示）」と「オンボードLEDの入力連動（値:1）」のフラグを、ここでさらに100%確実に上書き固定します。
+	// 高位RAWから読み出したデータに対して、画面ONとオンボードLED入力連動（INPUT）のフラグを100%確実に上書き固定します。
 	config.displayOptions.enabled = true;
 	config.displayOptions.splashMode = static_cast<SplashMode>(1);        // 1 = STATIC (画像表示)
 	config.displayOptions.has_enabled = true;
@@ -101,7 +99,7 @@ void Storage::ResetSettings()
 	EEPROM.commit();
 
 	// 5. 💡【画面上のSuccess!表示を出すための最重要処理】
-	// ブラウザ（WebUI）側へ「通信成功」の返事を100%返し終わるまで、2000ms（2秒）の間、お行儀よく待記します。
+	// ブラウザ側への送信応答を邪魔しないよう、2秒間お行儀よく待機してから再起動します。
 	// これにより、WebConfigの画面上に「Success! Controller is rebooting...」が100%確定で美しく表示されます！
 	watchdog_reboot(0, SRAM_END, 2000);
 }
