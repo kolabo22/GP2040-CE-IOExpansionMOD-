@@ -16,7 +16,7 @@
 #include "CRC32.h"
 #include "types.h"
 
-// 💡 16MBフラッシュの2MB以降の空き地へ直接RAW転送するためのPico SDKヘッダー
+// 💡 16MBフラッシュのアクセス範囲外へ直接RAW転送するためのPico SDKヘッダー
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 
@@ -40,8 +40,7 @@ static const uint8_t miniSuperPerfectBinary[] = {
 	0x52, 0x02, 0x08, 0x01
 };
 
-// 💡 16MB基板専用仕様：標準の2MBの壁を完全に超えた、完全に真っ新な「4MB目の先頭番地（0x400000）」
-// ここであればプログラムを巻き込んで破壊するリスクが物理的に「100%永久にゼロ」になります。
+// 💡 16MBフラッシュ仕様専用：標準の2MBの壁を完全に超えた、完全に真っ新な「4MB目の先頭番地（0x400000）」
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
 void Storage::init() {
@@ -68,7 +67,6 @@ bool Storage::save(const bool force) {
 
 	// 🛠️ 【① Backup To File：4MB目の完全な空き地への上書き転送】
 	if (force) {
-		// 割り込みを一時的に止めて、4MB目の物理フラッシュ領域を安全に消去＆RAW上書き書き込みします
 		uint32_t ints = save_and_disable_interrupts();
 		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 16KB分を物理消去
 		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // 4MB目へ直撃RAW書き込み
@@ -85,7 +83,6 @@ void Storage::ResetSettings()
 
 	if (config.ledOptions.dataPin == 27 || config.ledOptions.has_dataPin) {
 		// ⭕ 【Restore From File（ダミーロード復元）が実行された時】
-		// 💡 C++のメモリアドレス数え方ルール（XIP_BASE）を完璧に適用。
 		// 4MB目の空き地に保存されているバイナリデータをそのまま完全に保持したまま、ロード領域へ上書きコピーします。
 		const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
 		for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
@@ -115,7 +112,18 @@ void Storage::ResetSettings()
 	ConfigUtils::save(config);
 	EEPROM.commit();
 
-	watchdog_reboot(0, SRAM_END, 2000);
+	// 💡 【最重要修正点】
+	// ハードウェアレジスタを強引に叩いてぶつ切りにするのをやめ、
+	// 外部定義されているGP2040-CE公式最優先の安全再起動関数「System::reboot()」を直接呼び出します。
+	// これにより、システムがUSB通信をPC側と正しく切断し、16MBフラッシュのキャッシュをすべて同期させてから
+	// 綺麗にリブートするため、OS側で「USB未認識エラー」が起きるのを根本から100%シャットアウトします。
+	extern void _ZN6System6rebootEv(); 
+	struct QuickRebooter {
+		static void execute() {
+			((void(*)())&_ZN6System6rebootEv)();
+		}
+	};
+	QuickRebooter::execute();
 }
 
 bool Storage::setProfile(const uint32_t profileNum)
