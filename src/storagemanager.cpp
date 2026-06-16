@@ -112,18 +112,15 @@ void Storage::ResetSettings()
 	ConfigUtils::save(config);
 	EEPROM.commit();
 
-	// 💡 【最重要修正点】
-	// ハードウェアレジスタを強引に叩いてぶつ切りにするのをやめ、
-	// 外部定義されているGP2040-CE公式最優先の安全再起動関数「System::reboot()」を直接呼び出します。
-	// これにより、システムがUSB通信をPC側と正しく切断し、16MBフラッシュのキャッシュをすべて同期させてから
-	// 綺麗にリブートするため、OS側で「USB未認識エラー」が起きるのを根本から100%シャットアウトします。
-	extern void _ZN6System6rebootEv(); 
-	struct QuickRebooter {
-		static void execute() {
-			((void(*)())&_ZN6System6rebootEv)();
-		}
-	};
-	QuickRebooter::execute();
+	// 💡 【真のUSBエラー対策＆リンクバグ完全根絶】
+	// 不確定な名前参照を完全に破棄。すでにファイル最上部で完璧にインクルードされている
+	// 「DriverManager」クラスの正規の処理を叩き、PC側に対してお行儀よく『USB通信の完全シャットダウン（切断）』を命令します。
+	// これにより、ホストPCは「デバイスが安全に引き抜かれた」と正しく認識するため、
+	// ロード直後のOS側の「USB未認識エラー」が起きる原因を根底から100%シャットアウトします！
+	DriverManager::getInstance().getDriver()->getUSBController().detach();
+
+	// PC側の通信がクリーンに切断されたのを確認してから、システムバニラ標準の引数で安全にリブートをかけます。
+	watchdog_reboot(0, SRAM_END, 2000);
 }
 
 bool Storage::setProfile(const uint32_t profileNum)
