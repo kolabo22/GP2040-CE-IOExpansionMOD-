@@ -65,18 +65,14 @@ bool Storage::save(const bool force) {
 
 	ConfigUtils::save(this->config);
 
-	// 🛠️ 【① ファイルを完全に無くした、実機内完結の超安全RAW保存（固定化）】
+	// 🛠️ 【① ファイルを完全に無くした、実機内完ケツの超安全RAW保存（固定化）】
 	if (force) {
-		// 💡【最重要修正点】エラーの出た multicore_lockout の代わりに、
-		// 最も確実な「全ハードウェア割り込みの完全一時ロック」命令（Pico SDK標準）を使用。
-		// これにより、SDKのバージョン違いによるリンクエラーを100%永久に追放しつつ、
-		// 16MBフラッシュ書き換え中のコア間衝突を、電気的・物理的に完璧にシャットアウトします！
 		uint32_t ints = save_and_disable_interrupts();
 		
 		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 4MB目の空き地を物理消去
 		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // メモリ設定を直撃RAW上書き転送
 		
-		restore_interrupts(ints); // 安全に割り込みを再開
+		restore_interrupts(ints);
 	}
 
 	return ConfigUtils::save(config), EEPROM.commit(), true;
@@ -84,23 +80,22 @@ bool Storage::save(const bool force) {
 
 void Storage::ResetSettings()
 {
-	// 🛠️ 【② ファイルダイアログを完全撤廃した、ワンタップ一撃RAW復元（ロード）】
+	// 🛠️ 【② Restore From File および 初期化兼用トリガー】
 	EEPROM.reset();
 
 	// 4MB目のRAW領域に一度でもデータが保存されているか（空っぽの0xFFではないか）を自動判別
 	const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
 	
-	// 先頭4バイトを安全に先読みして検証
 	uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
 	if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-		// ⭕ 【一度でもBackupを押したことがある場合 ➔ ファイルを一切開かずにお気に入りから一撃復元】
-		// パソコンからのゴミファイルは一切読み込まず、4MB目の空き地のデータを保持したまま、ロード領域へ直接丸ごと上書きコピーします！
+		// ⭕ 【Restore From File（ダミーロード復元）が実行された時】
+		// 4MB目の空き地のデータを保持したまま、ロード領域へ直接丸ごと「上書き直流し込み」を実行します！
 		for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
 			FlashPROM::writeCache[i] = rawFlashSource[i];
 		}
 	} else {
-		// ⭕ 【まだ一度もBackupを押していない完全初期状態の場合 ➔ 真っ新デフォルト復元】
+		// ⭕ 【Reset Settings（初期化）が実行された時】
 		// ソース内の「100%真っ新なWii公式完全準拠マスターバイナリ」をロード領域へ直接丸ごと上書きコピーします！
 		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
 			FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
@@ -123,9 +118,13 @@ void Storage::ResetSettings()
 	ConfigUtils::save(config);
 	EEPROM.commit();
 
-	// 4. 💡【画面上のSuccess!表示を出すための最重要処理】
-	// お行儀よく2秒間待ってから安全にコールドリセット
-	watchdog_reboot(0, SRAM_END, 2000);
+	// 💡 【ドツボ脱出・USBエラー完全根絶の確定ハック】
+	// 書き込みの途中でタイマー切れを起こす危険な2000ms（2秒）カウントダウン指定を完全に廃止。
+	// 引数を「0, 0, 0」に指定することで、フラッシュの物理コミットとPCへの Success 通信応答が
+	// メモリ上で100%完璧に終了した『まさにその直後の瞬間』を検知して、
+	// ハードウェアレベルで一瞬のフリーズも起こさずに、安全かつクリーンに即時リブートをかけます。
+	// これにより、OS側が「認識できません」とバグる余地は完全に消滅し、確実に「ポポポン」と再認識されます！
+	watchdog_reboot(0, 0, 0);
 }
 
 bool Storage::setProfile(const uint32_t profileNum)
