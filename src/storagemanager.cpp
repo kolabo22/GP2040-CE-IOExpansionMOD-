@@ -57,7 +57,6 @@ bool Storage::save(const bool force) {
 void Storage::ResetSettings()
 {
 	// 💡 実機バックアップJSONから正確にシリアライズされた、MINI Super完全同期バイナリデータ配列
-	// Wii拡張、PCF8575の16ピンマップ、LEDインデックスの全てが1ビットの狂いもなくここに完全封入されています。
 	static const uint8_t miniSuperPerfectBinary[] = {
 		0x0A, 0x0C, 0x08, 0x0E, 0x10, 0x00, 0x18, 0x01, 0x20, 0x05, 0x5A, 0x00, 0x12, 0x22, 0x08, 0x1B, 
 		0x10, 0x00, 0x18, 0x00, 0x20, 0x01, 0x28, 0x50, 0x30, 0x0A, 0x38, 0x01, 0x40, 0x0E, 0x48, 0x22, 
@@ -73,20 +72,22 @@ void Storage::ResetSettings()
 		0x1C, 0x18, 0x10, 0x4A, 0x06, 0x08, 0x01, 0x10, 0x02, 0x18, 0x01, 0x52, 0x02, 0x08, 0x01
 	};
 
-	// 1. Nanopbのストリームをデコードバッファから安全に構築
-	#include "pb_decode.h"
-	pb_istream_t stream = pb_istream_from_buffer(miniSuperPerfectBinary, sizeof(miniSuperPerfectBinary));
-	
-	// 2. このクラス（Storage）自身が内包し管理している本物の「config」構造体にバイナリを一撃直流し込み
-	// アンパサンドなしの Config_fields マクロ展開により、lvalueコンパイルエラーを完全に解決
-	if (pb_decode(&stream, Config_fields, &config)) {
-		// 3. デコードに成功したら、このクラスが持つ正規のsave(true)メソッドを叩いてフラッシュへ強制上書き
-		save(true);
+	// 1. 一度EEPROMクラスの初期化（リセット）を実行し、キャッシュ内を空にします
+	EEPROM.reset();
+
+	// 2. パブリックな静的配列メンバ「FlashPROM::writeCache」に対して、
+	// お預かりした本物のバイナリデータを1バイトずつ直接上書き（直流し込み）します。
+	for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
+		FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
 	}
 
-	// 4. 保存が完全に完了した状態で、システムバニラ標準の引数に従い安全に再起動
+	// 3. フラッシュメモリ（32KB領域）へ、書き換えたキャッシュデータを本物のセーブデータとして強制永続化コミットします
+	EEPROM.commit();
+
+	// 4. システムバニラ標準の引数（SRAM_END, 2000ms）に従い、ウォッチドッグで安全にクールドリブート（再起動）をかけます
 	watchdog_reboot(0, SRAM_END, 2000);
 }
+
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
