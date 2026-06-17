@@ -353,7 +353,7 @@ err_t httpd_post_begin(void *connection, const char *uri, const char *http_reque
     // 🎯 バックアップAPI：4MB目へRAW転送してセーブ、ブラウザには通常終了を返す
     if (strcmp(uri, "/api/backup") == 0) {
         Storage::getInstance().save(true);
-        strncpy(response_uri, "/reboot.html", response_uri_len); // バニラ準拠の終了画面へ
+        strncpy(response_uri, "/reboot.html", response_uri_len);
         response_uri[response_uri_len - 1] = '\0';
         return ERR_OK;
     }
@@ -361,7 +361,7 @@ err_t httpd_post_begin(void *connection, const char *uri, const char *http_reque
     // 🎯 リストアまたは初期化API：実機内完結で読み込み・同期
     if (strcmp(uri, "/api/restore") == 0 || strcmp(uri, "/api/resetSettings") == 0) {
         Storage::getInstance().ResetSettings();
-        strncpy(response_uri, "/reboot.html", response_uri_len); // バニラ準拠の終了画面へ
+        strncpy(response_uri, "/reboot.html", response_uri_len);
         response_uri[response_uri_len - 1] = '\0';
         return ERR_OK;
     }
@@ -407,6 +407,25 @@ err_t httpd_post_receive_data(void *connection, struct pbuf *p)
         return ERR_BUF;
     }
     return ERR_OK;
+}
+
+// ==============================================================================
+// 🛠️ LWIP POST 完了コールバック (余計なハードウェア操作をせず自然に戻す)
+// ==============================================================================
+void httpd_post_finished(void *connection, char *response_uri, uint16_t response_uri_len)
+{
+    LWIP_UNUSED_ARG(connection);
+    
+    if (http_post_uri == "/api/backup" || http_post_uri == "/api/restore" || http_post_uri == "/api/resetSettings") {
+        strncpy(response_uri, "/reboot.html", response_uri_len);
+        response_uri[response_uri_len - 1] = '\0';
+        return;
+    }
+
+    if (http_post_payload_len != 0xffff) {
+        strncpy(response_uri, http_post_uri.c_str(), response_uri_len);
+        response_uri[response_uri_len - 1] = '\0';
+    }
 }
 
 // ==============================================================================
