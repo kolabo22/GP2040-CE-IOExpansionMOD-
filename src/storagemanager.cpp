@@ -55,57 +55,67 @@ bool Storage::save()
 }
 
 bool Storage::save(const bool force) {
-	if (!force &&
-		PeripheralManager::getInstance().isUSBEnabled(0) &&
-		(DriverManager::getInstance().getInputMode() == INPUT_MODE_PS4 ||
-			DriverManager::getInstance().getInputMode() == INPUT_MODE_PS5) &&
-		((PS4Driver*)DriverManager::getInstance().getDriver())->getDongleAuthRequired() == true ) {
-		return false;
-	}
+    if (!force &&
+        PeripheralManager::getInstance().isUSBEnabled(0) &&
+        (DriverManager::getInstance().getInputMode() == INPUT_MODE_PS4 ||
+        DriverManager::getInstance().getInputMode() == INPUT_MODE_PS5) &&
+        ((PS4Driver*)DriverManager::getInstance().getDriver())->getDongleAuthRequired() == true ) {
+        return false;
+    }
 
-	ConfigUtils::save(this->config);
+    ConfigUtils::save(this->config);
 
-	// 🛠️ 【① NOファイル仕様：ファイル保存を完全に無くした実機内完結セーブ】
-	if (force) {
-		uint32_t ints = save_and_disable_interrupts();
-		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 4MB目の空き地を物理消去
-		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // メモリ設定を直撃RAW上書き転送
-		restore_interrupts(ints);
-	}
+    // 🛠️ 【① NO ファイル仕様：ファイル保存を完全に無くした実機内完結セーブ】
+    if (force) {
+        uint32_t ints = save_and_disable_interrupts();
+        // 💡 隔離領域（4MB目）の設定領域サイズである32KB（8セクター）を正確に確保して物理消去
+        flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 8);
+        // メモリ設定キャッシュの全データ（32KB）を直撃 RAW 上書き転送
+        flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 8); 
+        restore_interrupts(ints);
+    }
 
-	return ConfigUtils::save(config), EEPROM.commit(), true;
+    return ConfigUtils::save(config), EEPROM.commit(), true;
 }
-
 void Storage::ResetSettings()
 {
-	// 🛠️ 【② NOファイル仕様：ダイアログを完全撤廃したワンタップ一撃復元】
-	EEPROM.reset();
+    // 🛠️ 【② NO ファイル仕様：ダイアログを完全撤廃したワンタップ一撃復元】
+    EEPROM.reset();
 
-	// 4MB目のRAW領域にデータが保存されているか（空っぽの0xFFではないか）を自動判別
-	const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
-	uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
+    // 4MB 目の RAW 領域にデータが保存されているか（空っぽの 0xFF ではないか）を自動判別
+    const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
+    uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
-	// 💡【検閲の完全バイパス】ダミーファイルの送信要求を完全に無視し、実機内完結で読み込みます
-	if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-		// ⭕ 【一度でもBackupを押したことがある場合 ➔ ファイルを一切開かずにお気に入りから一撃復元】
-		for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
-			FlashPROM::writeCache[i] = rawFlashSource[i];
-		}
-	} else {
-		// ⭕ 【完全初期状態の場合 ➔ 真っ新デフォルト復元】
-		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
-			FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
-		}
-	}
+    if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
+        // ⭕ 【一度でも Backup を押したことがある場合 ➔ ファイルを一切開かずにお気に入りから一撃復元】
+        // 💡 32KB（8セクター）分を丸ごと逆コピー上書き
+        for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
+            FlashPROM::writeCache[i] = rawFlashSource[i];
+        }
+    } else {
+        // ⭕ 【完全初期状態の場合 ➔ 真っ新デフォルト復元】
+        for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
+            if (i < sizeof(miniSuperPerfectBinary)) {
+                FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
+            } else {
+                FlashPROM::writeCache[i] = 0x00; // 残り領域は綺麗にゼロクリア
+            }
+        }
+    }
 
-	// 物理フラッシュメモリへ確定コミット。
-	EEPROM.commit();
-	ConfigUtils::load(config);
+    // 物理フラッシュメモリへ確定コミット
+    EEPROM.commit();
+    ConfigUtils::load(config);
 
-	// 💡【USB未認識エラー＆画面フリーズの完全解決】
-	// 2000ms（2秒）の間、ブラウザに「Success!」を表示させきってから安全にコールドリセット
-	watchdog_reboot(0, SRAM_END, 2000);
+    // 🔥【レイヤ3：メモリキャッシュへのリアルタイム強制同期フラグ注入】
+    // 再起動を待つまでもなく、現在CPUが参照しているランタイムの全設定フラグをこの場で上書き固定
+    this->config.displayOptions.enabled = true;       // 画面常時ON
+    this->config.ledOptions.useInputMode = 1;         // オンボードLED入力連動モード（値:1）
+
+    // 💡【重要】webconfig.cpp 側の LWIP レイヤーで「tud_disconnect() 付きの安全な再起動」が
+    // 走るため、ここに残っていた古い watchdog_reboot は完全撤去してそのまま正常終了させます。
 }
+
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
