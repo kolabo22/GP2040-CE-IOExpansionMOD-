@@ -333,11 +333,15 @@ void load_hotkey(const HotkeyEntry* hotkey, DynamicJsonDocument& doc, const stri
 // LWIP callback on HTTP POST to validate the URI
 
 // ==============================================================================
-// 🔥 【3レイヤ直流し（ファイルレス）専用：超爆速物理USB切断＆ハードウェアリセット】
+// 🔥 【通常モード復帰パッチ版】超爆速物理USB切断＆ハードウェアリセット
 // ==============================================================================
 static void performSecureUsbHardwareReboot() {
     // 1. LWIPがレスポンスパケットをネットワーク層（ホスト）へ完全に吐き出すための微小な猶予
     sleep_ms(100);
+
+    // 💡【アケコン起動バグ修正】WebConfig（設定画面）モードの永続フラグを物理的に折る
+    // 次回の起動時に強制的に「通常コントローラーモード」として爆速起動させます
+    System::reboot(System::BootMode::GAMEPAD);
 
     // 2. ホストPCに対して「アケコンが物理的に抜線された」と100%認識させる（TinyUSB層）
     tud_disconnect();
