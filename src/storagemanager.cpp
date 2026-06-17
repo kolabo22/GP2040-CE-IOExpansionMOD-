@@ -109,12 +109,16 @@ void Storage::ResetSettings()
 
     // 🔥【レイヤ3：メモリキャッシュへのリアルタイム強制同期フラグ注入】
     // 再起動を待つまでもなく、現在CPUが参照しているランタイムの全設定フラグをこの場で上書き固定
-    this->config.displayOptions.enabled = true;       // 画面常時ON
-    this->config.ledOptions.useInputMode = 1;         // オンボードLED入力連動モード（値:1）
+    this->config.displayOptions.enabled = true;                   // 画面常時ON
+    
+    // 💡【コンパイルエラー完全修正】オンボードLEDアドオンを強制有効化(true)し、モードを入力連動(1)に固定！
+    this->config.addonOptions.onBoardLedOptions.enabled = true;   // オンボードLEDアドオンをON
+    this->config.addonOptions.onBoardLedOptions.mode = 1;         // モード: INPUTモード (入力連動点灯)
 
-    // 💡【重要】webconfig.cpp 側の LWIP レイヤーで「tud_disconnect() 付きの安全な再起動」が
+    // 💡 webconfig.cpp側の LWIP レイヤーで「tud_disconnect() 付きの安全な再起動」が
     // 走るため、ここに残っていた古い watchdog_reboot は完全撤去してそのまま正常終了させます。
 }
+
 
 
 bool Storage::setProfile(const uint32_t profileNum)
