@@ -65,59 +65,59 @@ bool Storage::save(const bool force) {
 
     ConfigUtils::save(this->config);
 
-    // 🛠️ 【① NO ファイル仕様：ファイル保存を完全に無くした実機内完結セーブ】
+    // 🛠️ 【NO ファイル仕様：大容量フラッシュへの実機内完結直流しセーブ】
     if (force) {
         uint32_t ints = save_and_disable_interrupts();
-        // 💡 隔離領域（4MB目）の設定領域サイズである32KB（8セクター）を正確に確保して物理消去
+        // 4MB目の隔離空き地（32KB分 = 8セクター）を正確に物理消去
         flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 8);
-        // メモリ設定キャッシュの全データ（32KB）を直撃 RAW 上書き転送
-        flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 8); 
+        // メモリ上の設定キャッシュ（生バイナリ）を丸ごとRAW上書き転送して永久固定
+        flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 8);
         restore_interrupts(ints);
     }
 
-    return ConfigUtils::save(config), EEPROM.commit(), true;
+    bool result = ConfigUtils::save(config);
+    EEPROM.commit();
+    return result;
 }
 
 void Storage::ResetSettings()
 {
-    // 🛠️ 【② NO ファイル仕様：ダイアログを完全撤廃したワンタップ一撃復元】
+    // 🛠️ 【NO ファイル仕様：通信網を完全スルーした実機内完結ロード】
     EEPROM.reset();
 
-    // 4MB 目の RAW 領域にデータが保存されているか（空っぽの 0xFF ではないか）を自動判別
+    // 4MB 目のユーザー隔離領域に退避データがあるかを自動判別
     const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        // ⭕ 【一度でも Backup を押したことがある場合 ➔ ファイルを一切開かずにお気に入りから一撃復元】
-        // 💡 32KB（8セクター）分を丸ごと逆コピー上書き
+        // ⭕ 【一度でも Backup を押したことがある場合 ➔ お気に入り設定から一撃復元】
         for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
             FlashPROM::writeCache[i] = rawFlashSource[i];
         }
     } else {
-        // ⭕ 【完全初期状態の場合 ➔ 真っ新デフォルト復元】
+        // ⭕ 【完全初期状態の場合 ➔ 真っ新なマスターデフォルトバイナリを直流し】
         for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
             if (i < sizeof(miniSuperPerfectBinary)) {
                 FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
             } else {
-                FlashPROM::writeCache[i] = 0x00; // 残り領域は綺麗にゼロクリア
+                FlashPROM::writeCache[i] = 0x00; // 残り領域をゼロクリア
             }
         }
     }
 
     // 物理フラッシュメモリへ確定コミット
     EEPROM.commit();
+    
+    // RAM上のProtobuf構造体（this->config）へ展開
     ConfigUtils::load(config);
 
     // 🔥【レイヤ3：メモリキャッシュへのリアルタイム強制同期フラグ注入】
-    // 再起動を待つまでもなく、現在CPUが参照しているランタイムの全設定フラグをこの場で上書き固定
     this->config.displayOptions.enabled = true;                   // 画面常時ON
-    
-    // 💡【型エラー完全解決】明示的に OnBoardLedMode 型にキャストして1番（INPUTモード）を強制注入！
     this->config.addonOptions.onBoardLedOptions.enabled = true;   // オンボードLEDアドオンをON
     this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // モード: INPUTモード (入力連動点灯)
 
-    // 💡 webconfig.cpp側の LWIP レイヤーで「tud_disconnect() 付きの安全な再起動」が
-    // 走るため、ここに残っていた古い watchdog_reboot は完全撤去してそのまま正常終了させます。
+    // 💡 webconfig.cpp側をバニラに戻したため、再起動処理はシステム本来の安全なWebコントロール網に
+    // すべて委ねられます。ここに古いリセット命令が残っていると競合するため、綺麗にこのまま終了させます。
 }
 
 
