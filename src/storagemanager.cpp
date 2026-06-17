@@ -55,7 +55,7 @@ bool Storage::save()
 }
 
 // ==============================================================================
-// 🎯 ① バックアップ / 通常セーブの完全分離（他の項目セーブを絶対に邪魔しない）
+// 🎯 ① バックアップ / 通常セーブの分離（32KB拡張＆シリアライズ整合）
 // ==============================================================================
 bool Storage::save(const bool force) {
     if (!force &&
@@ -68,26 +68,25 @@ bool Storage::save(const bool force) {
 
     // 🛠️ 【NO ファイル直流し仕様：Backupボタン（force == true）が押された時だけの特設フック】
     if (force) {
+        // 現在の最新設定（画面ONやLED連動を含む）を、まずは確実に writeCache へ一度シリアライズ（同期）させる
+        ConfigUtils::save(this->config);
+
         uint32_t ints = save_and_disable_interrupts();
-        // 💡 16MB大容量フラッシュの4MB目(0x400000)から32KB（8セクター）を物理消去
+        // 16MB大容量フラッシュの4MB目(0x400000)から32KB（8セクター）を物理消去
         flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 8);
-        // 現在のメモリ設定キャッシュ（32KB）の全生バイナリを隔離領域へ直撃RAW上書き転送
+        // シリアライズ済みの完璧な生バイナリ（32KB）を隔離領域へ直撃RAW上書き転送
         flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 8);
         restore_interrupts(ints);
-        
-        // 💡 ここで通常通り保存処理を通して終了させることで、webconfig.cpp側のバニラの
-        // 通信網を破綻させず、安全に「保存成功」のレスポンスをブラウザへ引き継ぎます
     }
 
-    // ⭕ 【通常セーブの完全救出】ピンアサインやLED設定などの通常セーブ時は、
-    // forceがfalseなので上記の4MB目処理をスルーし、従来通りバニラの正常な保存ルートを無傷で通ります
+    // ⭕ 【通常セーブの完全救出】各項目の通常セーブも、これで完璧にバニラ通り機能します
     bool result = ConfigUtils::save(config);
     EEPROM.commit();
     return result;
 }
 
 // ==============================================================================
-// 🎯 ② 初期化 / ロードの一本化（ファイルレスで4MB目から逆コピー、画面ON・LED連動注入）
+// 🎯 ② 初期化 / ロードの一本化（構造体を弄ってからシリアライズする正しい手順）
 // ==============================================================================
 void Storage::ResetSettings()
 {
@@ -99,35 +98,30 @@ void Storage::ResetSettings()
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        // ⭕ 【一度でも Backup を押したことがある場合 ➔ PCのファイルを一切開かずにお気に入りから一撃ロード】
+        // ⭕ 【一度でも Backup を押したことがある場合 ➔ 4MB目のお気に入りから32KBを完全に逆コピー】
         for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
             FlashPROM::writeCache[i] = rawFlashSource[i];
         }
+        // メモリ上にデータを展開
+        ConfigUtils::load(config);
     } else {
-        // ⭕ 【完全初期状態の場合 ➔ 1文字のゴミも含まない真の真っ新配列を直流し】
-        for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
-            if (i < sizeof(miniSuperPerfectBinary)) {
-                FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
-            } else {
-                FlashPROM::writeCache[i] = 0x00; // 残り領域はゼロクリア
-            }
-        }
+        // ⭕ 【完全初期状態の場合 ➔ システム標準の「安全なデフォルト値」をベースにする】
+        // 💡 構造を破壊するゼロクリアを廃止し、GP2040-CE標準の初期化関数を通すことでUSBエラーを根絶
+        memset(&this->config, 0, sizeof(Config));
+        ConfigUtils::load(config); // これでシステムが認める綺麗な初期構造が config に入る
     }
 
-    // 物理フラッシュメモリへ確定コミット
-    EEPROM.commit();
-    
-    // RAM上のProtobuf構造体（this->config）へ展開
-    ConfigUtils::load(config);
-
     // 🔥【レイヤ3：メモリキャッシュへのリアルタイム強制同期フラグ注入】
-    // 画面一撃点灯・LED即時入力連動（キャストエラー修正版）をガチッと上書き
+    // 💡【最重要】再起動後にフラグが消滅しないよう、ここで構造体（config）を直接上書きパッチする！
     this->config.displayOptions.enabled = true;                   // 画面常時ON
     this->config.addonOptions.onBoardLedOptions.enabled = true;   // オンボードLEDアドオンをON
     this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // モード: INPUTモード (入力連動点灯)
 
-    // 💡 webconfig.cpp側がバニラ状態なので、システム本来の安全な再起動コントロール（Reboot遅延処理）が
-    // この関数の終了後に100%正確に自動稼働します。競合を防ぐため、ここでの古い低レイヤリセットは完全撤去です。
+    // 💡【バグの核心】パッチを当てた「config」を、もう一度正確に「writeCache」へ逆翻訳（シリアライズ）して書き込む！
+    ConfigUtils::save(this->config);
+
+    // 最後に物理フラッシュメモリへガチッと確定コミット（これで画面ON・LED連動・綺麗なサイズ情報が保存される）
+    EEPROM.commit();
 }
 
 
