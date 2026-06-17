@@ -53,24 +53,18 @@ bool Storage::save(const bool force) {
 
     // 🛠️ 【Backupボタン（force == true）が押された時だけの特設フック】
     if (force) {
-        // 1. 現在の最新設定（画面ONやLED連動を含む）を確実に一度公式エンジンで writeCache へ同期
+        // 現在の最新設定（画面ONやLED連動を含む）を確実に一度公式エンジンで writeCache へ同期
         ConfigUtils::save(this->config);
 
         uint32_t ints = save_and_disable_interrupts();
-        // 2. 16MB大容量フラッシュの4MB目(0x400000)から32KB（8セクター）を物理消去
+        // 16MB大容量フラッシュの4MB目(0x400000)から32KB（8セクター）を物理消去
         flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 8);
-        // 3. 完璧な生バイナリ（32KB）を隔離領域へ直撃RAW上書き転送して実機内セーブを完全固定
+        // 完璧な生バイナリ（32KB）を隔離領域へ直撃RAW上書き転送して実機内セーブを完全固定
         flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 8);
         restore_interrupts(ints);
-
-        // 💡 【重要：バグの元凶 memset を完全撤去】
-        // 通常のSaveボタンと共通で使われる writeCache バッファを一切汚さずにそのままキープします。
-        // これにより、通常の各項目セーブも、バックアップボタンも、ブラウザ側への返送パケットが
-        // 1ビットも狂うことなく100%完全に成立し、画面に緑色の「SUCCESS」が正常に大復活します！
     }
 
-    // ⭕ 【通常セーブの完全救出】各項目の通常セーブは、forceがfalseなので無傷で100%公式ルートを流れます
-    // これにより、通常の保存ボタンを押した際にフリーズしたり、USBデバイスエラーが吹く不具合は完全に消滅します。
+    // ⭕ 【通常セーブの完全救出】各項目の通常セーブ時は、forceがfalseなので無傷で100%公式ルートを流れます
     bool result = ConfigUtils::save(config);
     EEPROM.commit();
     return result;
@@ -97,11 +91,10 @@ void Storage::ResetSettings()
     } else {
         // ⭕ 【完全初期状態の場合 ➔ 寸分の狂いもない現在の最新デフォルト構造を展開】
         memset(&this->config, 0, sizeof(Config));
-        ConfigUtils::load(config); // 公式の安全な初期構造が config に入ります
+        ConfigUtils::load(config); 
     }
 
     // 🔥【レイヤ3：メモリキャッシュへのリアルタイム強制同期フラグ注入】
-    // 💡 初期化時やダミーロード時でも、100%確実に「画面常時ON」「LED入力連動（値:1）」で固定
     this->config.displayOptions.enabled = true;                   // 画面常時ON
     this->config.addonOptions.onBoardLedOptions.enabled = true;   // オンボードLEDアドオンをON
     this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // モード: INPUTモード (入力連動点灯)
@@ -109,14 +102,8 @@ void Storage::ResetSettings()
     // 💡 注入したフラグを完璧なProtobufバイナリに再シリアライズして writeCache に公式上書き翻訳
     ConfigUtils::save(this->config);
     
-    // 💡 物理フラッシュメモリへガチッとコミットして確定永続保存（書き込みパルスを完全に処理）
+    // 💡 物理フラッシュメモリへガチッとコミットして確定永続保存
     EEPROM.commit();
-
-    // 💡 【超重要】ここで無理やり割り込んで即死リセット(System::reboot)をかけるのを完全に撤去します！
-    // この関数の処理をそのままクリーンに終了(return)させてシステムコアへ戻します。
-    // これにより実機はブラウザに対して「初期化完了」の返事（Reboot画面）を100%綺麗に返しきることができ、
-    // ネットワークパケットを正常に吐き出し終えた直後に、GP2040-CE本来の安全な自動2秒遅延リブートが
-    // バックグラウンドで勝手に駆動し、電源の抜き差し不要で全自動でアケコンモードへ勝手に復帰します。
 }
 
 
