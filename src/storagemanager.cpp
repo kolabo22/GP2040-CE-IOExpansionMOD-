@@ -77,6 +77,7 @@ bool Storage::save(const bool force) {
 
     return ConfigUtils::save(config), EEPROM.commit(), true;
 }
+
 void Storage::ResetSettings()
 {
     // 🛠️ 【② NO ファイル仕様：ダイアログを完全撤廃したワンタップ一撃復元】
@@ -111,14 +112,13 @@ void Storage::ResetSettings()
     // 再起動を待つまでもなく、現在CPUが参照しているランタイムの全設定フラグをこの場で上書き固定
     this->config.displayOptions.enabled = true;                   // 画面常時ON
     
-    // 💡【コンパイルエラー完全修正】オンボードLEDアドオンを強制有効化(true)し、モードを入力連動(1)に固定！
+    // 💡【型エラー完全解決】明示的に OnBoardLedMode 型にキャストして1番（INPUTモード）を強制注入！
     this->config.addonOptions.onBoardLedOptions.enabled = true;   // オンボードLEDアドオンをON
-    this->config.addonOptions.onBoardLedOptions.mode = 1;         // モード: INPUTモード (入力連動点灯)
+    this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // モード: INPUTモード (入力連動点灯)
 
     // 💡 webconfig.cpp側の LWIP レイヤーで「tud_disconnect() 付きの安全な再起動」が
     // 走るため、ここに残っていた古い watchdog_reboot は完全撤去してそのまま正常終了させます。
 }
-
 
 
 bool Storage::setProfile(const uint32_t profileNum)
