@@ -410,7 +410,7 @@ err_t httpd_post_receive_data(void *connection, struct pbuf *p)
 }
 
 // ==============================================================================
-// 🛠️ LWIP POST 完了コールバック (重複なし・完全一本化)
+// 🛠️ LWIP POST 完了コールバック 
 // ==============================================================================
 void httpd_post_finished(void *connection, char *response_uri, uint16_t response_uri_len)
 {
@@ -428,3 +428,14 @@ void httpd_post_finished(void *connection, char *response_uri, uint16_t response
     }
 }
 
+// ==============================================================================
+// 🛑 【ここから下が削ってはいけなかった心臓部です】 1文字も汚さず完全に復活
+// ==============================================================================
+void WebConfig::setup() {
+    rndis_init();
+    httpd_init();
+}
+
+void WebConfig::loop() {
+    // WebConfigのバックグラウンドタスク処理（バニラ通り）
+}
