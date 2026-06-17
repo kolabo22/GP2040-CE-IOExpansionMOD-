@@ -87,7 +87,7 @@ bool Storage::save(const bool force) {
 }
 
 // ==============================================================================
-// 💾 🎯 ② 初期化 / ロードの完全一本化（一発点灯＆全自動リブート復帰パッチ版）
+// 💾 🎯 ② 初期化 / ロードの完全一本化（周辺機器強制再ビルド・全自動リブート版）
 // ==============================================================================
 void Storage::ResetSettings()
 {
@@ -109,38 +109,34 @@ void Storage::ResetSettings()
         // ⭕ 【完全初期状態の場合】1文字のゴミも含まない、画面ON・LED連動済みの「真のマスターバイナリ配列」を直流し！
         for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
             if (i < sizeof(miniSuperPerfectBinary)) {
-                FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
-            } else {
-                FlashPROM::writeCache[i] = 0x00; // 残り領域をゼロクリア
+                if (i < sizeof(miniSuperPerfectBinary)) {
+                    FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
+                } else {
+                    FlashPROM::writeCache[i] = 0x00; // 残り領域をゼロクリア
+                }
             }
         }
         // 直流しした完璧なバイナリから config 構造体へ展開（これでWiiアサイン等も一発で同期）
         ConfigUtils::load(config);
     }
 
-    // 🔥【レイヤ3：メモリキャッシュへのリアルタイム強制同期フラグ注入】
-    // 💡 初期化時でも100%不揮発で画面がパッと点灯し、LEDが入報連動するための強制パッチ
+    // 💡 【重要】メモリ構造体へ設定変更を確実に反映・浸透させるための完全パッチ
     this->config.displayOptions.enabled = true;                   // 画面常時ON
     this->config.addonOptions.onBoardLedOptions.enabled = true;   // オンボードLEDアドオンをON
     this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // モード: INPUTモード (入力連動点灯)
 
-    // 💡【注入したフラグを Protobuf バイナリに再シリアライズ】
+    // 🔥【今回の修正の核心】
+    // 変更した構造体のフラグを GP2040-CE のコアシステムへ「確定コミット」させて、
+    // 物理フラッシュ（writeCache）側のProtobufチェックサム付きバイナリデータを完全に再構築します。
     ConfigUtils::save(this->config);
-
-    // 💡【物理フラッシュメモリへ確定保存】
     EEPROM.commit();
 
-    // ==============================================================================
-    // 🎯 【全自動リブート復帰パッチ】関数の最末尾にこの2行を追加します
-    // ==============================================================================
-    // 1. 次回の起動モードを「通常アケコン（GAMEPAD）」モードに強制指定して固定します
+    // 🎯 【全自動リブート予約】
+    // 次回の起動モードを通常アケコン（GAMEPAD）に指定し、
+    // webconfig（設定モード）の処理が正常終了した直後に、全自動で安全に再起動がかかるようにします。
     System::reboot(System::BootMode::GAMEPAD);
-
-    // 2. 💡【重要】ここで即死リセットさせず、このまま正常終了（return）させます。
-    // これにより、実機はブラウザへ「初期化成功」の返事（Reboot画面）を100%綺麗に送り届けることができ、
-    // そのパケットを吐き出し終えた直後、システム標準の安全な2秒遅延リブート（ウォッチドッグ）が
-    // 自動的に駆動して、電源の抜き差し不要で通常アケコンモードへ勝手に再起動がかかります。
 }
+
 
 
 bool Storage::setProfile(const uint32_t profileNum)
