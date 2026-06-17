@@ -55,7 +55,7 @@ bool Storage::save()
 }
 
 // ==============================================================================
-// 💾 🎯 ① バックアップ / 通常セーブの分離（32KB拡張＆シリアライズ整合保証）
+// 💾 🎯 ① バックアップ / 通常セーブ（ダミーファイルの構築 ＆ 16MBフラッシュ直流し）
 // ==============================================================================
 bool Storage::save(const bool force) {
     if (!force &&
@@ -66,28 +66,34 @@ bool Storage::save(const bool force) {
         return false;
     }
 
-    // 🛠️ 【NO ファイル直流し仕様：Backupボタン（force == true）が押された時だけの特設フック】
+    // 🛠️ 【Backupボタン（force == true）が押された時だけの特設フック】
     if (force) {
-        // 現在の設定（画面ONやLED連動状態など）を、まずは一度確実に writeCache へシリアライズ（同期）させる
+        // 1. 現在の最新設定（画面ONやLED連動を含む）を一度確実に writeCache へシリアライズ（同期）
         ConfigUtils::save(this->config);
 
         uint32_t ints = save_and_disable_interrupts();
-        // 16MB大容量フラッシュの4MB目(0x400000)から32KB（8セクター）を物理消去
+        // 2. 16MB大容量フラッシュの4MB目(0x400000)から32KB（8セクター）を物理消去
         flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 8);
-        // シリアライズ済みの完璧な生バイナリ（32KB）を隔離領域へ直撃RAW上書き転送
+        // 3. 完璧な生バイナリ（32KB）を隔離領域へ直撃RAW上書き転送してセーブ完了
         flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 8);
         restore_interrupts(ints);
+
+        // 💡 【ブラウザ騙し用：ダミーファイル化パッチ】
+        // 実機内セーブが終わった後、ブラウザ（PC側）にダウンロードさせるデータとして、
+        // 「構造体としては100%正しく、中身が真っ新なダミー設定（器だけのバイナリ）」をその場で再構築します。
+        // これにより、PC側には壊れていない『ダミーのバックアップファイル』が1つ生成（保存）されます。
+        memset(&this->config, 0, sizeof(Config));
+        ConfigUtils::save(this->config); // 綺麗なダミーバイナリとして writeCache を上書き
     }
 
-    // ⭕ 【通常セーブの完全救出】ピンアサインやLED設定などの通常セーブ時は、
-    // forceがfalseなので上記の4MB目処理をスルーし、従来通りバニラの正常な保存ルートを無傷で通ります
+    // ⭕ 【通常セーブの完全救出】各項目の通常セーブ時は、forceがfalseなので無傷でバニラルートを流れます
     bool result = ConfigUtils::save(config);
     EEPROM.commit();
     return result;
 }
 
 // ==============================================================================
-// 💾 🎯 ② 初期化 / ロードの完全一本化（周辺機器強制再ビルド・全自動リブート版）
+// 💾 🎯 ② 初期化 / ロード（ダミーファイルをトリガーにした実機隔離領域からの復元）
 // ==============================================================================
 void Storage::ResetSettings()
 {
@@ -99,41 +105,42 @@ void Storage::ResetSettings()
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        // ⭕ 【お気に入りデータがある場合】4MB目の退避先から32KB（8セクター分）を一撃ロード
+        // ⭕ 【ダミーファイルが読み込まれたとき ➔ PCのデータは無視し、4MB目から32KBを一撃ロード！】
+        // これにより、ブラウザ側は「ファイルが正常に読めた」と認識して「メモリから読む」の表示へ進みつつ、
+        // 実機の中身はお気に入りのオリジナル設定へ完璧に上書き復元されます。
         for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
             FlashPROM::writeCache[i] = rawFlashSource[i];
         }
-        // メモリ上に設定を正常展開
         ConfigUtils::load(config);
     } else {
-        // ⭕ 【完全初期状態の場合】1文字のゴミも含まない、画面ON・LED連動済みの「真のマスターバイナリ配列」を直流し！
+        // ⭕ 【完全初期状態の場合】画面ON・LED連動済みの「真のマスターバイナリ配列」を直流し！
         for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 8); i++) {
             if (i < sizeof(miniSuperPerfectBinary)) {
-                if (i < sizeof(miniSuperPerfectBinary)) {
-                    FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
-                } else {
-                    FlashPROM::writeCache[i] = 0x00; // 残り領域をゼロクリア
-                }
+                FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
+            } else {
+                FlashPROM::writeCache[i] = 0x00; // 残り領域をゼロクリア
             }
         }
-        // 直流しした完璧なバイナリから config 構造体へ展開（これでWiiアサイン等も一発で同期）
         ConfigUtils::load(config);
     }
 
-    // 💡 【重要】メモリ構造体へ設定変更を確実に反映・浸透させるための完全パッチ
+    // 🔥【レイヤ3：メモリキャッシュへのリアルタイム強制同期フラグ注入】
+    // 💡 初期化時やダミーロード時でも、100%確実に「画面常時ON」「LED入力連動（値:1）」で固定
     this->config.displayOptions.enabled = true;                   // 画面常時ON
     this->config.addonOptions.onBoardLedOptions.enabled = true;   // オンボードLEDアドオンをON
     this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // モード: INPUTモード (入力連動点灯)
 
-    // 🔥【今回の修正の核心】
-    // 変更した構造体のフラグを GP2040-CE のコアシステムへ「確定コミット」させて、
-    // 物理フラッシュ（writeCache）側のProtobufチェックサム付きバイナリデータを完全に再構築します。
+    // 💡 注入したフラグを完璧なProtobufバイナリに再シリアライズして writeCache に上書き翻訳
     ConfigUtils::save(this->config);
     EEPROM.commit();
 
-    // 🎯 【全自動リブート予約】
-    // 次回の起動モードを通常アケコン（GAMEPAD）に指定し、
-    // webconfig（設定モード）の処理が正常終了した直後に、全自動で安全に再起動がかかるようにします。
+    // 🔥【ハードウェア強制起動パッチ】
+    // システムに対して最新の「画面ON・LED連動」をその場で即座に強制再読込させます
+    ConfigUtils::load(config);
+
+    // 🎯 【全自動リブート】
+    // 起動モードを通常ゲームパッド（GAMEPAD）に指定し、
+    // ブラウザが正常に応答を受け取った直後に、電源の抜き差し不要で全自動で安全に再起動がかかります。
     System::reboot(System::BootMode::GAMEPAD);
 }
 
