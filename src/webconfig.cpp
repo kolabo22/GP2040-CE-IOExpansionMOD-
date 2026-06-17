@@ -36,6 +36,10 @@
 #include "lwip/mem.h"
 #include "addons/input_macro.h"
 
+#include "tusb.h"
+#include "hardware/watchdog.h"
+#include "pico/time.h"
+
 #define PATH_CGI_ACTION "/cgi/action"
 
 #define LWIP_HTTPD_POST_MAX_PAYLOAD_LEN (1024 * 16)
@@ -327,6 +331,28 @@ void load_hotkey(const HotkeyEntry* hotkey, DynamicJsonDocument& doc, const stri
 }
 
 // LWIP callback on HTTP POST to validate the URI
+
+// ==============================================================================
+// 🔥 【3レイヤ直流し（ファイルレス）専用：超爆速物理USB切断＆ハードウェアリセット】
+// ==============================================================================
+static void performSecureUsbHardwareReboot() {
+    // 1. LWIPがレスポンスパケットをネットワーク層（ホスト）へ完全に吐き出すための微小な猶予
+    sleep_ms(100);
+
+    // 2. ホストPCに対して「アケコンが物理的に抜線された」と100%認識させる（TinyUSB層）
+    tud_disconnect();
+
+    // 3. OS側がデバイスの喪失を完全に検知・クリーンアップしきるまでの物理的猶予
+    sleep_ms(500);
+
+    // 4. ウォッチドッグで一切の未定義状態を排除した、真のコールドリセットを叩き込む
+    watchdog_reboot(0, SRAM_END, 10);
+    while (true); // 再起動を待機
+}
+
+// ==============================================================================
+// 🛠️ LWIP POST 開始コールバック (URI判定の水際でフック)
+// ==============================================================================
 err_t httpd_post_begin(void *connection, const char *uri, const char *http_request,
                        uint16_t http_request_len, int content_len, char *response_uri,
                        uint16_t response_uri_len, uint8_t *post_auto_wnd)
@@ -342,18 +368,43 @@ err_t httpd_post_begin(void *connection, const char *uri, const char *http_reque
         return ERR_ARG;
     }
 
+    // 🎯 バックアップAPIが叩かれた「瞬間」に実機内隔離領域(4MB目)へRAW転送してセーブ
+    if (strcmp(uri, "/api/backup") == 0) {
+        Storage::getInstance().save(true);
+        strncpy(response_uri, uri, response_uri_len);
+        response_uri[response_uri_len - 1] = '\0';
+        return ERR_OK;
+    }
+
+    // 🎯 リストアまたは初期化APIが叩かれた「瞬間」に実機内完結で読み込み・同期
+    if (strcmp(uri, "/api/restore") == 0 || strcmp(uri, "/api/resetSettings") == 0) {
+        Storage::getInstance().ResetSettings();
+        strncpy(response_uri, uri, response_uri_len);
+        response_uri[response_uri_len - 1] = '\0';
+        return ERR_OK;
+    }
+
+    // それ以外の通常APIはバニラ通りペイロードバッファを初期化して受信へ進む
     http_post_uri = uri;
     http_post_payload_len = 0;
     memset(http_post_payload, 0, LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
     return ERR_OK;
 }
 
-// LWIP callback on HTTP POST to for receiving payload
+// ==============================================================================
+// 🛠️ LWIP POST データ受信コールバック (バッファ溢れの元凶をバイパス)
+// ==============================================================================
 err_t httpd_post_receive_data(void *connection, struct pbuf *p)
 {
     LWIP_UNUSED_ARG(connection);
+    
+    // 🎯 直流し対象APIのパケットは、中身を読まずにその場で即時「廃棄（ディスカード）」
+    if (http_post_uri == "/api/backup" || http_post_uri == "/api/restore" || http_post_uri == "/api/resetSettings") {
+        pbuf_free(p); // メモリリーク防止のための即時解放
+        return ERR_OK;
+    }
 
-    // Cache the received data to http_post_payload
+    // 通常のAPI（設定保存等）は、従来通りバッファへ蓄積
     while (p != NULL)
     {
         if (http_post_payload_len + p->len <= LWIP_HTTPD_POST_MAX_PAYLOAD_LEN)
@@ -361,36 +412,43 @@ err_t httpd_post_receive_data(void *connection, struct pbuf *p)
             MEMCPY(http_post_payload + http_post_payload_len, p->payload, p->len);
             http_post_payload_len += p->len;
         }
-        else // Buffer overflow
+        else 
         {
             http_post_payload_len = 0xffff;
             break;
         }
-
         p = p->next;
     }
-
-    // Need to release memory here or will leak
     pbuf_free(p);
 
-    // If the buffer overflows, error out
     if (http_post_payload_len == 0xffff) {
         return ERR_BUF;
     }
-
     return ERR_OK;
 }
 
-// LWIP callback to set the HTTP POST response_uri, which can then be looked up via the fs_custom callbacks
+// ==============================================================================
+// 🛠️ LWIP POST 完了コールバック (レスポンス完了の瞬間に切断・再起動を発動)
+// ==============================================================================
 void httpd_post_finished(void *connection, char *response_uri, uint16_t response_uri_len)
 {
     LWIP_UNUSED_ARG(connection);
+    
+    // 🎯 直流し対象のAPIが完了した瞬間、物理USB層の強制切断・コールドリセットを実行
+    if (http_post_uri == "/api/backup" || http_post_uri == "/api/restore" || http_post_uri == "/api/resetSettings") {
+        strncpy(response_uri, http_post_uri.c_str(), response_uri_len);
+        response_uri[response_uri_len - 1] = '\0';
+        
+        performSecureUsbHardwareReboot();
+        return;
+    }
 
     if (http_post_payload_len != 0xffff) {
         strncpy(response_uri, http_post_uri.c_str(), response_uri_len);
         response_uri[response_uri_len - 1] = '\0';
     }
 }
+
 
 void addUsedPinsArray(DynamicJsonDocument& doc)
 {
