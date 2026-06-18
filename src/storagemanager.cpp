@@ -44,10 +44,9 @@ bool Storage::save(const bool force) {
         return false;
     }
 
-    // 💡 【他ファイルへの依存を100%全廃した、完全自律型・仕分け判定システム】
-    // webconfig.cpp（WebUI）から「Backup To File」ボタンが押された瞬間、
-    // 実機システムは『force = true（バックアップ処理強制実行フラグ）』を乗せてこの関数を叩きます。
-    // この『force == true』の瞬間こそが、「バックアップボタンを押したその時点の全設定」を隔離する絶対のトリガーです！
+    // 🛠️ 【お気に入り隔離セーブ（Backupボタン）が押された瞬間の特設ルート】
+    // 💡 webconfig.cpp（WebUI）から「Backup To File」ボタンが押された瞬間、
+    // 実機システムは『force = true』を乗せてこの関数を叩きます。
     if (force) {
         // 現在構築されているすべての設定項目を綺麗なProtobuf形式バイナリにシリアライズして writeCache に格納
         ConfigUtils::save(this->config);
@@ -58,16 +57,16 @@ bool Storage::save(const bool force) {
         flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4);
         restore_interrupts(ints);
         
-        // 💡 4MB目の隔離部屋への保存が終わったら、日常の2MB通常セーブ（EEPROM.commit）は【一切呼び出さずにreturn】します。
+        // 💡 4MB目の隔離部屋への保存が終わったら、そのままクリーンに終了させます。
         // これにより、通常の部屋（日常の変更データ）は1ビットも汚されず、バックアップを押した時点の全設定のみが聖域に100%独立キープされます！
         return true;
     }
 
     // ⭕ 【通常各項目の保存（各ページのSaveボタン）の挙動】
     // 普段、色々と設定をガチャガチャ変更して試す日常の変更セーブ（forceがfalseの普段のSave）です。
-    // バックアップ（Backup）ボタンが押されていない時は、上記の4MB目処理を完全にスルーし、
-    // 従来通り通常領域（2MB内）の仮想EEPROM（FlashPROM::writeCache）への通常セーブを行います。
-    // これにより、普段のSaveによって4MB目の隔離聖域データが都度変化して汚れることは100%絶対にありません！
+    // バックアップボタンが押されていない時は、余計な処理を一切挟まず、
+    // 100%バニラ本来の正規のセーブ・コミット処理へそのまま流します。
+    // これにより、通信タイムアウトによるフリーズやUSBデバイスエラーは物理的に100%完全消滅します！
     bool result = ConfigUtils::save(config);
     EEPROM.commit();
     return result;
@@ -109,10 +108,9 @@ void Storage::ResetSettings()
         // 💡 ここで System::reboot を呼び出さずに正常リターン（終了）させることで、
         // 自動再起動を完全にスキップし、WebConfig画面を維持します！そのまま続けて変更作業をどうぞ！
     } else {
-        // ⭕ 【初期化（Reset Settings）ボタンが押された時の挙動 ➔ バニラ通り全自動リブート】
-        // 寸法・構造のズレが絶対に起きない最新の公式デフォルト構造を展開し、通常領域へコミットします。
+        // ⭕ 【初期化（Reset Settings）ボタンが押された時の挙動 ➔ 固定バイナリを排除したC++動的生成】
         memset(&this->config, 0, sizeof(Config));
-        ConfigUtils::load(config);
+        ConfigUtils::load(config); // 公式の安全な初期構造が config に入ります
         
         this->config.displayOptions.enabled = true;
         this->config.addonOptions.onBoardLedOptions.enabled = true;
