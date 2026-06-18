@@ -22,6 +22,12 @@
 // 16MB 💡 フラッシュの通常アクセス範囲外へ安全に RAW 転送するための隔離番地固定指定
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
+// 💡 【自作ジングルプレイヤー用外部変数パッチ】
+// お手製の jingle_player.cpp 側で定義されている「有効化フラグ」と「音量変数」を外部参照します。
+// もし変数名が異なる場合は、ご自身の cpp 側の変数名に合わせて書き換えてください。
+extern bool globalJinglePlayerEnabled;
+extern int32_t globalJingleVolume;
+
 void Storage::init() {
     systemFlashSize = System::getPhysicalFlash();
     EEPROM.start();
@@ -33,7 +39,7 @@ bool Storage::save() {
 }
 
 // ==============================================================================
-// 💾 🎯 ① バックアップ / 通常セーブ（システムメモリを破壊しない、バニラルート完全救出版）
+// 💾 🎯 ① バックアップ / 通常セーブ（システムメモリを破壊しない、バニラルルート完全救出版）
 // ==============================================================================
 bool Storage::save(const bool force) {
     if (!force &&
@@ -50,7 +56,6 @@ bool Storage::save(const bool force) {
         // 1. 16MB大容量フラッシュの4MB目(0x400000)から正確に16KB（4セクター）のみを安全に物理消去
         flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4);
         // 2. メモリ上の最新キャッシュ（16KB）を隔離領域へ1バイトもはみ出さずに直撃RAW上書き転送！
-        // 💡 【Pico SDKの正しい関数名に修正】
         flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4);
         restore_interrupts(ints);
     }
@@ -62,7 +67,7 @@ bool Storage::save(const bool force) {
 }
 
 // ==============================================================================
-// 💾 🎯 ② 初期化 / ロード（バイナリを100%排除した、C++純正シリアライズ自動生成版）
+// 💾 🎯 ② 初期化 / ロード（C++純正シリアライズ ＆ 自作ジングル強制割り込み仕様）
 // ==============================================================================
 void Storage::ResetSettings()
 {
@@ -74,7 +79,7 @@ void Storage::ResetSettings()
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        // ⭕ 【一度でもBackupを押したことがある場合】4MB目の隔離領域から「正確に16KB」を writeCache へ逆コピー復元
+        // ⭕ 【一度でもBackupを押したことがある場合】4MB目の隔離領域から「正確に16KB」を逆コピー復元
         for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
             FlashPROM::writeCache[i] = rawFlashSource[i];
         }
@@ -86,14 +91,14 @@ void Storage::ResetSettings()
         ConfigUtils::load(config); // 公式の安全な初期構造が config に入ります
         
         // 🔥 【追加カスタム仕様をC++純正コードで100%確実に注入】
-        // 💡 これにより、現在のシステム自身のシリアライズエンジンがCRC32チェックサムを1ビットの狂いもなく自動計算します
         this->config.displayOptions.enabled = true;                   // 1. 画面常時ON
         this->config.addonOptions.onBoardLedOptions.enabled = true;   // 2. オンボードLEDアドオンをON
         this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // 3. LEDモード: 入力テスト
         
-        // 💡 【お使いのブランチのブザー指定に完全準拠化】
-        this->config.addonOptions.buzzerOptions.enabled = true;       // 4. Buzzer/Jingle AddonをON
-        this->config.addonOptions.buzzerOptions.volumePercentage = 20; // 5. ボリュームを【20%】に固定
+        // 💡 【自作ジングルプレイヤーへの一撃強制書き込みパッチ】
+        // Protobufの構造を汚さず、直接自作 cpp 側の変数へフラグとボリューム「20」を叩き込みます！
+        globalJinglePlayerEnabled = true;
+        globalJingleVolume = 20;
         
         ConfigUtils::save(this->config);
     }
@@ -105,7 +110,7 @@ void Storage::ResetSettings()
     ConfigUtils::load(config);
 
     // 💡 【全自動リブートの完全調和】
-    // ここから先走り命令(System::reboot)を完全に撤去し、このままクリーンにリターンしてWebサーバーへ処理を戻します。
+    // ここから先走り命令(System::reboot)を完全に撤去し、このままクリーンにリターンしてWebサーバーへ戻します。
 }
 
 bool Storage::setProfile(const uint32_t profileNum)
