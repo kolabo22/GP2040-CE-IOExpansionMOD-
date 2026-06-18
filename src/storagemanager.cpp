@@ -19,9 +19,6 @@
 #include "config_utils.h"
 #include "tusb.h"
 
-// 💡 webconfig.cpp 側で現在処理中の通信宛先（URL文字列）を直接外部参照
-extern std::string http_post_uri;
-
 // 16MB 💡 日常の通常セーブ（2MB）から完全に隔離された「お気に入りマスター設定専用」の永久隔離聖域
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
@@ -47,11 +44,12 @@ bool Storage::save(const bool force) {
         return false;
     }
 
-    // 💡 【最重要：日常セーブとお気に入り保存のデータ完全分離ロジック】
-    if (http_post_uri == "/api/backup") {
-        // ⭕ 【お気に入り隔離セーブ（Backupボタン）が押された瞬間の挙動】
-        // 日常の通常セーブによってバッファが上書きされる「一歩手前」で、
-        // 「その時点でのすべての設定項目」を綺麗なProtobuf形式バイナリにシリアライズして writeCache に格納します。
+    // 💡 【他ファイルへの依存を100%全廃した、完全自律型・仕分け判定システム】
+    // webconfig.cpp（WebUI）から「Backup To File」ボタンが押された瞬間、
+    // 実機システムは『force = true（バックアップ処理強制実行フラグ）』を乗せてこの関数を叩きます。
+    // この『force == true』の瞬間こそが、「バックアップボタンを押したその時点の全設定」を隔離する絶対のトリガーです！
+    if (force) {
+        // 現在構築されているすべての設定項目を綺麗なProtobuf形式バイナリにシリアライズして writeCache に格納
         ConfigUtils::save(this->config);
 
         // その「その時点の全設定データ」を、4MB目の特設隔離聖域へRAW直撃転送して永久ロック保存します！
@@ -61,14 +59,14 @@ bool Storage::save(const bool force) {
         restore_interrupts(ints);
         
         // 💡 4MB目の隔離部屋への保存が終わったら、日常の2MB通常セーブ（EEPROM.commit）は【一切呼び出さずにreturn】します。
-        // これにより、通常の部屋は一切汚さず、バックアップボタンを押した時点の全設定のみが聖域に100%独立してキープされます！
+        // これにより、通常の部屋（日常の変更データ）は1ビットも汚されず、バックアップを押した時点の全設定のみが聖域に100%独立キープされます！
         return true;
     }
 
-    // ⭕ 【通常各項目の保存（Saveボタン）の挙動】
-    // 普段、色々と設定をガチャガチャ変更して試す日常の変更セーブ（forceがfalse、かつ通常URL時）です。
+    // ⭕ 【通常各項目の保存（各ページのSaveボタン）の挙動】
+    // 普段、色々と設定をガチャガチャ変更して試す日常の変更セーブ（forceがfalseの普段のSave）です。
     // バックアップ（Backup）ボタンが押されていない時は、上記の4MB目処理を完全にスルーし、
-    // 従来通り通常領域（2MB内）の仮想EEPROM（FlashPROM::writeCache）への保存予約を行います。
+    // 従来通り通常領域（2MB内）の仮想EEPROM（FlashPROM::writeCache）への通常セーブを行います。
     // これにより、普段のSaveによって4MB目の隔離聖域データが都度変化して汚れることは100%絶対にありません！
     bool result = ConfigUtils::save(config);
     EEPROM.commit();
@@ -85,26 +83,46 @@ void Storage::ResetSettings()
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
     // 💡 【ファイルから復元（Restoreボタン）が押された瞬間の挙動】
-    // 日常の通常セーブ（最終状態）は完全に無視し、4MB目の隔離聖域に厳重保管されている
-    // 「バックアップした時点のすべての設定項目」の16KBを writeCache へ一撃で「逆コピペ」して通常部屋へ復元します！
-    if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
-            FlashPROM::writeCache[i] = rawFlashSource[i];
+    // 画面の「Reset Settings（初期化）」の時は、バニラのWebサーバーが事前に writeCache を 0x00 で全破壊します。
+    // 逆に、中身が詰まっている（0x00ではないデータが入っている）状態は、100%「ファイルから復元（Restore）」の瞬間です。
+    bool isActualRestoreButton = false;
+    for (uint16_t i = 0; i < EEPROM_SIZE_BYTES; i++) {
+        if (FlashPROM::writeCache[i] != 0x00) {
+            isActualRestoreButton = true; // 中身が詰まっている場合は「Restore（ファイル復元）」です
+            break;
         }
+    }
+
+    if (isActualRestoreButton) {
+        // ⭕ 【Restore（ファイル復元）ボタンが押された時の挙動 ➔ 画面をキープして直立保持】
+        // 日常の通常セーブ（最終状態）は完全に無視し、4MB目の隔離聖域に厳重保管されている
+        // 「バックアップした時点のすべての設定項目」の16KBを writeCache へ一撃で「逆コピペ」して通常部屋へ復元します！
+        if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
+            for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
+                FlashPROM::writeCache[i] = rawFlashSource[i];
+            }
+        }
+        ConfigUtils::save(this->config);
+        EEPROM.commit();
+        ConfigUtils::load(config);
+        
+        // 💡 ここで System::reboot を呼び出さずに正常リターン（終了）させることで、
+        // 自動再起動を完全にスキップし、WebConfig画面を維持します！そのまま続けて変更作業をどうぞ！
     } else {
-        // 【完全初期状態の場合（工場出荷時）】公式安全デフォルトを展開
+        // ⭕ 【初期化（Reset Settings）ボタンが押された時の挙動 ➔ バニラ通り全自動リブート】
+        // 寸法・構造のズレが絶対に起きない最新の公式デフォルト構造を展開し、通常領域へコミットします。
         memset(&this->config, 0, sizeof(Config));
+        ConfigUtils::load(config);
+        
         this->config.displayOptions.enabled = true;
         this->config.addonOptions.onBoardLedOptions.enabled = true;
         this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1);
-    }
+        
+        ConfigUtils::save(this->config);
+        EEPROM.commit();
+        ConfigUtils::load(config);
 
-    ConfigUtils::save(this->config);
-    EEPROM.commit();
-    ConfigUtils::load(config);
-
-    // 💡 【初期化(Reset)はバニラ通り自動リブート ➔ ロード(Restore)は画面をキープして保持】
-    if (http_post_uri == "/api/resetSettings") {
+        // 💡 初期化（Reset）の時はバニラ通り通常アケコンモードへ自動移行して再起動させます！
         System::reboot(System::BootMode::GAMEPAD);
     }
 }
