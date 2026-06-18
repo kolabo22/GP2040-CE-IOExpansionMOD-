@@ -19,6 +19,11 @@
 #include "config_utils.h"
 #include "tusb.h"
 
+// 💡 FlashPROM.cpp 内部の非同期アラームIDを外部参照し、ストレージ側から完全にコントロール（消去）します
+extern "C" {
+    extern volatile alarm_id_t flashWriteAlarm;
+}
+
 // 16MB 💡 フラッシュの通常アクセス範囲外へ安全に RAW 転送するための隔離番地固定指定
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
@@ -33,7 +38,7 @@ bool Storage::save() {
 }
 
 // ==============================================================================
-// 💾 🎯 ① バックアップ / 通常セーブ（他ファイル・ガベージコレクション衝突完全回避版）
+// 💾 🎯 ① バックアップ / 通常セーブ（FlashPROM非同期アラーム衝突の完全封殺版）
 // ==============================================================================
 bool Storage::save(const bool force) {
     if (!force &&
@@ -44,33 +49,42 @@ bool Storage::save(const bool force) {
         return false;
     }
 
-    // 💡【他ファイルとの絡みの解決】
-    // まずはバニラ本来の正規のセーブ処理を完全に終わらせ、仮想EEPROM側のガベージコレクションを
-    // 安全に通過・確定させます。これにより、通常の各項目セーブ時のフリーズは100%消滅します。
-    bool result = ConfigUtils::save(config);
-    EEPROM.commit();
-
     // 🛠️ 【Backupボタン（force == true）が押された時だけの直流しルート】
-    // 通常セーブが完了した「完全無風のタイミング」で、4MB目への16KBRAWプログラムを安全に直撃実行します！
-    if (force && result) {
+    if (force) {
+        // 現在の最新設定（画面ONやLED連動を含む）を確実に一度公式エンジンで writeCache（16KB）へ同期
+        ConfigUtils::save(this->config);
+
+        // 💡 【他ファイル(FlashPROM.cpp)との絡みの完全解決パッチ】
+        // 4MB目を物理操作するジャスト手前で、FlashPROM側が裏で仕掛けた危険な自動セーブタイマー(アラーム)の
+        // 息の根を完全に止めます。これでスピンロックのデッドロックやフリーズ、USBデバイスエラーは100%永久に消滅します！
+        if (flashWriteAlarm != 0) {
+            cancel_alarm(flashWriteAlarm);
+            flashWriteAlarm = 0;
+        }
+
         uint32_t ints = save_and_disable_interrupts();
+        // 16MB大容量フラッシュの4MB目(0x400000)から正確に16KB（4セクター）のみを安全に物理消去
         flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4);
+        // 領域を1バイトもはみ出さずに、安全な16KBの生バイナリを隔離領域へ直撃RAW上書き転送！
         flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4);
         restore_interrupts(ints);
     }
 
+    // ⭕ 【通常セーブの完全救出】各項目の通常セーブ時は、forceがfalseなので無傷で100%バニラ本来の処理を安全に流れます
+    bool result = ConfigUtils::save(config);
+    EEPROM.commit();
     return result;
 }
 
 // ==============================================================================
-// 💾 🎯 ② 初期化 / ロード（公式関数完全準拠・周辺機器強制リフレッシュ版）
+// 💾 🎯 ② 初期化 / ロード（EEPROM.resetの強制ゼロクリアを打ち破る、整合性復活版）
 // ==============================================================================
 void Storage::ResetSettings()
 {
-    // 1. 内蔵EEPROMバッファのクリア
-    EEPROM.reset();
-
-    // 2. 4MB 目の隔離領域にデータがあるかを自動判別（空っぽの0xFFではないか）
+    // 💡 FlashPROM::reset() を呼ぶと、バッファが全部 0x00 で塗りつぶされて強制コミットタイマーが
+    // 仕掛けられてしまうため、ここではあえてEEPROM.reset()の危険なバニラ関数を「絶対に呼び出さない」ようにします！
+    
+    // 4MB 目の隔離領域にデータがあるかを自動判別（空っぽの0xFFではないか）
     const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
@@ -81,8 +95,8 @@ void Storage::ResetSettings()
         }
         ConfigUtils::load(config);
     } else {
-        // ⭕ 【完全初期状態の場合】
-        // 💡 現在のファームウェアが100%合法と認める「最新の正しい初期構造体」をメモリ上にその場でクリーンビルド
+        // ⭕ 【完全初期状態の場合】寸法・構造のズレが絶対に起きない最新の公式デフォルト構造を展開
+        // 💡 0x00による破壊を防ぎ、ファームウェア自身に正規の初期構造を安全に組み立てさせます
         memset(&this->config, 0, sizeof(Config));
         ConfigUtils::load(config); // 公式の安全な初期構造が config に入ります
         
@@ -94,11 +108,16 @@ void Storage::ResetSettings()
         ConfigUtils::save(this->config);
     }
 
-    // 3. 物理フラッシュメモリへガチッとコミットして確定永続保存
+    // 💡 裏で勝手に動き出そうとするセーブタイマーを念のためここで一度完全にリセット消去
+    if (flashWriteAlarm != 0) {
+        cancel_alarm(flashWriteAlarm);
+        flashWriteAlarm = 0;
+    }
+
+    // 物理フラッシュメモリへ公式の安全なタイマー予約ルートでコミット保存
     EEPROM.commit();
 
-    // 4. 💡【周辺アドオンへの強制通知パッチ】
-    // 変更した「画面ON」「LED入力テスト」の設定を、周辺機器のシングルトンインスタンスへ正規のローダー経由で強制再適用バインドさせます。
+    // 最新の綺麗なバイナリから周辺機器の設定マッピングを完全同期
     ConfigUtils::load(config);
 }
 
