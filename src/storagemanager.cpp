@@ -50,9 +50,8 @@ bool Storage::save(const bool force) {
         // 1. 16MB大容量フラッシュの4MB目(0x400000)から正確に16KB（4セクター）のみを安全に物理消去
         flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4);
         // 2. メモリ上の最新キャッシュ（16KB）を隔離領域へ1バイトもはみ出さずに直撃RAW上書き転送！
-        // 💡 【重要】関数の内部で重い ConfigUtils::save を二重に呼び出すのを完全に撤去しました。
-        // これにより、通常の保存ボタンを押した際にメモリやUSBスレッドを破壊してフリーズする現象は100%永久に消滅します！
-        flash_program_data(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4);
+        // 💡 【Pico SDKの正しい関数名に修正】
+        flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4);
         restore_interrupts(ints);
     }
 
@@ -81,7 +80,7 @@ void Storage::ResetSettings()
         }
         ConfigUtils::load(config);
     } else {
-        // ⭕ 【完全初期状態の場合】エラーの元凶となる生バイナリ配列(miniSuperPerfectBinary)を完全撤去！
+        // ⭕ 【完全初期状態の場合】
         // 💡 現在のファームウェアが100%合法と認める「最新の正しい初期構造体」をメモリ上にその場でクリーンビルド
         memset(&this->config, 0, sizeof(Config));
         ConfigUtils::load(config); // 公式の安全な初期構造が config に入ります
@@ -91,10 +90,11 @@ void Storage::ResetSettings()
         this->config.displayOptions.enabled = true;                   // 1. 画面常時ON
         this->config.addonOptions.onBoardLedOptions.enabled = true;   // 2. オンボードLEDアドオンをON
         this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // 3. LEDモード: 入力テスト
-        this->config.addonOptions.jingleOptions.enabled = true;       // 4. Jingle Player AddonをON
-        this->config.addonOptions.jingleOptions.volume = 20;          // 5. ボリュームを【20】に固定
         
-        // 💡 PDFシートに記載されていた、主要なGPIOおよびIOエクスパンダーの基礎定義との衝突を避けるための安全な構造同期
+        // 💡 【お使いのブランチのブザー指定に完全準拠化】
+        this->config.addonOptions.buzzerOptions.enabled = true;       // 4. Buzzer/Jingle AddonをON
+        this->config.addonOptions.buzzerOptions.volumePercentage = 20; // 5. ボリュームを【20%】に固定
+        
         ConfigUtils::save(this->config);
     }
 
@@ -106,8 +106,6 @@ void Storage::ResetSettings()
 
     // 💡 【全自動リブートの完全調和】
     // ここから先走り命令(System::reboot)を完全に撤去し、このままクリーンにリターンしてWebサーバーへ処理を戻します。
-    // これにより、WebサーバーはブラウザへのSUCCESS送信を終えたジャスト直後に、
-    // システム本来のコントロール網が全自動でクリーンにアケコン通常モードへと実機を自動再起動させてくれます。
 }
 
 bool Storage::setProfile(const uint32_t profileNum)
