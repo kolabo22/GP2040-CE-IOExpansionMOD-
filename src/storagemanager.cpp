@@ -1,5 +1,5 @@
 /*
- * SPDX-License-=============
+ * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: Copyright (c) 2024 OpenStickCommunity (gp2040-ce.info)
  */
 #include "storagemanager.h"
@@ -44,7 +44,7 @@ bool Storage::save(const bool force) {
         return false;
     }
 
-    // 💡【重要：他ファイルとの絡みの解決】
+    // 💡【他ファイルとの絡みの解決】
     // まずはバニラ本来の正規のセーブ処理を完全に終わらせ、仮想EEPROM側のガベージコレクションを
     // 安全に通過・確定させます。これにより、通常の各項目セーブ時のフリーズは100%消滅します。
     bool result = ConfigUtils::save(config);
@@ -63,7 +63,7 @@ bool Storage::save(const bool force) {
 }
 
 // ==============================================================================
-// 💾 🎯 ② 初期化 / ロード（周辺ハードウェアクラスへの設定強制リフレッシュ通知版）
+// 💾 🎯 ② 初期化 / ロード（公式関数完全準拠・周辺機器強制リフレッシュ版）
 // ==============================================================================
 void Storage::ResetSettings()
 {
@@ -91,20 +91,14 @@ void Storage::ResetSettings()
         this->config.addonOptions.onBoardLedOptions.enabled = true;   // 2. オンボードLEDアドオンをON
         this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // 3. LEDモード: 入力テスト
         
-        // 💡 【自作 jingle_player.cpp への引継ぎ用：Protobufの未使用な共通領域（forcedRows）を
-        // 安全なデータ引き渡し用コンテナとして間借りし、フラグ（1）と音量（20）を100%合法的に焼き付けます！】
-        this->config.macroOptions.forcedRows = (1 << 8) | 20; // 上位バイト:有効フラグ(1) / 下位バイト:音量(20)
-        
         ConfigUtils::save(this->config);
     }
 
     // 3. 物理フラッシュメモリへガチッとコミットして確定永続保存
     EEPROM.commit();
 
-    // 4. 💡【最重要：周辺アドオンへの強制通知パッチ】
-    // 変更した「画面ON」「LED入力テスト」の設定を、現在CPU上でアクティブに動いているディスプレイ画面や
-    // LED制御クラスのシングルトンインスタンスへ正規のローダー経由で強制再適用・バインドさせます。
-    // これにより、手動でリセットをかけずとも、自動起動した一発目からディスプレイが鮮やかに点灯します！
+    // 4. 💡【周辺アドオンへの強制通知パッチ】
+    // 変更した「画面ON」「LED入力テスト」の設定を、周辺機器のシングルトンインスタンスへ正規のローダー経由で強制再適用バインドさせます。
     ConfigUtils::load(config);
 }
 
