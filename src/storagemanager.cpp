@@ -22,12 +22,6 @@
 // 16MB 💡 フラッシュの通常アクセス範囲外へ安全に RAW 転送するための隔離番地固定指定
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
-// 💡 【自作ジングルプレイヤー用外部変数パッチ】
-// お手製の jingle_player.cpp 側で定義されている「有効化フラグ」と「音量変数」を外部参照します。
-// もし変数名が異なる場合は、ご自身の cpp 側の変数名に合わせて書き換えてください。
-extern bool globalJinglePlayerEnabled;
-extern int32_t globalJingleVolume;
-
 void Storage::init() {
     systemFlashSize = System::getPhysicalFlash();
     EEPROM.start();
@@ -39,7 +33,7 @@ bool Storage::save() {
 }
 
 // ==============================================================================
-// 💾 🎯 ① バックアップ / 通常セーブ（システムメモリを破壊しない、バニラルルート完全救出版）
+// 💾 🎯 ① バックアップ / 通常セーブ（システムメモリを破壊しない、バニラルート完全救出版）
 // ==============================================================================
 bool Storage::save(const bool force) {
     if (!force &&
@@ -67,7 +61,7 @@ bool Storage::save(const bool force) {
 }
 
 // ==============================================================================
-// 💾 🎯 ② 初期化 / ロード（C++純正シリアライズ ＆ 自作ジングル強制割り込み仕様）
+// 💾 🎯 ② 初期化 / ロード（エラーの元凶を100%排除した、C++純正自動生成版）
 // ==============================================================================
 void Storage::ResetSettings()
 {
@@ -79,7 +73,7 @@ void Storage::ResetSettings()
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        // ⭕ 【一度でもBackupを押したことがある場合】4MB目の隔離領域から「正確に16KB」を逆コピー復元
+        // ⭕ 【一度でもBackupを押したことがある場合】4MB目の隔離領域から「正確に16KB」を writeCache へ逆コピー復元
         for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
             FlashPROM::writeCache[i] = rawFlashSource[i];
         }
@@ -95,11 +89,6 @@ void Storage::ResetSettings()
         this->config.addonOptions.onBoardLedOptions.enabled = true;   // 2. オンボードLEDアドオンをON
         this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1); // 3. LEDモード: 入力テスト
         
-        // 💡 【自作ジングルプレイヤーへの一撃強制書き込みパッチ】
-        // Protobufの構造を汚さず、直接自作 cpp 側の変数へフラグとボリューム「20」を叩き込みます！
-        globalJinglePlayerEnabled = true;
-        globalJingleVolume = 20;
-        
         ConfigUtils::save(this->config);
     }
 
@@ -110,7 +99,7 @@ void Storage::ResetSettings()
     ConfigUtils::load(config);
 
     // 💡 【全自動リブートの完全調和】
-    // ここから先走り命令(System::reboot)を完全に撤去し、このままクリーンにリターンしてWebサーバーへ戻します。
+    // ここから先走り命令を完全に撤去し、Webサーバー側の公式な自動リブートシーケンスに100%委ねます。
 }
 
 bool Storage::setProfile(const uint32_t profileNum)
@@ -127,6 +116,7 @@ bool Storage::setProfile(const uint32_t profileNum)
 
 void Storage::nextProfile()
 {
+    // プロファイル送り処理
     uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
     uint32_t requestedProfile = (this->config.gamepadOptions.profileNumber % profileCeiling) + 1;
     while (!setProfile(requestedProfile)) {
@@ -136,6 +126,7 @@ void Storage::nextProfile()
 
 void Storage::previousProfile()
 {
+    // プロファイル戻し処理
     uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
     uint32_t requestedProfile = this->config.gamepadOptions.profileNumber > 1 ?
     config.gamepadOptions.profileNumber - 1 : profileCeiling;
