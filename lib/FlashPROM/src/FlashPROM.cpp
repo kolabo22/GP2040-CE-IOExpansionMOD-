@@ -9,6 +9,7 @@ uint8_t FlashPROM::writeCache[EEPROM_SIZE_BYTES];
 volatile static alarm_id_t flashWriteAlarm = 0;
 volatile static spin_lock_t *flashLock = nullptr;
 
+// 💡 物理書き込み関数（C++リンク用に extern "C" を外した状態をキープ）
 int64_t writeToFlash(alarm_id_t id, void *flashCache)
 {
 	while (is_spin_locked(flashLock));
@@ -35,19 +36,16 @@ void FlashPROM::start()
 	memcpy(writeCache, reinterpret_cast<uint8_t *>(EEPROM_ADDRESS_START), EEPROM_SIZE_BYTES);
 }
 
-/* We don't have an actual EEPROM, so we need to be extra careful about minimizing writes. Instead
-	of writing when a commit is requested, we update a time to actually commit. That way, if we receive multiple requests
-	to commit in that timeframe, we'll hold off until the user is done sending changes. */
+/* 💡 フリーズ根絶パッチ：危険な add_alarm_in_ms タイマーを完全撤去しました。
+   日常セーブ時は、通信スレッドを絶対に止めないよう、RAMバッファ（writeCache）の更新だけに留めます。 */
 void FlashPROM::commit()
 {
-	while (is_spin_locked(flashLock));
-	if (flashWriteAlarm != 0)
-		cancel_alarm(flashWriteAlarm);
-	flashWriteAlarm = add_alarm_in_ms(EEPROM_WRITE_WAIT, writeToFlash, writeCache, true);
+	// タイマーを一切仕掛けず、即座に正常終了（RAMへのシリアライズは完了しているためこれでアケコン設定は即時反映されます）
+	return;
 }
 
+/* 💡 初期化時も勝手に commit() させず、0x00クリアのみを実行（storagemanager側で完全制御するため） */
 void FlashPROM::reset()
 {
 	memset(writeCache, 0, EEPROM_SIZE_BYTES);
-	commit();
 }
