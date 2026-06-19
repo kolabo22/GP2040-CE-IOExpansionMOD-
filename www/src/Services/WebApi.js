@@ -617,35 +617,18 @@ async function setPeripheralOptions(mappings) {
 		});
 }
 
-//async function getUsedPins(setLoading) {
-//	setLoading(true);
+async function getUsedPins(setLoading) {
+	setLoading(true);
 
-//	try {
-//		const response = await Http.get(`${baseUrl}/api/getUsedPins`);
-//		setLoading(false);
-//		return response.data;
-//	} catch (error) {
-//		setLoading(false);
-//		console.error(error);
-//	}
-//}
-
-async function getUsedPins(setLoading) { 
- if (setLoading) setLoading(false);
- 
- // 💡 React側のオブジェクト走査・ループ処理がNull参照（Cannot read properties of undefined）で
- // 画面を真っ白に染めてクラッシュするのを完全に封殺するための鉄壁偽装ロジックです。
- const dummyUsedPins = {};
- for (let i = 0; i <= 29; i++) {
-   dummyUsedPins[`pin${i}`] = []; // 各ピンの使用アドオン一覧を安全な空配列としてエミュレート
- }
-
- return {
-   usedPins: dummyUsedPins,
-   corePins: [] // システム予約ピンも安全にスルーさせます
- };
+	try {
+		const response = await Http.get(`${baseUrl}/api/getUsedPins`);
+		setLoading(false);
+		return response.data;
+	} catch (error) {
+		setLoading(false);
+		console.error(error);
+	}
 }
-
 
 async function getExpansionPins() {
 	try {
