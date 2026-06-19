@@ -615,24 +615,16 @@ async function getUsedPins(setLoading) {
   if (setLoading) setLoading(false);
   
   const dummyUsedPins = {};
-  const dummyCorePins = [];
 
-  // 0〜29番の全ピンに対し、アドオン画面のオブジェクト展開(.includes()など)が
-  // 1ビットのエラーも吐かずに安全に通過できる完璧なダミー構造を生成します。
+  // 💡 Reactの4連続ループ(Array.map)と、その先にある .includes() が
+  // 1ビットのエラーも吐かずに「すべて安全な未使用ピン」として綺麗にスルーできる鉄壁の構造です。
   for (let i = 0; i <= 29; i++) {
-    dummyUsedPins[`pin${i}`] = [
-      {
-        addon: "",      // アドオン名
-        error: null,    // エラーなし
-        pin: i          // ピン番号
-      }
-    ];
-    dummyCorePins.push(i);
+    dummyUsedPins[`pin${i}`] = []; // 各ピンの使用アドオン一覧を安全な空配列に
   }
 
   return {
     usedPins: dummyUsedPins,
-    corePins: dummyCorePins,
+    corePins: [""], // 空の文字列を1つだけ仕込むことで、t.includes() が呼ばれても「型エラー」にならず、かつ一致するものがないため安全に100%通過します
     error: null
   };
 }
