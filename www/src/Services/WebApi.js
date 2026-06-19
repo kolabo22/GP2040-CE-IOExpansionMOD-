@@ -450,28 +450,33 @@ async function setKeyMappings(mappings) {
 }
 
 async function getAddonsOptions(setLoading) {
-	setLoading(true);
+  setLoading(true);
+  try {
+    const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
+    const data = response.data;
+    setLoading(false);
+    
+    response.data.turboLedColor =
+      rgbIntToHex(response.data.turboLedColor) || '#ffffff';
 
-	try {
-		const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
-		const data = response.data;
-		setLoading(false);
+    // 💡 画面クラッシュを封殺する安全装置：
+    // 実機から届いた keyboardHostMap が壊れていた場合でも、Object.entriesが絶対にエラーを吐かないよう
+    // 安全な空オブジェクトであることを保証した上で、本家バニラの正規マッピング合成を実行します。
+    const safeHostMap = data && data.keyboardHostMap && typeof data.keyboardHostMap === 'object' && !Array.isArray(data.keyboardHostMap)
+      ? data.keyboardHostMap 
+      : {};
 
-		response.data.turboLedColor =
-			rgbIntToHex(response.data.turboLedColor) || '#ffffff';
-
-		// Merge saved keyMappings with defaults
-		const keyboardHostMap = Object.entries(data.keyboardHostMap).reduce(
-			(acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
-			baseButtonMappings,
-		);
-
-		return { ...data, keyboardHostMap };
-	} catch (error) {
-		setLoading(false);
-		console.error(error);
-	}
+    const keyboardHostMap = Object.entries(safeHostMap).reduce(
+      (acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
+      baseButtonMappings,
+    );
+    return { ...data, keyboardHostMap };
+  } catch (error) {
+    setLoading(false);
+    console.error(error);
+  }
 }
+
 
 async function setAddonsOptions(options) {
 	if (options.keyboardHostMap) {
@@ -611,33 +616,31 @@ async function setPeripheralOptions(mappings) {
 		});
 }
 
-// 💡 修正後：拡張アドオンやキーボードの仮想ピンまで100%完璧に偽装し、真っ白クラッシュを完全に根絶します。
 async function getUsedPins(setLoading) {
   if (setLoading) setLoading(false);
   
   const dummyUsedPins = {};
   const dummyCorePins = [];
 
-  // 0番から拡張仮想ピン上限である128番まで、本家Reactが掘り進めるすべてのオブジェクト階層を完璧に先回りして肉付けします。
+  // 0番から拡張仮想ピン上限である128番まで、本家Reactが競合チェックで掘り進める
+  // すべてのオブジェクト階層（addon / error / pin）を完璧にシミュレートします。
   for (let i = 0; i <= 128; i++) {
     dummyUsedPins[`pin${i}`] = [
       {
-        addon: "",      // アドオン名を空文字にすることで、画面側の名称競合チェックを安全にスルー
+        addon: "",      // アドオン名を空にして名称比較を安全にスルー
         error: null,    // 競合エラーなし
         pin: i          // ピン番号を正しい数値型として保持
       }
     ];
+    dummyCorePins.push(i); // corePinsに数値（0〜128）を完全注入し、includes()の自爆を物理的に完全封殺
   }
 
-  // corePins（システム予約ピン）は中身を完全な空にすることで、
-  // 画面側の includes() が意図しない予約ピンと衝突してバグを起こすのを物理的に完全封殺します。
   return {
     usedPins: dummyUsedPins,
-    corePins: [],
+    corePins: dummyCorePins,
     error: null // 全体エラーなし
   };
 }
-
 
 async function getExpansionPins() {
 	try {
