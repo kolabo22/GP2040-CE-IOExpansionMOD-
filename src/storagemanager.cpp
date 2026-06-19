@@ -19,10 +19,8 @@
 #include "config_utils.h"
 #include "tusb.h"
 
-// 💡 FlashPROM.cpp 内部で定義されている、物理フラッシュへ直撃書き込みを行う関数を外部参照します
-extern "C" {
-    int64_t writeToFlash(alarm_id_t id, void *flashCache);
-}
+// 💡 extern "C" を完全撤去！ C++の命名規則として FlashPROM.cpp 内の物理書き込み関数を正しく外部参照します
+extern int64_t writeToFlash(alarm_id_t id, void *flashCache);
 
 // 16MB 💡 日常の通常セーブ（2MB）から完全に隔離された「お気に入りマスター設定専用」の永久隔離聖域
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
