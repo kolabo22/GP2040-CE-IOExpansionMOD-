@@ -19,7 +19,7 @@
 #include "config_utils.h"
 #include "tusb.h"
 
-// 💡 extern "C" を完全撤去！ C++の命名規則として FlashPROM.cpp 内の物理書き込み関数を正しく外部参照します
+// 💡 FlashPROM.cppの物理書き込み関数を参照
 extern int64_t writeToFlash(alarm_id_t id, void *flashCache);
 
 // 16MB 💡 日常の通常セーブ（2MB）から完全に隔離された「お気に入りマスター設定専用」の永久隔離聖域
@@ -63,15 +63,12 @@ bool Storage::save(const bool force) {
     }
 
     // ⭕ 【通常各項目の保存（各ページのSaveボタン）の挙動】
-    // 💡 【長引くグルグル・USBエラーの完全解決パッチ】
-    // 変更した設定をメモリ（writeCache）にシリアライズした直後、
-    // FlashPROM.cpp の危険な遅延タイマー「EEPROM.commit()」の呼び出しを【完全に完全撤去（禁止）】しました！
-    // 代わりに、FlashPROM.cpp 内に実装されている本物の物理書き込み関数「writeToFlash」をその場で
-    // ダイレクトに直撃同期呼び出し（即時コミット）させます。
-    // これにより、Webサーバーが1ミリ秒も待たされることなく、一瞬でブラウザへ完了のパケットが返るため、
-    // 長引くグルグルも、ピコピコ鳴るUSBデバイスエラーも、構造・物理レベルで100%永久に完全消滅します！
+    // 💡 【非同期タイマー化によるUSBフリーズ完全パッチ】
+    // 物理書き込み（writeToFlash）をその場で呼ぶとマルチコアがロックされ、USB通信が死んでフリーズします。
+    // そのため、シリアライズが完了したら「1.5秒後（1500ms）に裏で書き込んでね」とPicoのアラームタイマーに委託します。
+    // これによりWebサーバーは一瞬で解放されてブラウザに「Saved!」を返し、USB通信を維持したまま、安全なタイミングで物理書き込みが行われます。
     bool result = ConfigUtils::save(config);
-    writeToFlash(0, FlashPROM::writeCache); 
+    add_alarm_in_ms(1500, writeToFlash, FlashPROM::writeCache, true); 
     return result;
 }
 
@@ -101,7 +98,9 @@ void Storage::ResetSettings()
             }
         }
         ConfigUtils::save(this->config);
-        writeToFlash(0, FlashPROM::writeCache); // 即時同期書き込み
+        
+        // Restore時はその後にWebUIを操作するため、ここでも1.5秒の非同期タイマーにして通信を絶対に殺さないようにします
+        add_alarm_in_ms(1500, writeToFlash, FlashPROM::writeCache, true);
         ConfigUtils::load(config);
         
         // 💡 ここで System::reboot を呼び出さずに正常リターン（終了）させることで画面を維持します！
@@ -115,7 +114,10 @@ void Storage::ResetSettings()
         this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1);
         
         ConfigUtils::save(this->config);
-        writeToFlash(0, FlashPROM::writeCache); // 即時同期書き込み
+        
+        // Reset時はどうせ直後に再起動（System::reboot）がかかってUSB通信が切断されるため、
+        // ここだけは即時物理書き込みを実行して確実にデータを定着させます。
+        writeToFlash(0, FlashPROM::writeCache); 
         ConfigUtils::load(config);
 
         // 💡 初期化（Reset）の時はバニラ通り通常アケコンモードへ自動移行して再起動させます！
