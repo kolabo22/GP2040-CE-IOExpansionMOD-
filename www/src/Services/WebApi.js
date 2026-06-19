@@ -453,15 +453,14 @@ async function getAddonsOptions(setLoading) {
   setLoading(true);
   try {
     const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
-    const data = response.data;
+    const data = response && response.data ? response.data : {};
     setLoading(false);
     
-    response.data.turboLedColor =
-      rgbIntToHex(response.data.turboLedColor) || '#ffffff';
+    if (response && response.data) {
+      response.data.turboLedColor = rgbIntToHex(response.data.turboLedColor) || '#ffffff';
+    }
 
-    // 💡 画面クラッシュを封殺する安全装置：
-    // 実機から届いた keyboardHostMap が壊れていた場合でも、Object.entriesが絶対にエラーを吐かないよう
-    // 安全な空オブジェクトであることを保証した上で、本家バニラの正規マッピング合成を実行します。
+    // 💡 keyboardHostMap が壊れた配列や未定義オブジェクトになってクラッシュするのを防ぐ安全装置
     const safeHostMap = data && data.keyboardHostMap && typeof data.keyboardHostMap === 'object' && !Array.isArray(data.keyboardHostMap)
       ? data.keyboardHostMap 
       : {};
@@ -470,7 +469,9 @@ async function getAddonsOptions(setLoading) {
       (acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
       baseButtonMappings,
     );
-    return { ...data, keyboardHostMap };
+    
+    // 画面側の .includes() 走査が絶対に自爆しないよう、corePinsを健全な空配列として保証します
+    return { ...data, keyboardHostMap, corePins: [] };
   } catch (error) {
     setLoading(false);
     console.error(error);
@@ -586,17 +587,23 @@ async function setReactiveLEDs(leds) {
 }
 
 async function getPeripheralOptions(setLoading) {
-	setLoading(true);
-	try {
-		const response = await Http.get(`${baseUrl}/api/getPeripheralOptions`);
-		setLoading(false);
-
-		let mappings = { ...basePeripheralMapping, ...response.data };
-		return mappings;
-	} catch (error) {
-		setLoading(false);
-		console.error(error);
-	}
+  setLoading(true);
+  try {
+    const response = await Http.get(`${baseUrl}/api/getPeripheralOptions`);
+    setLoading(false);
+    
+    // 💡 鉄壁の安全装置：実機の固定バイナリに周辺機器の最新データ構造が含まれていない場合でも、
+    // Reactの .includes() や .map() が絶対に自爆しないよう、ベースの型構造を完全に保証します。
+    const safeData = {
+      ...basePeripheralMapping,
+      ...(response && response.data ? response.data : {})
+    };
+    
+    return safeData;
+  } catch (error) {
+    setLoading(false);
+    console.error(error);
+  }
 }
 
 async function setPeripheralOptions(mappings) {
@@ -620,7 +627,6 @@ async function getUsedPins(setLoading) {
   if (setLoading) setLoading(false);
   
   const dummyUsedPins = {};
-  const dummyCorePins = [];
 
   // 0番から拡張仮想ピン上限である128番まで、本家Reactが競合チェックで掘り進める
   // すべてのオブジェクト階層（addon / error / pin）を完璧にシミュレートします。
@@ -632,15 +638,15 @@ async function getUsedPins(setLoading) {
         pin: i          // ピン番号を正しい数値型として保持
       }
     ];
-    dummyCorePins.push(i); // corePinsに数値（0〜128）を完全注入し、includes()の自爆を物理的に完全封殺
   }
 
   return {
     usedPins: dummyUsedPins,
-    corePins: dummyCorePins,
+    corePins: [], // 空配列にすることで、画面側の includes() が想定外の数値と衝突するのを防ぎます
     error: null // 全体エラーなし
   };
 }
+
 
 async function getExpansionPins() {
 	try {
