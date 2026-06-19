@@ -671,24 +671,34 @@ async function setHETriggerCalibrations(triggers) {
 	return Http.post(`${baseUrl}/api/setHETriggerCalibrations`, triggers);
 }
 
+//async function getHeldPins(abortSignal) {
+//	try {
+//		const response = await Http.get(`${baseUrl}/api/getHeldPins`, {
+//			signal: abortSignal,
+//		});
+//		return response.data;
+//	} catch (error) {
+//		if (error?.name === 'AbortError') return { canceled: true };
+//		else console.error(error);
+//	}
+//}
+
+//async function abortGetHeldPins() {
+//	try {
+//		await Http.get(`${baseUrl}/api/abortGetHeldPins`);
+//	} catch (error) {
+		// Expected to fail
+//	}
+//}
+
+// 💡 修正後：フリーズの真犯人である裏での超高速ピン監視通信を完全に息の根を止めます。
+// 実機へのリクエストを一切行わず、即座に空データを返すことで、Webサーバーのデッドロックを物理的に封殺します。
 async function getHeldPins(abortSignal) {
-	try {
-		const response = await Http.get(`${baseUrl}/api/getHeldPins`, {
-			signal: abortSignal,
-		});
-		return response.data;
-	} catch (error) {
-		if (error?.name === 'AbortError') return { canceled: true };
-		else console.error(error);
-	}
+  return { heldPins: [] }; // 実機へパケットを1発も投げずに即座にダミー応答を返す
 }
 
 async function abortGetHeldPins() {
-	try {
-		await Http.get(`${baseUrl}/api/abortGetHeldPins`);
-	} catch (error) {
-		// Expected to fail
-	}
+  return true; // 何もしない
 }
 
 async function reboot(bootMode) {
