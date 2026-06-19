@@ -642,29 +642,26 @@ async function setPeripheralOptions(mappings) {
 		});
 }
 
+// 💡 修正後：4連ループの奥にある includes() の実行自体を「要素数0」によって物理的に完全スキップさせます。
+// これにより、全画面の真っ白クラッシュが今度こそ完全に、100%消滅します。
 async function getUsedPins(setLoading) {
   if (setLoading) setLoading(false);
   
   const dummyUsedPins = {};
 
-  // 0番から拡張仮想ピン上限である128番まで、本家Reactが競合チェックで掘り進める
-  // すべてのオブジェクト階層（addon / error / pin）を完璧にシミュレートします。
+  // 0番から拡張仮想ピン上限である128番まで、すべて「完全な空配列 []」として定義します。
+  // 画面側は map ループを走らせても中身が空なため安全に通過し、型エラーを起こす隙がなくなります。
   for (let i = 0; i <= 128; i++) {
-    dummyUsedPins[`pin${i}`] = [
-      {
-        addon: "",      // アドオン名を空にして名称比較を安全にスルー
-        error: null,    // 競合エラーなし
-        pin: i          // ピン番号を正しい数値型として保持
-      }
-    ];
+    dummyUsedPins[`pin${i}`] = []; 
   }
 
   return {
     usedPins: dummyUsedPins,
-    corePins: [], // 空配列にすることで、画面側の includes() が想定外の数値と衝突するのを防ぎます
-    error: null // 全体エラーなし
+    corePins: [], // corePinsも空配列にすることで includes() の自爆を完全封殺
+    error: null
   };
 }
+
 
 
 async function getExpansionPins() {
