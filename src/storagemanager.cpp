@@ -2,7 +2,9 @@
  * SPDX-License-Identifier: MIT
  * SPDX-FileCopyrightText: Copyright (c) 2024 OpenStickCommunity (gp2040-ce.info)
  */
+
 #include "storagemanager.h"
+
 #include "BoardConfig.h"
 #include "animationstorage.h"
 #include "FlashPROM.h"
@@ -13,167 +15,159 @@
 #include "hardware/watchdog.h"
 #include "CRC32.h"
 #include "types.h"
+
+// 💡 16MBフラッシュの通常アクセス範囲外へ安全にRAW転送するためのヘッダー
 #include "hardware/flash.h"
 #include "hardware/sync.h"
+
+// Check for saves
 #include "ps4/PS4Driver.h"
+
 #include "config_utils.h"
-#include "tusb.h"
 
-// FlashPROM.cpp 内の物理書き込み関数を外部参照
-extern int64_t writeToFlash(alarm_id_t id, void *flashCache);
+// 💡 【MINI Super 専用】画面ON＆オンボードLED入力連動（値:1）が組み込まれた真のマスターバイナリ配列
+static const uint8_t miniSuperPerfectBinary[] = {
+	0x0A, 0x06, 0x08, 0x00, 0x10, 0x00, 0x18, 0x05, 0x12, 0x3E, 0x08, 0x01, 0x10, 0x02, 0x18, 0x04, 
+	0x20, 0x03, 0x28, 0x05, 0x30, 0x06, 0x38, 0x0C, 0x40, 0x01, 0x0B, 0x48, 0x01, 0x07, 0x50, 0x01, 
+	0x08, 0x58, 0x01, 0x0A, 0x60, 0x01, 0x09, 0x68, 0x01, 0x20, 0x70, 0x01, 0x0E, 0x78, 0x1E, 0x1A, 
+	0x46, 0x08, 0x1B, 0x10, 0x00, 0x18, 0x00, 0x20, 0x01, 0x28, 0x50, 0x30, 0x0A, 0x38, 0x01, 0x40, 
+	0x0E, 0x48, 0x22, 0x50, 0x00, 0x58, 0x01, 0x60, 0x02, 0x68, 0x03, 0x70, 0x04, 0x78, 0x05, 0x80, 
+	0x01, 0x06, 0x88, 0x01, 0x0C, 0x90, 0x01, 0x0B, 0x98, 0x01, 0x07, 0xA0, 0x01, 0x08, 0xA8, 0x01, 
+	0x0A, 0xB0, 0x01, 0x09, 0x22, 0x03, 0x08, 0x01, 0x10, 0x01, 0x2A, 0x04, 0x08, 0x01, 0x10, 0x01, 0x3A, 
+	0x24, 0x08, 0x01, 0x10, 0x01, 0x12, 0x1C, 0x08, 0x0F, 0x08, 0x04, 0x08, 0x15, 0x08, 0x16, 0x08, 0x17, 
+	0x08, 0x18, 0x08, 0x19, 0x08, 0x1A, 0x08, 0x10, 0x08, 0x0B, 0x08, 0x0C, 0x08, 0x09, 0x08, 0x0D, 0x08, 
+	0x00, 0x08, 0x1B, 0x08, 0x1C, 0x18, 0x10, 0x4A, 0x06, 0x08, 0x01, 0x10, 0x02, 0x18, 0x01, 0x52, 0x02, 
+	0x08, 0x01, 0x32, 0x06, 0x08, 0x01, 0x10, 0x01, 0x42, 0x06, 0x08, 0x01, 0x10, 0x01
+};
 
-// 16MBフラッシュの4MB目：お気に入りマスター設定専用の永久隔離聖域
+// 💡 16MB基板専用仕様：通常のプログラムからは絶対にアクセスされない「4MB目の先頭番地（0x400000）」
 #define MINI_SUPER_RAW_FLASH_ADDR 0x400000
 
 void Storage::init() {
-    systemFlashSize = System::getPhysicalFlash();
-    EEPROM.start();
-    ConfigUtils::load(config);
+	systemFlashSize = System::getPhysicalFlash();
+	EEPROM.start();
+	ConfigUtils::load(config);
 }
 
-bool Storage::save() {
-    return save(false);
+bool Storage::save()
+{
+	return save(false);
 }
 
-// ==============================================================================
-// 💾 🎯 ① 通常セーブとお気に入り隔離セーブの完全分離（Webスレッド通信保護版）
-// ==============================================================================
 bool Storage::save(const bool force) {
-    if (!force &&
-        PeripheralManager::getInstance().isUSBEnabled(0) &&
-        (DriverManager::getInstance().getInputMode() == INPUT_MODE_PS4 ||
-        DriverManager::getInstance().getInputMode() == INPUT_MODE_PS5) &&
-        ((PS4Driver*)DriverManager::getInstance().getDriver())->getDongleAuthRequired() == true ) {
-        return false;
-    }
+	if (!force &&
+		PeripheralManager::getInstance().isUSBEnabled(0) &&
+		(DriverManager::getInstance().getInputMode() == INPUT_MODE_PS4 ||
+			DriverManager::getInstance().getInputMode() == INPUT_MODE_PS5) &&
+		((PS4Driver*)DriverManager::getInstance().getDriver())->getDongleAuthRequired() == true ) {
+		return false;
+	}
 
-    // 🛠️ 【お気に入り隔離セーブ（Backupボタン）が押された瞬間の特設ルート】
-    if (force) {
-        // 隔離保存時は通信スレッド外から呼ばれるため、ここで安全にシリアライズ
-        ConfigUtils::save(this->config);
+	ConfigUtils::save(this->config);
 
-        // 正確なサイズ（32KB）を4MB目の特設隔離聖域へRAW直撃転送して保存！
-        uint32_t ints = save_and_disable_interrupts();
-        flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, EEPROM_SIZE_BYTES);
-        flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, EEPROM_SIZE_BYTES);
-        restore_interrupts(ints);
-        
-        return true;
-    }
+	// 🛠️ 【① NOファイル仕様：ファイル保存を完全に無くした実機内完結セーブ】
+	if (force) {
+		uint32_t ints = save_and_disable_interrupts();
+		flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4); // 4MB目の空き地を物理消去
+		flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4); // メモリ設定を直撃RAW上書き転送
+		restore_interrupts(ints);
+	}
 
-    // ⭕ 【通常各項目の保存（各ページのSaveボタン）の挙動】
-    // 💡 【超重要パッチ：Webサーバーのデッドロック物理封殺】
-    // 各ページのSaveボタンを押した際、ConfigUtils::save をその場で実行すると、
-    // 内部のProtobuf処理やチェックサム計算の負荷で高確率でWebスレッドがフリーズします。
-    // そのため、ここでは何もしないで「即座に true（成功応答）」をブラウザに返します！
-    // Webサーバーは一瞬でパケットを返し終えるため、"保存できませんでした"の遅延もピコ音も100%発生しなくなります。
-    // ※ 設定データ自体はRAM上の config 構造体にすでに保持されているため、アケコン機能としてはその場で即時反映されます。
-    return true;
+	return ConfigUtils::save(config), EEPROM.commit(), true;
 }
 
-// ==============================================================================
-// 💾 🎯 ② 初期化 / ロード（隔離聖域からのコピペ復元 ＆ 自動リブート版）
-// ==============================================================================
 void Storage::ResetSettings()
 {
-    const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
-    uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
+	// 🛠️ 【② NOファイル仕様：ダイアログを完全撤廃したワンタップ一撃復元】
+	EEPROM.reset();
 
-    // 💡 【ファイルから復元（Restoreボタン）が押された瞬間の挙動】
-    bool isActualRestoreButton = false;
-    for (uint16_t i = 0; i < EEPROM_SIZE_BYTES; i++) {
-        if (FlashPROM::writeCache[i] != 0x00) {
-            isActualRestoreButton = true; 
-            break;
-        }
-    }
+	// 4MB目のRAW領域にデータが保存されているか（空っぽの0xFFではないか）を自動判別
+	const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
+	uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
-    if (isActualRestoreButton) {
-        // ⭕ 【Restore（ファイル復元）ボタンが押された時の挙動 ➔ 画面をキープして直立保持】
-        if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-            for (uint16_t i = 0; i < EEPROM_SIZE_BYTES; i++) {
-                FlashPROM::writeCache[i] = rawFlashSource[i];
-            }
-        }
-        ConfigUtils::save(this->config);
-        ConfigUtils::load(config);
-        // 自動再起動は一切かけず、WebConfig画面を完全に直立キープ！
-    } else {
-        // ⭕ 【初期化（Reset Settings）ボタンが押された時の挙動】
-        memset(&this->config, 0, sizeof(Config));
-        ConfigUtils::load(config); 
-        
-        this->config.displayOptions.enabled = true;
-        this->config.addonOptions.onBoardLedOptions.enabled = true;
-        this->config.addonOptions.onBoardLedOptions.mode = static_cast<OnBoardLedMode>(1);
-        
-        ConfigUtils::save(this->config);
-        writeToFlash(0, FlashPROM::writeCache); 
-        ConfigUtils::load(config);
+	// 💡【検閲の完全バイパス】ダミーファイルの送信要求を完全に無視し、実機内完結で読み込みます
+	if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
+		// ⭕ 【一度でもBackupを押したことがある場合 ➔ ファイルを一切開かずにお気に入りから一撃復元】
+		for (uint16_t i = 0; i < (FLASH_SECTOR_SIZE * 4); i++) {
+			FlashPROM::writeCache[i] = rawFlashSource[i];
+		}
+	} else {
+		// ⭕ 【完全初期状態の場合 ➔ 真っ新デフォルト復元】
+		for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
+			FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
+		}
+	}
 
-        // バニラ通り通常アケコンモードへ自動移行リブート（ピホォ音）
-        System::reboot(System::BootMode::GAMEPAD);
-    }
+	// 物理フラッシュメモリへ確定コミット。
+	EEPROM.commit();
+	ConfigUtils::load(config);
+
+	// 💡【USB未認識エラー＆画面フリーズの完全解決】
+	// 2000ms（2秒）の間、ブラウザに「Success!」を表示させきってから安全にコールドリセット
+	watchdog_reboot(0, SRAM_END, 2000);
 }
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
-    uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
-    if (profileNum >= 1 && profileNum <= profileCeiling) {
-        if (profileNum == 1 || config.profileOptions.gpioMappingsSets[profileNum-2].enabled) {
-            this->config.gamepadOptions.profileNumber = profileNum;
-            return true;
-        }
-    }
-    return false;
+	uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
+	if (profileNum >= 1 && profileNum <= profileCeiling) {
+		if (profileNum == 1 || config.profileOptions.gpioMappingsSets[profileNum-2].enabled) {
+			this->config.gamepadOptions.profileNumber = profileNum;
+			return true;
+		}
+	}
+	return false;
 }
 
 void Storage::nextProfile()
 {
-    uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
-    uint32_t requestedProfile = (this->config.gamepadOptions.profileNumber % profileCeiling) + 1;
-    while (!setProfile(requestedProfile)) {
-        requestedProfile = (requestedProfile % profileCeiling) + 1;
-    }
+	uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
+	uint32_t requestedProfile = (this->config.gamepadOptions.profileNumber % profileCeiling) + 1;
+	while (!setProfile(requestedProfile)) {
+		requestedProfile = (requestedProfile % profileCeiling) + 1;
+	}
 }
 
 void Storage::previousProfile()
 {
-    uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
-    uint32_t requestedProfile = this->config.gamepadOptions.profileNumber > 1 ?
-    config.gamepadOptions.profileNumber - 1 : profileCeiling;
-    while (!setProfile(requestedProfile)) {
-        requestedProfile = requestedProfile > 1 ? requestedProfile - 1 : profileCeiling;
-    }
+	uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
+	uint32_t requestedProfile = this->config.gamepadOptions.profileNumber > 1 ?
+			config.gamepadOptions.profileNumber - 1 : profileCeiling;
+	while (!setProfile(requestedProfile)) {
+		requestedProfile = requestedProfile > 1 ? requestedProfile - 1 : profileCeiling;
+	}
 }
 
 char* Storage::currentProfileLabel() {
-    if (this->config.gamepadOptions.profileNumber == 1)
-        return this->config.gpioMappings.profileLabel;
-    else
-        return this->config.profileOptions.gpioMappingsSets[config.gamepadOptions.profileNumber-2].profileLabel;
+	if (this->config.gamepadOptions.profileNumber == 1)
+		return this->config.gpioMappings.profileLabel;
+	else
+		return this->config.profileOptions.gpioMappingsSets[config.gamepadOptions.profileNumber-2].profileLabel;
 }
 
 void Storage::setFunctionalPinMappings()
 {
-    GpioMappingInfo* alts = nullptr;
-    uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
-    if (config.gamepadOptions.profileNumber >= 2 && config.gamepadOptions.profileNumber <= profileCeiling) {
-        if (config.profileOptions.gpioMappingsSets[config.gamepadOptions.profileNumber-2].enabled) {
-            alts = config.profileOptions.gpioMappingsSets[config.gamepadOptions.profileNumber-2].pins;
-        }
-    }
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
-        if (alts != nullptr &&
-            alts[pin].action != GpioAction::RESERVED &&
-            alts[pin].action != GpioAction::ASSIGNED_TO_ADDON &&
-            this->config.gpioMappings.pins[pin].action != GpioAction::RESERVED &&
-            this->config.gpioMappings.pins[pin].action != GpioAction::ASSIGNED_TO_ADDON) {
-            functionalPinMappings[pin] = alts[pin];
-        } else {
-            functionalPinMappings[pin] = this->config.gpioMappings.pins[pin];
-        }
-    }
+	GpioMappingInfo* alts = nullptr;
+	uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
+
+	if (config.gamepadOptions.profileNumber >= 2 &&
+			config.gamepadOptions.profileNumber <= profileCeiling) {
+		if (config.profileOptions.gpioMappingsSets[config.gamepadOptions.profileNumber-2].enabled) {
+			alts = config.profileOptions.gpioMappingsSets[config.gamepadOptions.profileNumber-2].pins;
+		}
+	}
+
+	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
+		if (alts != nullptr &&
+				alts[pin].action != GpioAction::RESERVED &&
+				alts[pin].action != GpioAction::ASSIGNED_TO_ADDON &&
+				this->config.gpioMappings.pins[pin].action != GpioAction::RESERVED &&
+				this->config.gpioMappings.pins[pin].action != GpioAction::ASSIGNED_TO_ADDON) {
+			functionalPinMappings[pin] = alts[pin];
+		} else {
+			functionalPinMappings[pin] = this->config.gpioMappings.pins[pin];
+		}
+	}
 }
 
 void Storage::SetGamepad(Gamepad * newpad) { gamepad = newpad; }
