@@ -467,8 +467,7 @@ std::string setDisplayOptions(DisplayOptions& displayOptions)
 std::string setDisplayOptions()
 {
     std::string response = setDisplayOptions(Storage::getInstance().getDisplayOptions());
-     // ⚠️ 通信フリーズの原因となるイベントトリガーを完全封殺
-		 // EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
     return response;
 }
 
@@ -591,8 +590,7 @@ std::string setProfileOptions()
         if (altsIndex > 4) break;
     }
 
- // ⚠️ コメントアウトしてマルチコアデッドロックを回避
- // EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
     return serialize_json(doc);
 }
 
@@ -721,8 +719,7 @@ std::string setGamepadOptions()
     ForcedSetupOptions& forcedSetupOptions = Storage::getInstance().getForcedSetupOptions();
     readDoc(forcedSetupOptions.mode, doc, "forcedSetupMode");
 
- // ⚠️ コメントアウト
- // EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
 
     return serialize_json(doc);
 }
@@ -851,8 +848,7 @@ std::string setLedOptions()
     readDoc(ledOptions.caseRGBIndex, doc, "caseRGBIndex");
     readDoc(ledOptions.caseRGBCount, doc, "caseRGBCount");
 
- // ⚠️ コメントアウト
- // EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
     return serialize_json(doc);
 }
 
@@ -1142,8 +1138,8 @@ std::string setPinMappings()
     gpioMappings.profileLabel[profileLabelSize - 1] = '\0';
     gpioMappings.enabled = doc["enabled"];
 
- // ⚠️ コメントアウト
- // EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+
     return serialize_json(doc);
 }
 
