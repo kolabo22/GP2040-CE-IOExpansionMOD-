@@ -1,19 +1,16 @@
-import React, { useState, useContext } from 'react';
-import { Button, Form, Row, Col, Alert } from 'react-bootstrap';
-import { Trans, useTranslation } from 'react-i18next';
-import { AppContext } from '../../Contexts/AppContext';
-import Section from '../../Components/Section';
-import WebConfigApiService from '../../Services/WebConfigApiService';
+import React, { useState } from 'react';
+import { Button, Alert } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
+import Section from '../Components/Section';
 
 export default function BackupPage() {
-  const { buttonLabels } = useContext(AppContext);
   const { t } = useTranslation();
 
   const [saveMessage, setSaveMessage] = useState('');
   const [loadMessage, setLoadMessage] = useState('');
   const [noticeMessage, setNoticeMessage] = useState('');
 
-  // ❌ PCへのファイル保存(Blob)をカットし、C++の16KBRAW直流しスロットへ信号ポスト
+  // ❌ PCへのファイル保存(Blob)をカットし、C++の32KB RAW直流しルートへ信号ポスト
   const handleSave = async () => {
     try {
       const response = await fetch('/api/backup', { method: 'POST' });
@@ -30,7 +27,7 @@ export default function BackupPage() {
   };
 
   // ❌ PCからのファイル選択を不要にし、実機内の4MB隔離領域から全設定を一撃で復元
-  const handleFileSelect = async (ev) => {
+  const handleFileSelect = async () => {
     if (window.confirm("PCからのファイル選択は不要です。実機内の4MB隔離領域から全設定を一撃で復元しますか？")) {
       try {
         const response = await fetch('/api/restore', { method: 'POST' });
@@ -49,19 +46,17 @@ export default function BackupPage() {
   };
 
   return (
-    <Section title={"実機内完結・マスター設定管理"}>
-      <Row className="mb-3">
-        <Col>
-          <p>PCへのファイル保存や読み込みは一切不要です。すべてRP2040実機内の隔離聖域（4MB目）で完結します。</p>
-        </Col>
-      </Row>
+    <Section title={t('BackupPage:backup-header-text', 'Data Backup and Recovery')}>
+      <div className="mb-3">
+        <p>PCへのファイル保存や読み込みは一切不要です。すべてRP2040実機内の隔離聖域（4MB目）で完結します。</p>
+      </div>
 
       {saveMessage && <Alert variant="success">{saveMessage}</Alert>}
       {loadMessage && <Alert variant="success">{loadMessage}</Alert>}
       {noticeMessage && <Alert variant="danger">{noticeMessage}</Alert>}
 
-      <Row>
-        <Col md={6} className="mb-3">
+      <div className="row">
+        <div className="col-md-6 mb-3">
           <div className="p-3 border rounded bg-light">
             <h5>📥 お気に入りマスター設定として保存</h5>
             <p className="small text-muted">現在のすべての設定項目を、実機内の永久隔離聖域へRAW直流し保存します。</p>
@@ -69,9 +64,9 @@ export default function BackupPage() {
               実機内へ隔離保存
             </Button>
           </div>
-        </Col>
+        </div>
 
-        <Col md={6} className="mb-3">
+        <div className="col-md-6 mb-3">
           <div className="p-3 border rounded bg-light">
             <h5>📤 隔離聖域から一撃復元</h5>
             <p className="small text-muted">実機内4MB領域に保存されているマスター設定を現在の通常領域へ上書き復元します。自動再起動はかかりません。</p>
@@ -79,8 +74,8 @@ export default function BackupPage() {
               実機内から復元
             </Button>
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
     </Section>
   );
 }
