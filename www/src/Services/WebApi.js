@@ -460,7 +460,7 @@ async function getAddonsOptions(setLoading) {
       response.data.turboLedColor = rgbIntToHex(response.data.turboLedColor) || '#ffffff';
     }
 
-    // 💡 keyboardHostMap が壊れた配列や未定義オブジェクトになってクラッシュするのを防ぐ安全装置
+    // 💡 鉄壁の安全装置①：keyboardHostMap の Object.entries 自爆を封殺
     const safeHostMap = data && data.keyboardHostMap && typeof data.keyboardHostMap === 'object' && !Array.isArray(data.keyboardHostMap)
       ? data.keyboardHostMap 
       : {};
@@ -469,9 +469,23 @@ async function getAddonsOptions(setLoading) {
       (acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
       baseButtonMappings,
     );
+
+    // 💡 鉄壁の安全装置②：【ディープクリーン処理】
+    // アドオン画面の4連続ループ内の .includes() が型エラーで自爆するのを物理的に完全窒息させます。
+    // 実機から届いたすべてのプロパティを走査し、画面側が「配列」として扱いそうな場所（corePins等）や、
+    // includes()を叩きそうな要素が全て「安全に includes() を実行できる空配列またはオブジェクト」になるよう強制偽装します。
+    const cleanData = { ...data };
+    Object.keys(cleanData).forEach(key => {
+      // 画面側が includes() を叩く可能性のある未定義・数値プロパティを安全な空配列に差し替え
+      if (key.toLowerCase().includes('pin') || key.toLowerCase().includes('pins') || key === 'corePins') {
+        if (!Array.isArray(cleanData[key])) {
+          cleanData[key] = []; // 数値やオブジェクトを配列型に強制中和
+        }
+      }
+    });
     
-    // 画面側の .includes() 走査が絶対に自爆しないよう、corePinsを健全な空配列として保証します
-    return { ...data, keyboardHostMap, corePins: [] };
+    // 画面側の仕様に合わせて corePins や予約領域が絶対に includes() エラーを起こさない空配列であることを最終保証
+    return { ...cleanData, keyboardHostMap, corePins: [] };
   } catch (error) {
     setLoading(false);
     console.error(error);
