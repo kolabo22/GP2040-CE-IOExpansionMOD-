@@ -456,8 +456,11 @@ async function getAddonsOptions(setLoading) {
     const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
     const data = response && response.data ? response.data : {};
     setLoading(false);
+    
+    if (response && response.data) {
+      response.data.turboLedColor = rgbIntToHex(response.data.turboLedColor) || '#ffffff';
+    }
 
-    // 💡 画面クラッシュを封殺する安全装置①：keyboardHostMapのObject.entries自爆を封殺
     const safeHostMap = data && data.keyboardHostMap && typeof data.keyboardHostMap === 'object' && !Array.isArray(data.keyboardHostMap)
       ? data.keyboardHostMap 
       : {};
@@ -467,13 +470,19 @@ async function getAddonsOptions(setLoading) {
       baseButtonMappings,
     );
 
-    // 💡 鉄壁の安全装置②：画面のコンポーネントが .includes() や .filter() で自爆しないよう、
-    // 実機から届いた生データ（data）を安全なデフォルト型（Number）で維持し、corePinsの走査エラーを完全に黙らせます。
-    return {
-      ...data,
-      keyboardHostMap,
-      corePins: [] // corePinsを空配列にすることで、アドオン画面側の多重ループの自爆を100%防ぎます
-    };
+    // 💡 鉄壁の安全装置：アドオン画面の4連続includes()自爆を物理的に完全窒息
+    // 生データ内の -1 や数値を完璧に先回りして、安全な空配列 [] に徹底クリーンアップします。
+    const cleanData = { ...data };
+    Object.keys(cleanData).forEach(key => {
+      if (cleanData[key] === -1 || typeof cleanData[key] === 'number') {
+        // 有効化フラグ(Enabled)やボリューム(Volume)などの制御数値を除き、ピン設定値はすべて配列化して自爆を防御
+        if (key.toLowerCase().includes('pin') || key.toLowerCase().includes('enabled') === false) {
+          cleanData[key] = [];
+        }
+      }
+    });
+    
+    return { ...cleanData, keyboardHostMap, corePins: [] };
   } catch (error) {
     setLoading(false);
     console.error(error);
@@ -594,19 +603,27 @@ async function getPeripheralOptions(setLoading) {
     const response = await Http.get(`${baseUrl}/api/getPeripheralOptions`);
     setLoading(false);
     
-    // 💡 鉄壁の安全装置：実機の固定バイナリに周辺機器の最新データ構造が含まれていない場合でも、
-    // Reactの .includes() や .map() が絶対に自爆しないよう、ベースの型構造を完全に保証します。
-    const safeData = {
-      ...basePeripheralMapping,
-      ...(response && response.data ? response.data : {})
-    };
+    const baseData = { ...basePeripheralMapping, ...(response && response.data ? response.data : {}) };
     
-    return safeData;
+    // 💡 鉄壁の安全装置：includes() 自爆を完全に窒息させる一括ディープクリーン
+    // 値が -1 (数値) のまま React に渡ると 100% 真っ白にクラッシュするため、
+    // 配列でないもの、または -1 のものはすべて安全な空配列 [] に上書き強制中和します。
+    Object.keys(baseData).forEach(key => {
+      if (baseData[key] === -1 || typeof baseData[key] === 'number' || !Array.isArray(baseData[key])) {
+        // block や mode などの制御用数値（配列でない設定値）を除き、ピン関連の数値はすべて配列化
+        if (key.toLowerCase().includes('pin') || key.toLowerCase().includes('block') === false) {
+          baseData[key] = []; 
+        }
+      }
+    });
+    
+    return baseData;
   } catch (error) {
     setLoading(false);
     console.error(error);
   }
 }
+
 
 async function setPeripheralOptions(mappings) {
 	console.dir(mappings);
