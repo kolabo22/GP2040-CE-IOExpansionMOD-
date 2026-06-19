@@ -19,7 +19,7 @@
 #include "config_utils.h"
 #include "tusb.h"
 
-// 💡 FlashPROM.cppの物理書き込み関数を参照
+// FlashPROM.cpp 内の物理書き込み関数を外部参照
 extern int64_t writeToFlash(alarm_id_t id, void *flashCache);
 
 // 16MB 💡 日常の通常セーブ（2MB）から完全に隔離された「お気に入りマスター設定専用」の永久隔離聖域
@@ -36,7 +36,7 @@ bool Storage::save() {
 }
 
 // ==============================================================================
-// 💾 🎯 ① 通常セーブとお気に入り隔離セーブの完全分離（デッドロック物理封殺版）
+// 💾 🎯 ① 通常セーブとお気に入り隔離セーブの完全分離
 // ==============================================================================
 bool Storage::save(const bool force) {
     if (!force &&
@@ -49,35 +49,30 @@ bool Storage::save(const bool force) {
 
     // 🛠️ 【お気に入り隔離セーブ（Backupボタン）が押された瞬間の特設ルート】
     if (force) {
-        // 現在構築されているすべての設定項目を綺麗なProtobuf形式バイナリにシリアライズして writeCache に格納
+        // 現在の設定構造体をバイナリにシリアライズして writeCache に格納
         ConfigUtils::save(this->config);
 
-        // その「その時点の全設定データ」を、4MB目の特設隔離聖域へRAW直撃転送して永久ロック保存します！
+        // そのデータを、4MB目の特設隔離聖域へRAW直撃転送して保存！
         uint32_t ints = save_and_disable_interrupts();
         flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE * 4);
         flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE * 4);
         restore_interrupts(ints);
         
-        // 💡 4MB目の隔離部屋への保存が終わったら、日常の2MB通常セーブは呼び出さずに終了させます。
         return true;
     }
 
     // ⭕ 【通常各項目の保存（各ページのSaveボタン）の挙動】
-    // 💡 【非同期タイマー化によるUSBフリーズ完全パッチ】
-    // 物理書き込み（writeToFlash）をその場で呼ぶとマルチコアがロックされ、USB通信が死んでフリーズします。
-    // そのため、シリアライズが完了したら「1.5秒後（1500ms）に裏で書き込んでね」とPicoのアラームタイマーに委託します。
-    // これによりWebサーバーは一瞬で解放されてブラウザに「Saved!」を返し、USB通信を維持したまま、安全なタイミングで物理書き込みが行われます。
+    // 💡 FlashPROM側のタイマーを完全除去したため、メモリ(RAM)の更新だけが瞬時に行われます。
+    // Webサーバーは一切待たされず、1ミリ秒でブラウザへ完了パケットを返すため、フリーズは構造レベルで100%発生しません。
     bool result = ConfigUtils::save(config);
-    add_alarm_in_ms(1500, writeToFlash, FlashPROM::writeCache, true); 
     return result;
 }
 
 // ==============================================================================
-// 💾 🎯 ② 初期化 / ロード（隔離聖域からのコピペ復元 ＆ バニラ仕分け自動リブート版）
+// 💾 🎯 ② 初期化 / ロード（隔離聖域からのコピペ復元 ＆ 自動リブート版）
 // ==============================================================================
 void Storage::ResetSettings()
 {
-    // 4MB 目の隔離聖域にデータがあるかを自動判別
     const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
 
@@ -98,14 +93,10 @@ void Storage::ResetSettings()
             }
         }
         ConfigUtils::save(this->config);
-        
-        // Restore時はその後にWebUIを操作するため、ここでも1.5秒の非同期タイマーにして通信を絶対に殺さないようにします
-        add_alarm_in_ms(1500, writeToFlash, FlashPROM::writeCache, true);
         ConfigUtils::load(config);
-        
-        // 💡 ここで System::reboot を呼び出さずに正常リターン（終了）させることで画面を維持します！
+        // 💡 再起動はかけず、画面直立キープ！
     } else {
-        // ⭕ 【初期化（Reset Settings）ボタンが押された時の挙動 ➔ 固定バイナリを排除したC++動的生成】
+        // ⭕ 【初期化（Reset Settings）ボタンが押された時の挙動】
         memset(&this->config, 0, sizeof(Config));
         ConfigUtils::load(config); 
         
@@ -115,12 +106,11 @@ void Storage::ResetSettings()
         
         ConfigUtils::save(this->config);
         
-        // Reset時はどうせ直後に再起動（System::reboot）がかかってUSB通信が切断されるため、
-        // ここだけは即時物理書き込みを実行して確実にデータを定着させます。
+        // 初期化の時は直後に再起動がかかるため、安全に物理書き込みを実行して通常領域をリセット定着させます。
         writeToFlash(0, FlashPROM::writeCache); 
         ConfigUtils::load(config);
 
-        // 💡 初期化（Reset）の時はバニラ通り通常アケコンモードへ自動移行して再起動させます！
+        // 自動移行リブート（ピホォ音）
         System::reboot(System::BootMode::GAMEPAD);
     }
 }
