@@ -11,6 +11,8 @@ volatile static spin_lock_t *flashLock = nullptr;
 
 int64_t writeToFlash(alarm_id_t id, void *flashCache)
 {
+	while (is_spin_locked(flashLock));
+
 	multicore_lockout_start_blocking();
 	uint32_t interrupts = spin_lock_blocking(flashLock);
 
@@ -33,13 +35,19 @@ void FlashPROM::start()
 	memcpy(writeCache, reinterpret_cast<uint8_t *>(EEPROM_ADDRESS_START), EEPROM_SIZE_BYTES);
 }
 
+/* We don't have an actual EEPROM, so we need to be extra careful about minimizing writes. Instead
+	of writing when a commit is requested, we update a time to actually commit. That way, if we receive multiple requests
+	to commit in that timeframe, we'll hold off until the user is done sending changes. */
 void FlashPROM::commit()
 {
-	// ⚠️ 通信スレッドでのフリーズを根絶するため、通常コミット処理を完全ダミー化
-	return;
+	while (is_spin_locked(flashLock));
+	if (flashWriteAlarm != 0)
+		cancel_alarm(flashWriteAlarm);
+	flashWriteAlarm = add_alarm_in_ms(EEPROM_WRITE_WAIT, writeToFlash, writeCache, true);
 }
 
 void FlashPROM::reset()
 {
 	memset(writeCache, 0, EEPROM_SIZE_BYTES);
+	commit();
 }
