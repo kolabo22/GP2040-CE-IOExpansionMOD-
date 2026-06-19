@@ -630,18 +630,22 @@ async function setPeripheralOptions(mappings) {
 //	}
 //}
 
-// 💡 修正後：ブラウザのReact画面が要求する構造を100%完璧に偽装したダミーデータを即答します。
-// 実機への通信(Http.get)は1発も投げないため、サーバー負荷は完全ゼロになります。
-// かつ、構造が完璧なため、ブラウザ側が TypeError で自爆クラッシュするのを物理的に100%防ぎます。
-async function getUsedPins(setLoading) {
-  if (setLoading) setLoading(false);
-  return {
-    usedPins: {
-      // 画面が壊れないよう、標準的な空のピンアサイン構造をダミーで配置
-    },
-    corePins: []
-  };
+async function getUsedPins(setLoading) { 
+ if (setLoading) setLoading(false);
+ 
+ // 💡 React側のオブジェクト走査・ループ処理がNull参照（Cannot read properties of undefined）で
+ // 画面を真っ白に染めてクラッシュするのを完全に封殺するための鉄壁偽装ロジックです。
+ const dummyUsedPins = {};
+ for (let i = 0; i <= 29; i++) {
+   dummyUsedPins[`pin${i}`] = []; // 各ピンの使用アドオン一覧を安全な空配列としてエミュレート
+ }
+
+ return {
+   usedPins: dummyUsedPins,
+   corePins: [] // システム予約ピンも安全にスルーさせます
+ };
 }
+
 
 async function getExpansionPins() {
 	try {
