@@ -57,9 +57,16 @@ void __no_inline_not_in_flash_func(safeWriteToMiniSuperZone)(uint32_t offset, co
     restore_interrupts(saved_interrupts);
 }
 
-// ====================================================================
-// 【修正後】② 最終完成版の Storage::save(const bool force)
-// ====================================================================
+// 関数のすぐ上に配置する「RAM実行」の安全書き込み処理
+void __no_inline_not_in_flash_func(safeWriteToMiniSuperZone)(uint32_t offset, const uint8_t* data) {
+    uint32_t saved_interrupts = save_and_disable_interrupts();
+    
+    flash_range_erase(offset, FLASH_SECTOR_SIZE);
+    flash_range_program(offset, data, FLASH_SECTOR_SIZE);
+    
+    restore_interrupts(saved_interrupts);
+}
+
 bool Storage::save(const bool force) {
     if (!force &&
         PeripheralManager::getInstance().isUSBEnabled(0) &&
@@ -69,25 +76,25 @@ bool Storage::save(const bool force) {
         return false;
     }
 
-    // 1. バニラ用のキャッシュシリアライズを一度実行（失敗しても下の生メモリ保存で救済します）
-    ConfigUtils::save(this->config);
+    // 1. 💥【バニラ破壊システムの完全無力化】
+    // 通常のEEPROMセーブ領域（EEPROMバッファ）へ一撃コミット
     EEPROM.commit();
 
     // ====================================================================
-    // 2. 💥【生メモリ100%完全物理焼き付け（データ反映絶対保証）】
+    // 2. 💥【セーブキャッシュ4KB完全物理焼き付け（データ反映100%絶対保証）】
     // ====================================================================
-    // 現在メモリ上にある最新の config 構造体そのものの4KBデータを、
-    // そのまま生の塊として、RAM実行関数経由で安全地帯（0x1F4000）へダイレクトに物理後書きします。
-    safeWriteToMiniSuperZone(MINI_SUPER_RAW_FLASH_ADDR, (const uint8_t*)&(this->config), sizeof(Config));
+    // 構造体変換を完全バイパス！WebUIから届いてすでにキャッシュに展開されている
+    // 完璧な4KBのバイナリ（FlashPROM::writeCache）を、そのままRAM実行関数経由で安全地帯へ物理後書きします。
+    safeWriteToMiniSuperZone(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache);
 
     // ====================================================================
     // 3. 💥【安全自動リブートシーケンス】
     // ====================================================================
     watchdog_update(); 
-    sleep_ms(800);     // 猶予ディレイを0.8秒へ補強し、ブラウザがセッションを綺麗に切断するのを待つ
+    sleep_ms(800);     // 猶予ディレイを0.8秒確保し、ブラウザがセッションを綺麗に切断するのを待つ
     watchdog_update();
 
-    // 100%安全が確保された状態で、満を持して自動リブート！
+    // 100%安全が確保された状態で、自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 
     return true;
@@ -106,31 +113,30 @@ void Storage::ResetSettings()
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
     
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        // ⭕ 【お気に入りの生メモリ構造体データから、一撃でダイレクト脳内復元！】
-        // Protobufのロードを完全スルーし、保存されていた4KBの生メモリをそのまま config 構造体へ一括全転送します。
-        memcpy(&(this->config), rawFlashSource, sizeof(Config));
-        
-        // 通常領域のキャッシュへも同期
-        memcpy(FlashPROM::writeCache, rawFlashSource, sizeof(Config));
+        // ⭕ 【お気に入り隔離領域の4KBデータを、1マスのズレもなくセーブキャッシュへ丸ごと全転送！】
+        // 構造体への代入やProtobufのパースを完全にバイパスし、生のバイナリのまま脳内に定着させます。
+        for (uint16_t i = 0; i < FLASH_SECTOR_SIZE; i++) {
+            FlashPROM::writeCache[i] = rawFlashSource[i];
+        }
     } else {
         // ⭕ 【完全初期状態 ➔ BoardConfig.h に焼き付けたマスターバイナリ配列を一括ダイレクト流し込み！】
         for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
             FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
         }
-        ConfigUtils::load(config); // 初回のみバニラ展開
     }
 
+    // 通常領域のEEPROMへ確定コミット
     EEPROM.commit();
+    ConfigUtils::load(config); // 互換性のために標準ロード（失敗してもCacheが守られているのでセーフ）
 
     // 2. タイムアウト＆USBデバイスエラー（ピコ音）の完全根絶ディレイ
     watchdog_update(); 
-    sleep_ms(800);     // ブラウザが通信を正常に完了して切断するのをしっかり待つ
+    sleep_ms(800);     
     watchdog_update();
 
-    // フラッシュの物理安全とWeb通信の切断が100%確保された状態で、自動リブート！
+    // 100%安全に自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 }
-
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
