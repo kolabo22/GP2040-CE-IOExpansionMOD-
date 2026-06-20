@@ -2232,7 +2232,11 @@ std::string getAddonOptions()
     doc["pinShmupDial"] = cleanPin(turboOptions.shmupDialPin);
     doc["turboLedType"] = (int)turboOptions.turboLedType;
     doc["turboLedIndex"] = (int)turboOptions.turboLedIndex;
-    doc["turboLedColor"] = rgbIntToHex(turboOptions.turboLedColor); // JS側が喜ぶ "#ffffff" 形式の文字列へ
+    // 🟢 C++側で安全に "#000000" のような16進数文字列を組み立てて格納
+char hexColor[8];
+snprintf(hexColor, sizeof(hexColor), "#%06x", (unsigned int)turboOptions.turboLedColor);
+doc["turboLedColor"] = std::string(hexColor);
+
     doc["TurboInputEnabled"] = turboOptions.enabled ? 1 : 0;
 
     // ==========================================
