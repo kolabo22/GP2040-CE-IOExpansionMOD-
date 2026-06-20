@@ -19,7 +19,7 @@
 #include "config_utils.h"
 
 // 【MINI Super 専用】画面 ON＆オンボード LED 入力連動が組み込まれた真のマスターバイナリ配列
-static const uint8_t miniSuperPerfectBinary[] = {
+//static const uint8_t miniSuperPerfectBinary[] = {
 0x0A, 0x06, 0x08, 0x00, 0x10, 0x00, 0x18, 0x05, 0x12, 0x3E, 0x08, 0x01, 0x10, 0x02, 0x18, 0x04, 
 0x20, 0x03, 0x28, 0x05, 0x30, 0x06, 0x38, 0x0C, 0x40, 0x01, 0x0B, 0x48, 0x01, 0x07, 0x50, 0x01, 
 0x08, 0x58, 0x01, 0x0A, 0x60, 0x01, 0x09, 0x68, 0x01, 0x20, 0x70, 0x01, 0x0E, 0x78, 0x1E, 0x1A, 
@@ -71,33 +71,36 @@ bool Storage::save(const bool force) {
     return ConfigUtils::save(config), true;
 }
 
+// 🎯 src/storagemanager.cpp の 2ページ目にある Storage::ResetSettings() を以下に丸ごと差し替え
 void Storage::ResetSettings()
 {
     EEPROM.reset();
 
-    // 素のPicoのフラッシュメモリ内の隔離番地から自動判別
+    // 1. 素の Pico のフラッシュメモリ内の隔離番地（0x1F4000）にお気に入りデータがあるか自動判別
     const uint8_t* rawFlashSource = (const uint8_t*)(XIP_BASE + MINI_SUPER_RAW_FLASH_ADDR);
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
-
+    
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        // ⭕ 【お気に入りから一撃復元（4KB分）】
+        // ⭕ 【お気に入りから一撃復元（4KB 分）】
         for (uint16_t i = 0; i < FLASH_SECTOR_SIZE; i++) {
             FlashPROM::writeCache[i] = rawFlashSource[i];
         }
     } else {
-        // ⭕ 【完全初期状態 ➔ 画面ONバイナリ展開】
+        // ⭕ 【完全初期状態 ➔ BoardConfig.h に焼き付けたマスターバイナリ配列を一括ダイレクト流し込み！】
+        // 余計な処理は何もせず、配列のサイズ分だけ一撃で保存キャッシュ（writeCache）に全上書き転送します。
         for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
             FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
         }
     }
 
-    // 初期化・復元時は直後に再起動がかかるため、安全に通常領域へコミットして定着させます
+    // 2. 初期化・流し込み直後に自動再起動がかかるため、安全に通常領域へコミットして定着させます
     EEPROM.commit();
-    ConfigUtils::load(config);
+    ConfigUtils::load(config); // 流し込んだバイナリを実機のメインメモリ（config構造体）に完全展開
 
-    // Webサーバーを安全に閉じてブラウザに応答を返しきってから、ピホォ音自動リブート！
+    // Web サーバーを安全に閉じてブラウザに応答を返しきってから、ピホォ音自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 }
+
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
