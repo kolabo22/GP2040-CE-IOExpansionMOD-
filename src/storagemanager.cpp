@@ -90,29 +90,36 @@ void Storage::ResetSettings()
     
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
         // ⭕ 【お気に入り隔離領域の4KBデータを、1マスのズレもなくセーブキャッシュへ丸ごと全転送！】
-        // 構造体への代入やProtobufのパースを完全にバイパスし、生のバイナリのまま脳内に定着させます。
         for (uint16_t i = 0; i < FLASH_SECTOR_SIZE; i++) {
             FlashPROM::writeCache[i] = rawFlashSource[i];
         }
+        
+        // 💥【バニラ上書き完全遮断の核心】
+        // 通常のロード関数を使わず、今読み出した完璧なキャッシュバッファから、
+        // 実機のメインメモリ（config構造体）へ一撃でダイレクト脳内復元・完全定着させます！
+        ConfigUtils::fromProto(FlashPROM::writeCache, this->config);
     } else {
         // ⭕ 【完全初期状態 ➔ BoardConfig.h に焼き付けたマスターバイナリ配列を一括ダイレクト流し込み！】
         for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
             FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
         }
+        // 初回デフォルトバイナリをメモリへ展開
+        ConfigUtils::fromProto(FlashPROM::writeCache, this->config);
     }
 
-    // 通常領域のEEPROMへ確定コミット
+    // 2. 実機メモリに展開された完璧なデータを、通常セーブ領域のバッファへも完全に定着させます
+    ConfigUtils::save(this->config);
     EEPROM.commit();
-    ConfigUtils::load(config); // 互換性のために標準ロード（失敗してもCacheが守られているのでセーフ）
 
-    // 2. タイムアウト＆USBデバイスエラー（ピコ音）の完全根絶ディレイ
+    // 3. タイムアウト＆USBデバイスエラー（ピコ音）の完全根絶ディレイ
     watchdog_update(); 
-    sleep_ms(800);     
+    sleep_ms(800);     // ブラウザがセッションを綺麗に切断するのをしっかり待つ
     watchdog_update();
 
-    // 100%安全に自動リブート！
+    // フラッシュの物理安全とWeb通信の切断が100%確保された状態で、満を持して自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 }
+
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
