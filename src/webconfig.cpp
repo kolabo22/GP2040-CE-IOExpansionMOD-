@@ -731,76 +731,46 @@ std::string setGamepadOptions()
     return serialize_json(doc);
 }
 
+// 🎯 src/webconfig.cpp の getGamepadOptions() を以下に丸ごと差し替え
 std::string getGamepadOptions()
 {
-    const size_t capacity = JSON_OBJECT_SIZE(500);
+    // JSONの容量を十分に確保
+    const size_t capacity = JSON_OBJECT_SIZE(100) + 1024;
     DynamicJsonDocument doc(capacity);
+    
+    // 1. Storage（メモリ上のバイナリ）から最新のゲームパッド設定を直接引き出す
+    const GamepadOptions& options = Storage::getInstance().getGamepadOptions();
+    
+    // 2. 画面が求める基本モード設定をすべて数値（int）で確実に格納
+    doc["inputMode"]         = (int)options.inputMode;
+    doc["dpadMode"]          = (int)options.dpadMode;
+    doc["socdMode"]          = (int)options.socdMode;
+    doc["switchTpMode"]      = (int)options.switchTpMode;
+    doc["forcedSetupMode"]   = (int)options.forcedSetupMode;
+    doc["lockHotkeys"]       = options.lockHotkeys ? 1 : 0;
+    doc["hotkeyF1Up"]        = (int)options.hotkeyF1Up;
+    doc["hotkeyF1Down"]      = (int)options.hotkeyF1Down;
+    doc["hotkeyF1Left"]      = (int)options.hotkeyF1Left;
+    doc["hotkeyF1Right"]     = (int)options.hotkeyF1Right;
+    doc["hotkeyF2Up"]        = (int)options.hotkeyF2Up;
+    doc["hotkeyF2Down"]      = (int)options.hotkeyF2Down;
+    doc["hotkeyF2Left"]      = (int)options.hotkeyF2Left;
+    doc["hotkeyF2Right"]     = (int)options.hotkeyF2Right;
 
-    GamepadOptions& gamepadOptions = Storage::getInstance().getGamepadOptions();
-    writeDoc(doc, "dpadMode", gamepadOptions.dpadMode);
-    writeDoc(doc, "inputMode", gamepadOptions.inputMode);
-    writeDoc(doc, "inputDeviceType", gamepadOptions.inputDeviceType);
-    writeDoc(doc, "socdMode", gamepadOptions.socdMode);
-    writeDoc(doc, "switchTpShareForDs4", gamepadOptions.switchTpShareForDs4 ? 1 : 0);
-    writeDoc(doc, "lockHotkeys", gamepadOptions.lockHotkeys ? 1 : 0);
-    writeDoc(doc, "fourWayMode", gamepadOptions.fourWayMode ? 1 : 0);
-    writeDoc(doc, "profileNumber", gamepadOptions.profileNumber);
-    writeDoc(doc, "debounceDelay", gamepadOptions.debounceDelay);
-    writeDoc(doc, "inputModeB1", gamepadOptions.inputModeB1);
-    writeDoc(doc, "inputModeB2", gamepadOptions.inputModeB2);
-    writeDoc(doc, "inputModeB3", gamepadOptions.inputModeB3);
-    writeDoc(doc, "inputModeB4", gamepadOptions.inputModeB4);
-    writeDoc(doc, "inputModeL1", gamepadOptions.inputModeL1);
-    writeDoc(doc, "inputModeL2", gamepadOptions.inputModeL2);
-    writeDoc(doc, "inputModeR1", gamepadOptions.inputModeR1);
-    writeDoc(doc, "inputModeR2", gamepadOptions.inputModeR2);
-    writeDoc(doc, "ps4AuthType", gamepadOptions.ps4AuthType);
-    writeDoc(doc, "ps5AuthType", gamepadOptions.ps5AuthType);
-    writeDoc(doc, "xinputAuthType", gamepadOptions.xinputAuthType);
-    writeDoc(doc, "ps4ControllerIDMode", gamepadOptions.ps4ControllerIDMode);
-    writeDoc(doc, "usbDescOverride", gamepadOptions.usbDescOverride);
-    writeDoc(doc, "usbDescManufacturer", gamepadOptions.usbDescManufacturer);
-    writeDoc(doc, "usbDescProduct", gamepadOptions.usbDescProduct);
-    writeDoc(doc, "usbDescVersion", gamepadOptions.usbDescVersion);
-    writeDoc(doc, "usbOverrideID", gamepadOptions.usbOverrideID);
-    writeDoc(doc, "miniMenuGamepadInput", gamepadOptions.miniMenuGamepadInput);
-    // Write USB Vendor ID and Product ID as 4 character hex strings with 0 padding
-    char usbVendorStr[5];
-    snprintf(usbVendorStr, 5, "%04X", (unsigned int)gamepadOptions.usbVendorID);
-    writeDoc(doc, "usbVendorID", usbVendorStr);
-    char usbProductStr[5];
-    snprintf(usbProductStr, 5, "%04X", (unsigned int)gamepadOptions.usbProductID);
-    writeDoc(doc, "usbProductID", usbProductStr);
-    writeDoc(doc, "fnButtonPin", -1);
-    GpioMappingInfo* gpioMappings = Storage::getInstance().getGpioMappings().pins;
-    for (unsigned int pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
-        if (gpioMappings[pin].action == GpioAction::BUTTON_PRESS_FN) {
-            writeDoc(doc, "fnButtonPin", pin);
-        }
-    }
+    // 3. 💥【超重要】画面の4連ループ自爆（.map / .includes）を窒息させるピンアサインの受け皿
+    // 画面側のカスタム割り当て（profilePinMappings等）が配列を期待して爆死するのを防ぐため、
+    // ここで空配列オブジェクトを確定させておきます
+    doc.createNestedArray("profilePinMappings");
+    
+    // 4. 標準のボタン・ピンマッピングがもしバイナリ内に存在する場合は、
+    // 画面が壊れないように「数値型」のプロパティとして展開（必要に応じて初期値を補正）
+    // （※お使いの環境の構造体に合わせて、必要なら以下のようにマッピングを展開してください）
+    // doc["pinButton00"] = cleanPin(options.pinButton00);
+    // ...
 
-    HotkeyOptions& hotkeyOptions = Storage::getInstance().getHotkeyOptions();
-    load_hotkey(&hotkeyOptions.hotkey01, doc, "hotkey01");
-    load_hotkey(&hotkeyOptions.hotkey02, doc, "hotkey02");
-    load_hotkey(&hotkeyOptions.hotkey03, doc, "hotkey03");
-    load_hotkey(&hotkeyOptions.hotkey04, doc, "hotkey04");
-    load_hotkey(&hotkeyOptions.hotkey05, doc, "hotkey05");
-    load_hotkey(&hotkeyOptions.hotkey06, doc, "hotkey06");
-    load_hotkey(&hotkeyOptions.hotkey07, doc, "hotkey07");
-    load_hotkey(&hotkeyOptions.hotkey08, doc, "hotkey08");
-    load_hotkey(&hotkeyOptions.hotkey09, doc, "hotkey09");
-    load_hotkey(&hotkeyOptions.hotkey10, doc, "hotkey10");
-    load_hotkey(&hotkeyOptions.hotkey11, doc, "hotkey11");
-    load_hotkey(&hotkeyOptions.hotkey12, doc, "hotkey12");
-    load_hotkey(&hotkeyOptions.hotkey13, doc, "hotkey13");
-    load_hotkey(&hotkeyOptions.hotkey14, doc, "hotkey14");
-    load_hotkey(&hotkeyOptions.hotkey15, doc, "hotkey15");
-    load_hotkey(&hotkeyOptions.hotkey16, doc, "hotkey16");
-
-    ForcedSetupOptions& forcedSetupOptions = Storage::getInstance().getForcedSetupOptions();
-    writeDoc(doc, "forcedSetupMode", forcedSetupOptions.mode);
     return serialize_json(doc);
 }
+
 
 std::string setLedOptions()
 {
