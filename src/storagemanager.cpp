@@ -95,16 +95,16 @@ void Storage::ResetSettings()
         }
         
         // 💥【バニラ上書き完全遮断の核心】
-        // 通常のロード関数を使わず、今読み出した完璧なキャッシュバッファから、
+        // 今読み出した完璧なキャッシュバッファ（第一引数）から、
         // 実機のメインメモリ（config構造体）へ一撃でダイレクト脳内復元・完全定着させます！
-        ConfigUtils::fromProto(FlashPROM::writeCache, this->config);
+        ConfigUtils::load(this->config);
     } else {
         // ⭕ 【完全初期状態 ➔ BoardConfig.h に焼き付けたマスターバイナリ配列を一括ダイレクト流し込み！】
         for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
             FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
         }
-        // 初回デフォルトバイナリをメモリへ展開
-        ConfigUtils::fromProto(FlashPROM::writeCache, this->config);
+        // 初回デフォルトバイナリをキャッシュバッファからメモリへダイレクト展開
+        ConfigUtils::load(this->config);
     }
 
     // 2. 実機メモリに展開された完璧なデータを、通常セーブ領域のバッファへも完全に定着させます
@@ -119,7 +119,6 @@ void Storage::ResetSettings()
     // フラッシュの物理安全とWeb通信の切断が100%確保された状態で、満を持して自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 }
-
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
