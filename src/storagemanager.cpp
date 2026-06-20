@@ -53,11 +53,10 @@ void Storage::ResetSettings()
 	// 🛠️ 通常のEEPROMキャッシュバッファをクリア
 	EEPROM.reset();
 
-	// ⭕【一撃ダイレクト流し込み】
-	// 隔離領域のチェックなどは一切挟まず、初期化が押されたその瞬間に、
-	// BoardConfig.h に焼き付けた本物の縦並び完成バイナリをそのままバッファへ全転送します！
-	for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
-		FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
+	// 🟢 ヘッダー側の物理吸い出し縦並び配列（miniSuperPerfectStaticBinary）から、
+	// 1マスの狂いもなく4096バイト分を一撃で保存バッファへ全転送します！
+	for (uint16_t i = 0; i < sizeof(miniSuperPerfectStaticBinary); i++) {
+		FlashPROM::writeCache[i] = miniSuperPerfectStaticBinary[i];
 	}
 
 	// 物理フラッシュメモリの通常領域（1MBの開始地点）へ確定コミット
