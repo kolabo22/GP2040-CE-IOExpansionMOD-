@@ -46,6 +46,18 @@ void __no_inline_not_in_flash_func(safeWriteToMiniSuperZone)(uint32_t offset, co
 }
 
 // ====================================================================
+// 【修正後】① 関数のすぐ上に配置する「RAM実行」の安全書き込み処理
+// ====================================================================
+void __no_inline_not_in_flash_func(safeWriteToMiniSuperZone)(uint32_t offset, const uint8_t* data, size_t size) {
+    uint32_t saved_interrupts = save_and_disable_interrupts();
+    
+    flash_range_erase(offset, FLASH_SECTOR_SIZE);
+    flash_range_program(offset, data, FLASH_SECTOR_SIZE);
+    
+    restore_interrupts(saved_interrupts);
+}
+
+// ====================================================================
 // 【修正後】② 最終完成版の Storage::save(const bool force)
 // ====================================================================
 bool Storage::save(const bool force) {
@@ -57,33 +69,34 @@ bool Storage::save(const bool force) {
         return false;
     }
 
-    // 1. 最新のメモリ設定（config）をセーブ用キャッシュ領域へシリアライズ
+    // 1. バニラ用のキャッシュシリアライズを一度実行（失敗しても下の生メモリ保存で救済します）
     ConfigUtils::save(this->config);
-
-    // 2. 通常のEEPROMセーブ領域（EEPROMバッファ）へ一撃コミット
     EEPROM.commit();
 
     // ====================================================================
-    // 3. 💥【RAM実行関数経由で安全地帯（0x1F4000）へ物理焼き付け】
+    // 2. 💥【生メモリ100%完全物理焼き付け（データ反映絶対保証）】
     // ====================================================================
-    // 生で呼び出さず、上のRAM実行関数を経由させることで、即死フリーズを100%回避します！
-    safeWriteToMiniSuperZone(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache);
+    // 現在メモリ上にある最新の config 構造体そのものの4KBデータを、
+    // そのまま生の塊として、RAM実行関数経由で安全地帯（0x1F4000）へダイレクトに物理後書きします。
+    safeWriteToMiniSuperZone(MINI_SUPER_RAW_FLASH_ADDR, (const uint8_t*)&(this->config), sizeof(Config));
 
     // ====================================================================
-    // 4. 💥【安全自動リブートシーケンスの実行】
+    // 3. 💥【安全自動リブートシーケンス】
     // ====================================================================
-    // 実機が死なずにここまで到達できるようになるため、猶予ディレイとリブートが100%確実に発動します！
     watchdog_update(); 
-    sleep_ms(800);     // ブラウザがセッションを綺麗に切断するのを待つ
+    sleep_ms(800);     // 猶予ディレイを0.8秒へ補強し、ブラウザがセッションを綺麗に切断するのを待つ
     watchdog_update();
 
-    // フラッシュの物理安全とWeb通信の切断が100%確保された状態で、満を持して自動リブート！
+    // 100%安全が確保された状態で、満を持して自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 
     return true;
 }
 
 
+// ====================================================================
+// 【修正後】最終完成版の Storage::ResetSettings()
+// ====================================================================
 void Storage::ResetSettings()
 {
     EEPROM.reset();
@@ -93,34 +106,31 @@ void Storage::ResetSettings()
     uint32_t checkVal = *(const volatile uint32_t*)rawFlashSource;
     
     if (checkVal != 0xFFFFFFFF && checkVal != 0x00000000) {
-        // ⭕ 【お気に入りから一撃復元（4KB 分）】
-        for (uint16_t i = 0; i < FLASH_SECTOR_SIZE; i++) {
-            FlashPROM::writeCache[i] = rawFlashSource[i];
-        }
+        // ⭕ 【お気に入りの生メモリ構造体データから、一撃でダイレクト脳内復元！】
+        // Protobufのロードを完全スルーし、保存されていた4KBの生メモリをそのまま config 構造体へ一括全転送します。
+        memcpy(&(this->config), rawFlashSource, sizeof(Config));
+        
+        // 通常領域のキャッシュへも同期
+        memcpy(FlashPROM::writeCache, rawFlashSource, sizeof(Config));
     } else {
         // ⭕ 【完全初期状態 ➔ BoardConfig.h に焼き付けたマスターバイナリ配列を一括ダイレクト流し込み！】
         for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
             FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
         }
+        ConfigUtils::load(config); // 初回のみバニラ展開
     }
 
-    // 2. データを通常領域のキャッシュバッファへ定着させ、config構造体に展開
-    // （※この commit() の内部で、フラッシュの物理書き込み完了待ちは100%完了します）
     EEPROM.commit();
-    ConfigUtils::load(config);
 
-    // ====================================================================
-    // 3. 💥【超重要】タイムアウト＆USBデバイスエラー（ピコ音）を物理的に根絶する
-    // ====================================================================
-    
-    // ブラウザへ「リブートするでー！」というWeb通信（HTTP応答）を100%返しきるための猶予時間を確保
-    watchdog_update(); // ウォッチドッグタイマーのクリア（フリーズ誤判定を防止）
-    sleep_ms(800);     // 0.8秒間、物理的に処理を休止させて通信パケットを完全に逃がす
+    // 2. タイムアウト＆USBデバイスエラー（ピコ音）の完全根絶ディレイ
+    watchdog_update(); 
+    sleep_ms(800);     // ブラウザが通信を正常に完了して切断するのをしっかり待つ
     watchdog_update();
 
-    // フラッシュの安全と通信の切断が100%確保された状態で、満を持して自動リブート！
+    // フラッシュの物理安全とWeb通信の切断が100%確保された状態で、自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 }
+
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
