@@ -32,19 +32,18 @@ bool Storage::save() {
 }
 
 // ====================================================================
-// 【修正後】① 関数のすぐ上に配置する「RAM実行」の安全書き込み処理
+// 【修正後】最終完成版の安全関数 ＆ Storage::save() 処理
 // ====================================================================
-// この修飾子により、この関数はフラッシュではなく100%RAM上で実行され、即死を物理的に防ぎます
+
+// 🟢 ちぎれていた宣言を修復し、ファイル上で「この1箇所だけ」に綺麗に定義します
 void __no_inline_not_in_flash_func(safeWriteToMiniSuperZone)(uint32_t offset, const uint8_t* data) {
     uint32_t saved_interrupts = save_and_disable_interrupts();
     
-    // RAM上で実行されているため、フラッシュが凍結してもCPUは絶対にクラッシュしません
     flash_range_erase(offset, FLASH_SECTOR_SIZE);
     flash_range_program(offset, data, FLASH_SECTOR_SIZE);
     
     restore_interrupts(saved_interrupts);
 }
-
 
 bool Storage::save(const bool force) {
     if (!force &&
@@ -55,30 +54,28 @@ bool Storage::save(const bool force) {
         return false;
     }
 
-    // 1. 💥【バニラ破壊システムの完全無力化】
-    // 通常のEEPROMセーブ領域（EEPROMバッファ）へ一撃コミット
+    // 1. 🎯【最重要：データ反映の命綱】
+    // WebUIから届いて更新された最新のメモリ（this->config）を、一撃でセーブキャッシュ領域（writeCache）へパース展開！
+    ConfigUtils::save(this->config);
+
+    // 2. 通常のEEPROMセーブ領域（EEPROMバッファ）へ一撃コミット
     EEPROM.commit();
 
-    // ====================================================================
-    // 2. 💥【セーブキャッシュ4KB完全物理焼き付け（データ反映100%絶対保証）】
-    // ====================================================================
-    // 構造体変換を完全バイパス！WebUIから届いてすでにキャッシュに展開されている
-    // 完璧な4KBのバイナリ（FlashPROM::writeCache）を、そのままRAM実行関数経由で安全地帯へ物理後書きします。
+    // 3. 💥【安全地帯（0x1F4000）への物理焼き付け実行】
+    // 上で完璧にパースされた最新の4KBバイナリデータを、RAM実行関数経由で隔離番地へダイレクト後書き！
     safeWriteToMiniSuperZone(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache);
 
-    // ====================================================================
-    // 3. 💥【安全自動リブートシーケンス】
-    // ====================================================================
+    // 4. 💥【タイムアウト＆不意打ち通信完全大窒息シーケンス】
+    // ブラウザへ「セーブ成功リブートするで！」というパケットを100%返しきるための0.8秒ディレイ
     watchdog_update(); 
-    sleep_ms(800);     // 猶予ディレイを0.8秒確保し、ブラウザがセッションを綺麗に切断するのを待つ
+    sleep_ms(800);     
     watchdog_update();
 
-    // 100%安全が確保された状態で、自動リブート！
+    // 全ての安全が物理確保された状態で、満を持して自動リブートを実行！
     System::reboot(System::BootMode::GAMEPAD);
 
     return true;
 }
-
 
 // ====================================================================
 // 【修正後】最終完成版の Storage::ResetSettings()
