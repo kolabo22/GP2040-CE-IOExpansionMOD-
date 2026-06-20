@@ -45,27 +45,6 @@ void __no_inline_not_in_flash_func(safeWriteToMiniSuperZone)(uint32_t offset, co
     restore_interrupts(saved_interrupts);
 }
 
-// ====================================================================
-// 【修正後】① 関数のすぐ上に配置する「RAM実行」の安全書き込み処理
-// ====================================================================
-void __no_inline_not_in_flash_func(safeWriteToMiniSuperZone)(uint32_t offset, const uint8_t* data, size_t size) {
-    uint32_t saved_interrupts = save_and_disable_interrupts();
-    
-    flash_range_erase(offset, FLASH_SECTOR_SIZE);
-    flash_range_program(offset, data, FLASH_SECTOR_SIZE);
-    
-    restore_interrupts(saved_interrupts);
-}
-
-// 関数のすぐ上に配置する「RAM実行」の安全書き込み処理
-void __no_inline_not_in_flash_func(safeWriteToMiniSuperZone)(uint32_t offset, const uint8_t* data) {
-    uint32_t saved_interrupts = save_and_disable_interrupts();
-    
-    flash_range_erase(offset, FLASH_SECTOR_SIZE);
-    flash_range_program(offset, data, FLASH_SECTOR_SIZE);
-    
-    restore_interrupts(saved_interrupts);
-}
 
 bool Storage::save(const bool force) {
     if (!force &&
