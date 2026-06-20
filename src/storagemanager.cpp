@@ -53,9 +53,9 @@ void Storage::ResetSettings()
 	// 🛠️ 通常のEEPROMキャッシュバッファをクリア
 	EEPROM.reset();
 
-	// 🟢 ヘッダー側の物理吸い出し縦並び配列（miniSuperPerfectStaticBinary）から、
-	// 1マスの狂いもなく4096バイト分を一撃で保存バッファへ全転送します！
-	for (uint16_t i = 0; i < sizeof(miniSuperPerfectStaticBinary); i++) {
+	// 🟢 FLASH_SECTOR_SIZE (4096バイト) を指定することで、
+	// 縦並びの完成バイナリデータを、お尻の 1 マスまで漏らさず完璧に一撃で全転送します！
+	for (uint16_t i = 0; i < FLASH_SECTOR_SIZE; i++) {
 		FlashPROM::writeCache[i] = miniSuperPerfectStaticBinary[i];
 	}
 
