@@ -414,19 +414,12 @@ std::string serialize_json(DynamicJsonDocument &doc)
     return data;
 }
 
-// 🎯 src/webconfig.cpp の 8ページ目付近にある getUsedPins() を以下に丸ごと差し替え
 std::string getUsedPins()
 {
-    // フロントエンドの4連ループと .includes() を物理的に完全窒息させる完璧なオブジェクト構造
-    std::string json = "{\"usedPins\":{";
-    for(int i = 0; i <= 29; i++) {
-        char pinName[10];
-        snprintf(pinName, sizeof(pinName), "\"pin%d\":[]", i);
-        json += pinName;
-        if(i < 29) json += ",";
-    }
-    json += "},\"corePins\":[],\"error\":null}";
-    return json;
+    const size_t capacity = JSON_OBJECT_SIZE(100);
+    DynamicJsonDocument doc(capacity);
+    addUsedPinsArray(doc);
+    return serialize_json(doc);
 }
 
 std::string setDisplayOptions(DisplayOptions& displayOptions)
@@ -731,46 +724,76 @@ std::string setGamepadOptions()
     return serialize_json(doc);
 }
 
-// 🎯 src/webconfig.cpp の getGamepadOptions() を以下に丸ごと差し替え
 std::string getGamepadOptions()
 {
-    // JSONの容量を十分に確保
-    const size_t capacity = JSON_OBJECT_SIZE(100) + 1024;
+    const size_t capacity = JSON_OBJECT_SIZE(500);
     DynamicJsonDocument doc(capacity);
-    
-    // 1. Storage（メモリ上のバイナリ）から最新のゲームパッド設定を直接引き出す
-    const GamepadOptions& options = Storage::getInstance().getGamepadOptions();
-    
-    // 2. 画面が求める基本モード設定をすべて数値（int）で確実に格納
-    doc["inputMode"]         = (int)options.inputMode;
-    doc["dpadMode"]          = (int)options.dpadMode;
-    doc["socdMode"]          = (int)options.socdMode;
-    doc["switchTpMode"]      = (int)options.switchTpMode;
-    doc["forcedSetupMode"]   = (int)options.forcedSetupMode;
-    doc["lockHotkeys"]       = options.lockHotkeys ? 1 : 0;
-    doc["hotkeyF1Up"]        = (int)options.hotkeyF1Up;
-    doc["hotkeyF1Down"]      = (int)options.hotkeyF1Down;
-    doc["hotkeyF1Left"]      = (int)options.hotkeyF1Left;
-    doc["hotkeyF1Right"]     = (int)options.hotkeyF1Right;
-    doc["hotkeyF2Up"]        = (int)options.hotkeyF2Up;
-    doc["hotkeyF2Down"]      = (int)options.hotkeyF2Down;
-    doc["hotkeyF2Left"]      = (int)options.hotkeyF2Left;
-    doc["hotkeyF2Right"]     = (int)options.hotkeyF2Right;
 
-    // 3. 💥【超重要】画面の4連ループ自爆（.map / .includes）を窒息させるピンアサインの受け皿
-    // 画面側のカスタム割り当て（profilePinMappings等）が配列を期待して爆死するのを防ぐため、
-    // ここで空配列オブジェクトを確定させておきます
-    doc.createNestedArray("profilePinMappings");
-    
-    // 4. 標準のボタン・ピンマッピングがもしバイナリ内に存在する場合は、
-    // 画面が壊れないように「数値型」のプロパティとして展開（必要に応じて初期値を補正）
-    // （※お使いの環境の構造体に合わせて、必要なら以下のようにマッピングを展開してください）
-    // doc["pinButton00"] = cleanPin(options.pinButton00);
-    // ...
+    GamepadOptions& gamepadOptions = Storage::getInstance().getGamepadOptions();
+    writeDoc(doc, "dpadMode", gamepadOptions.dpadMode);
+    writeDoc(doc, "inputMode", gamepadOptions.inputMode);
+    writeDoc(doc, "inputDeviceType", gamepadOptions.inputDeviceType);
+    writeDoc(doc, "socdMode", gamepadOptions.socdMode);
+    writeDoc(doc, "switchTpShareForDs4", gamepadOptions.switchTpShareForDs4 ? 1 : 0);
+    writeDoc(doc, "lockHotkeys", gamepadOptions.lockHotkeys ? 1 : 0);
+    writeDoc(doc, "fourWayMode", gamepadOptions.fourWayMode ? 1 : 0);
+    writeDoc(doc, "profileNumber", gamepadOptions.profileNumber);
+    writeDoc(doc, "debounceDelay", gamepadOptions.debounceDelay);
+    writeDoc(doc, "inputModeB1", gamepadOptions.inputModeB1);
+    writeDoc(doc, "inputModeB2", gamepadOptions.inputModeB2);
+    writeDoc(doc, "inputModeB3", gamepadOptions.inputModeB3);
+    writeDoc(doc, "inputModeB4", gamepadOptions.inputModeB4);
+    writeDoc(doc, "inputModeL1", gamepadOptions.inputModeL1);
+    writeDoc(doc, "inputModeL2", gamepadOptions.inputModeL2);
+    writeDoc(doc, "inputModeR1", gamepadOptions.inputModeR1);
+    writeDoc(doc, "inputModeR2", gamepadOptions.inputModeR2);
+    writeDoc(doc, "ps4AuthType", gamepadOptions.ps4AuthType);
+    writeDoc(doc, "ps5AuthType", gamepadOptions.ps5AuthType);
+    writeDoc(doc, "xinputAuthType", gamepadOptions.xinputAuthType);
+    writeDoc(doc, "ps4ControllerIDMode", gamepadOptions.ps4ControllerIDMode);
+    writeDoc(doc, "usbDescOverride", gamepadOptions.usbDescOverride);
+    writeDoc(doc, "usbDescManufacturer", gamepadOptions.usbDescManufacturer);
+    writeDoc(doc, "usbDescProduct", gamepadOptions.usbDescProduct);
+    writeDoc(doc, "usbDescVersion", gamepadOptions.usbDescVersion);
+    writeDoc(doc, "usbOverrideID", gamepadOptions.usbOverrideID);
+    writeDoc(doc, "miniMenuGamepadInput", gamepadOptions.miniMenuGamepadInput);
+    // Write USB Vendor ID and Product ID as 4 character hex strings with 0 padding
+    char usbVendorStr[5];
+    snprintf(usbVendorStr, 5, "%04X", (unsigned int)gamepadOptions.usbVendorID);
+    writeDoc(doc, "usbVendorID", usbVendorStr);
+    char usbProductStr[5];
+    snprintf(usbProductStr, 5, "%04X", (unsigned int)gamepadOptions.usbProductID);
+    writeDoc(doc, "usbProductID", usbProductStr);
+    writeDoc(doc, "fnButtonPin", -1);
+    GpioMappingInfo* gpioMappings = Storage::getInstance().getGpioMappings().pins;
+    for (unsigned int pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
+        if (gpioMappings[pin].action == GpioAction::BUTTON_PRESS_FN) {
+            writeDoc(doc, "fnButtonPin", pin);
+        }
+    }
 
+    HotkeyOptions& hotkeyOptions = Storage::getInstance().getHotkeyOptions();
+    load_hotkey(&hotkeyOptions.hotkey01, doc, "hotkey01");
+    load_hotkey(&hotkeyOptions.hotkey02, doc, "hotkey02");
+    load_hotkey(&hotkeyOptions.hotkey03, doc, "hotkey03");
+    load_hotkey(&hotkeyOptions.hotkey04, doc, "hotkey04");
+    load_hotkey(&hotkeyOptions.hotkey05, doc, "hotkey05");
+    load_hotkey(&hotkeyOptions.hotkey06, doc, "hotkey06");
+    load_hotkey(&hotkeyOptions.hotkey07, doc, "hotkey07");
+    load_hotkey(&hotkeyOptions.hotkey08, doc, "hotkey08");
+    load_hotkey(&hotkeyOptions.hotkey09, doc, "hotkey09");
+    load_hotkey(&hotkeyOptions.hotkey10, doc, "hotkey10");
+    load_hotkey(&hotkeyOptions.hotkey11, doc, "hotkey11");
+    load_hotkey(&hotkeyOptions.hotkey12, doc, "hotkey12");
+    load_hotkey(&hotkeyOptions.hotkey13, doc, "hotkey13");
+    load_hotkey(&hotkeyOptions.hotkey14, doc, "hotkey14");
+    load_hotkey(&hotkeyOptions.hotkey15, doc, "hotkey15");
+    load_hotkey(&hotkeyOptions.hotkey16, doc, "hotkey16");
+
+    ForcedSetupOptions& forcedSetupOptions = Storage::getInstance().getForcedSetupOptions();
+    writeDoc(doc, "forcedSetupMode", forcedSetupOptions.mode);
     return serialize_json(doc);
 }
-
 
 std::string setLedOptions()
 {
@@ -1257,22 +1280,41 @@ std::string getKeyMappings()
     return serialize_json(doc);
 }
 
-// 🎯 src/webconfig.cpp の 23ページ目付近にある getPeripheralOptions() を以下に丸ごと差し替え
 std::string getPeripheralOptions()
 {
-    // 画面側のオブジェクト展開が100%安全に空振りするフラットなダミーJSON
-    std::string json = "{"
-        "\"i2c0\":[],\"i2c1\":[],"
-        "\"spi0\":[],\"spi1\":[],"
-        "\"uart0\":[],\"uart1\":[],"
-        "\"usb0\":[],"
-        "\"sdaPins\":[],\"sclPins\":[],"
-        "\"rxPins\":[],\"txPins\":[],"
-        "\"misoPins\":[],\"mosiPins\":[],\"sckPins\":[],\"csPins\":[]"
-    "}";
-    return json;
-}
+    const size_t capacity = JSON_OBJECT_SIZE(100);
+    DynamicJsonDocument doc(capacity);
+    const PeripheralOptions& peripheralOptions = Storage::getInstance().getPeripheralOptions();
 
+    writeDoc(doc, "peripheral", "i2c0", "enabled", peripheralOptions.blockI2C0.enabled);
+    writeDoc(doc, "peripheral", "i2c0", "sda",     peripheralOptions.blockI2C0.sda);
+    writeDoc(doc, "peripheral", "i2c0", "scl",     peripheralOptions.blockI2C0.scl);
+    writeDoc(doc, "peripheral", "i2c0", "speed",   peripheralOptions.blockI2C0.speed);
+
+    writeDoc(doc, "peripheral", "i2c1", "enabled", peripheralOptions.blockI2C1.enabled);
+    writeDoc(doc, "peripheral", "i2c1", "sda",     peripheralOptions.blockI2C1.sda);
+    writeDoc(doc, "peripheral", "i2c1", "scl",     peripheralOptions.blockI2C1.scl);
+    writeDoc(doc, "peripheral", "i2c1", "speed",   peripheralOptions.blockI2C1.speed);
+
+    writeDoc(doc, "peripheral", "spi0", "enabled", peripheralOptions.blockSPI0.enabled);
+    writeDoc(doc, "peripheral", "spi0", "rx",      peripheralOptions.blockSPI0.rx);
+    writeDoc(doc, "peripheral", "spi0", "cs",      peripheralOptions.blockSPI0.cs);
+    writeDoc(doc, "peripheral", "spi0", "sck",     peripheralOptions.blockSPI0.sck);
+    writeDoc(doc, "peripheral", "spi0", "tx",      peripheralOptions.blockSPI0.tx);
+
+    writeDoc(doc, "peripheral", "spi1", "enabled", peripheralOptions.blockSPI1.enabled);
+    writeDoc(doc, "peripheral", "spi1", "rx",      peripheralOptions.blockSPI1.rx);
+    writeDoc(doc, "peripheral", "spi1", "cs",      peripheralOptions.blockSPI1.cs);
+    writeDoc(doc, "peripheral", "spi1", "sck",     peripheralOptions.blockSPI1.sck);
+    writeDoc(doc, "peripheral", "spi1", "tx",      peripheralOptions.blockSPI1.tx);
+
+    writeDoc(doc, "peripheral", "usb0", "enabled", peripheralOptions.blockUSB0.enabled);
+    writeDoc(doc, "peripheral", "usb0", "dp",      peripheralOptions.blockUSB0.dp);
+    writeDoc(doc, "peripheral", "usb0", "enable5v",peripheralOptions.blockUSB0.enable5v);
+    writeDoc(doc, "peripheral", "usb0", "order",   peripheralOptions.blockUSB0.order);
+
+    return serialize_json(doc);
+}
 
 std::string getI2CPeripheralMap() {
     const size_t capacity = JSON_OBJECT_SIZE(500);
@@ -2097,167 +2139,238 @@ std::string getWiiControls()
     return serialize_json(doc);
 }
 
-// 🎯 src/webconfig.cpp の getAddonOptions() を以下に丸ごと差し替え
 std::string getAddonOptions()
 {
-    // JSONの容量を十分に確保
-    const size_t capacity = JSON_OBJECT_SIZE(300) + 2048;
+    const size_t capacity = JSON_OBJECT_SIZE(500);
     DynamicJsonDocument doc(capacity);
-    
-    // ==========================================
-    // 1. 各アドオンの実際の数値を正しく格納（空配列化を完全撤廃）
-    // ==========================================
+
     const AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
-    doc["analogAdc1PinX"] = cleanPin(analogOptions.analogAdc1PinX);
-    doc["analogAdc1PinY"] = cleanPin(analogOptions.analogAdc1PinY);
-    doc["analogAdc1Mode"] = (int)analogOptions.analogAdc1Mode;
-    doc["analogAdc1Invert"] = (int)analogOptions.analogAdc1Invert;
-    doc["analogAdc2PinX"] = cleanPin(analogOptions.analogAdc2PinX);
-    doc["analogAdc2PinY"] = cleanPin(analogOptions.analogAdc2PinY);
-    doc["analogAdc2Mode"] = (int)analogOptions.analogAdc2Mode;
-    doc["analogAdc2Invert"] = (int)analogOptions.analogAdc2Invert;
-    doc["forced_circularity"] = (int)analogOptions.forced_circularity;
-    doc["forced_circularity2"] = (int)analogOptions.forced_circularity2;
-    doc["inner_deadzone"] = (int)analogOptions.inner_deadzone;
-    doc["inner_deadzone2"] = (int)analogOptions.inner_deadzone2;
-    doc["outer_deadzone"] = (int)analogOptions.outer_deadzone;
-    doc["outer_deadzone2"] = (int)analogOptions.outer_deadzone2;
-    doc["auto_calibrate"] = analogOptions.auto_calibrate ? 1 : 0;
-    doc["auto_calibrate2"] = analogOptions.auto_calibrate2 ? 1 : 0;
-    doc["joystickCenterX"] = (int)analogOptions.joystick_center_x;
-    doc["joystickCenterY"] = (int)analogOptions.joystick_center_y;
-    doc["joystickCenterX2"] = (int)analogOptions.joystick_center_x2;
-    doc["joystickCenterY2"] = (int)analogOptions.joystick_center_y2;
-    doc["analog_smoothing"] = analogOptions.analog_smoothing ? 1 : 0;
-    doc["analog_smoothing2"] = analogOptions.analog_smoothing2 ? 1 : 0;
-    doc["smoothing_factor"] = (int)analogOptions.smoothing_factor;
-    doc["smoothing_factor2"] = (int)analogOptions.smoothing_factor2;
-    doc["analog_error"] = (int)analogOptions.analog_error;
-    doc["analog_error2"] = (int)analogOptions.analog_error2;
-    doc["AnalogInputEnabled"] = analogOptions.enabled ? 1 : 0;
+    writeDoc(doc, "analogAdc1PinX", cleanPin(analogOptions.analogAdc1PinX));
+    writeDoc(doc, "analogAdc1PinY", cleanPin(analogOptions.analogAdc1PinY));
+    writeDoc(doc, "analogAdc1Mode", analogOptions.analogAdc1Mode);
+    writeDoc(doc, "analogAdc1Invert", analogOptions.analogAdc1Invert);
+    writeDoc(doc, "analogAdc2PinX", cleanPin(analogOptions.analogAdc2PinX));
+    writeDoc(doc, "analogAdc2PinY", cleanPin(analogOptions.analogAdc2PinY));
+    writeDoc(doc, "analogAdc2Mode", analogOptions.analogAdc2Mode);
+    writeDoc(doc, "analogAdc2Invert", analogOptions.analogAdc2Invert);
+    writeDoc(doc, "forced_circularity", analogOptions.forced_circularity);
+    writeDoc(doc, "forced_circularity2", analogOptions.forced_circularity2);
+    writeDoc(doc, "inner_deadzone", analogOptions.inner_deadzone);
+    writeDoc(doc, "inner_deadzone2", analogOptions.inner_deadzone2);
+    writeDoc(doc, "outer_deadzone", analogOptions.outer_deadzone);
+    writeDoc(doc, "outer_deadzone2", analogOptions.outer_deadzone2);
+    writeDoc(doc, "auto_calibrate", analogOptions.auto_calibrate);
+    writeDoc(doc, "auto_calibrate2", analogOptions.auto_calibrate2);
+    writeDoc(doc, "joystickCenterX", analogOptions.joystick_center_x);
+    writeDoc(doc, "joystickCenterY", analogOptions.joystick_center_y);
+    writeDoc(doc, "joystickCenterX2", analogOptions.joystick_center_x2);
+    writeDoc(doc, "joystickCenterY2", analogOptions.joystick_center_y2);
+    writeDoc(doc, "analog_smoothing", analogOptions.analog_smoothing);
+    writeDoc(doc, "analog_smoothing2", analogOptions.analog_smoothing2);
+    writeDoc(doc, "smoothing_factor", analogOptions.smoothing_factor);
+    writeDoc(doc, "smoothing_factor2", analogOptions.smoothing_factor2);
+    writeDoc(doc, "analog_error", analogOptions.analog_error);
+    writeDoc(doc, "analog_error2", analogOptions.analog_error2);
+    writeDoc(doc, "AnalogInputEnabled", analogOptions.enabled);
 
     const BootselButtonOptions& bootselButtonOptions = Storage::getInstance().getAddonOptions().bootselButtonOptions;
-    doc["bootselButtonMap"] = (int)bootselButtonOptions.buttonMap;
-    doc["BootselButtonAddonEnabled"] = bootselButtonOptions.enabled ? 1 : 0;
+    writeDoc(doc, "bootselButtonMap", bootselButtonOptions.buttonMap);
+    writeDoc(doc, "BootselButtonAddonEnabled", bootselButtonOptions.enabled);
 
     const BuzzerOptions& buzzerOptions = Storage::getInstance().getAddonOptions().buzzerOptions;
-    doc["buzzerPin"] = cleanPin(buzzerOptions.pin);
-    doc["buzzerVolume"] = (int)buzzerOptions.volume;
-    doc["buzzerEnablePin"] = cleanPin(buzzerOptions.enablePin);
-    doc["BuzzerSpeakerAddonEnabled"] = buzzerOptions.enabled ? 1 : 0;
+    writeDoc(doc, "buzzerPin", cleanPin(buzzerOptions.pin));
+    writeDoc(doc, "buzzerVolume", buzzerOptions.volume);
+    writeDoc(doc, "buzzerEnablePin", buzzerOptions.enablePin);
+    writeDoc(doc, "BuzzerSpeakerAddonEnabled", buzzerOptions.enabled);
 
     const DualDirectionalOptions& dualDirectionalOptions = Storage::getInstance().getAddonOptions().dualDirectionalOptions;
-    doc["dualDirDpadMode"] = (int)dualDirectionalOptions.dpadMode;
-    doc["dualDirCombineMode"] = (int)dualDirectionalOptions.combineMode;
-    doc["dualDirFourWayMode"] = (int)dualDirectionalOptions.fourWayMode;
-    doc["DualDirectionalInputEnabled"] = dualDirectionalOptions.enabled ? 1 : 0;
+    writeDoc(doc, "dualDirDpadMode", dualDirectionalOptions.dpadMode);
+    writeDoc(doc, "dualDirCombineMode", dualDirectionalOptions.combineMode);
+    writeDoc(doc, "dualDirFourWayMode", dualDirectionalOptions.fourWayMode);
+    writeDoc(doc, "DualDirectionalInputEnabled", dualDirectionalOptions.enabled);
 
     const TiltOptions& tiltOptions = Storage::getInstance().getAddonOptions().tiltOptions;
-    doc["factorTilt1LeftX"] = (int)tiltOptions.factorTilt1LeftX;
-    doc["factorTilt1LeftY"] = (int)tiltOptions.factorTilt1LeftY;
-    doc["factorTilt1RightX"] = (int)tiltOptions.factorTilt1RightX;
-    doc["factorTilt1RightY"] = (int)tiltOptions.factorTilt1RightY;
-    doc["factorTilt2LeftX"] = (int)tiltOptions.factorTilt2LeftX;
-    doc["factorTilt2LeftY"] = (int)tiltOptions.factorTilt2LeftY;
-    doc["factorTilt2RightX"] = (int)tiltOptions.factorTilt2RightX;
-    doc["factorTilt2RightY"] = (int)tiltOptions.factorTilt2RightY;
-    doc["tiltSOCDMode"] = (int)tiltOptions.tiltSOCDMode;
-    doc["TiltInputEnabled"] = tiltOptions.enabled ? 1 : 0;
+    writeDoc(doc, "factorTilt1LeftX", tiltOptions.factorTilt1LeftX);
+    writeDoc(doc, "factorTilt1LeftY", tiltOptions.factorTilt1LeftY);
+    writeDoc(doc, "factorTilt1RightX", tiltOptions.factorTilt1RightX);
+    writeDoc(doc, "factorTilt1RightY", tiltOptions.factorTilt1RightY);
+    writeDoc(doc, "factorTilt2LeftX", tiltOptions.factorTilt2LeftX);
+    writeDoc(doc, "factorTilt2LeftY", tiltOptions.factorTilt2LeftY);
+    writeDoc(doc, "factorTilt2RightX", tiltOptions.factorTilt2RightX);
+    writeDoc(doc, "factorTilt2RightY", tiltOptions.factorTilt2RightY);
+    writeDoc(doc, "tiltSOCDMode", tiltOptions.tiltSOCDMode);
+    writeDoc(doc, "TiltInputEnabled", tiltOptions.enabled);
 
-    doc["I2CAnalog1219InputEnabled"] = Storage::getInstance().getAddonOptions().analogADS1219Options.enabled ? 1 : 0;
+    const AnalogADS1219Options& analogADS1219Options = Storage::getInstance().getAddonOptions().analogADS1219Options;
+    writeDoc(doc, "I2CAnalog1219InputEnabled", analogADS1219Options.enabled);
 
     const ReverseOptions& reverseOptions = Storage::getInstance().getAddonOptions().reverseOptions;
-    doc["reversePinLED"] = cleanPin(reverseOptions.ledPin);
-    doc["reverseActionUp"] = (int)reverseOptions.actionUp;
-    doc["reverseActionDown"] = (int)reverseOptions.actionDown;
-    doc["reverseActionLeft"] = (int)reverseOptions.actionLeft;
-    doc["reverseActionRight"] = (int)reverseOptions.actionRight;
-    doc["ReverseInputEnabled"] = reverseOptions.enabled ? 1 : 0;
+    writeDoc(doc, "reversePinLED", cleanPin(reverseOptions.ledPin));
+    writeDoc(doc, "reverseActionUp", reverseOptions.actionUp);
+    writeDoc(doc, "reverseActionDown", reverseOptions.actionDown);
+    writeDoc(doc, "reverseActionLeft", reverseOptions.actionLeft);
+    writeDoc(doc, "reverseActionRight", reverseOptions.actionRight);
+    writeDoc(doc, "ReverseInputEnabled", reverseOptions.enabled);
 
     const SOCDSliderOptions& socdSliderOptions = Storage::getInstance().getAddonOptions().socdSliderOptions;
-    doc["sliderSOCDModeDefault"] = (int)socdSliderOptions.modeDefault;
-    doc["SliderSOCDInputEnabled"] = socdSliderOptions.enabled ? 1 : 0;
+    writeDoc(doc, "sliderSOCDModeDefault", socdSliderOptions.modeDefault);
+    writeDoc(doc, "SliderSOCDInputEnabled", socdSliderOptions.enabled);
 
     const OnBoardLedOptions& onBoardLedOptions = Storage::getInstance().getAddonOptions().onBoardLedOptions;
-    doc["onBoardLedMode"] = (int)onBoardLedOptions.mode;
-    doc["BoardLedAddonEnabled"] = onBoardLedOptions.enabled ? 1 : 0;
+    writeDoc(doc, "onBoardLedMode", onBoardLedOptions.mode);
+    writeDoc(doc, "BoardLedAddonEnabled", onBoardLedOptions.enabled);
 
     const TurboOptions& turboOptions = Storage::getInstance().getAddonOptions().turboOptions;
-    doc["turboPinLED"] = cleanPin(turboOptions.ledPin);
-    doc["turboShotCount"] = (int)turboOptions.shotCount;
-    doc["shmupMode"] = turboOptions.shmupModeEnabled ? 1 : 0;
-    doc["shmupMixMode"] = (int)turboOptions.shmupMixMode;
-    doc["shmupAlwaysOn1"] = (int)turboOptions.shmupAlwaysOn1;
-    doc["shmupAlwaysOn2"] = (int)turboOptions.shmupAlwaysOn2;
-    doc["shmupAlwaysOn3"] = (int)turboOptions.shmupAlwaysOn3;
-    doc["shmupAlwaysOn4"] = (int)turboOptions.shmupAlwaysOn4;
-    doc["pinShmupBtn1"] = cleanPin(turboOptions.shmupBtn1Pin);
-    doc["pinShmupBtn2"] = cleanPin(turboOptions.shmupBtn2Pin);
-    doc["pinShmupBtn3"] = cleanPin(turboOptions.shmupBtn3Pin);
-    doc["pinShmupBtn4"] = cleanPin(turboOptions.shmupBtn4Pin);
-    doc["shmupBtnMask1"] = (int)turboOptions.shmupBtnMask1;
-    doc["shmupBtnMask2"] = (int)turboOptions.shmupBtnMask2;
-    doc["shmupBtnMask3"] = (int)turboOptions.shmupBtnMask3;
-    doc["shmupBtnMask4"] = (int)turboOptions.shmupBtnMask4;
-    doc["pinShmupDial"] = cleanPin(turboOptions.shmupDialPin);
-    doc["turboLedType"] = (int)turboOptions.turboLedType;
-    doc["turboLedIndex"] = (int)turboOptions.turboLedIndex;
-    // 🟢 C++側で安全に "#000000" のような16進数文字列を組み立てて格納
-char hexColor[8];
-snprintf(hexColor, sizeof(hexColor), "#%06x", (unsigned int)turboOptions.turboLedColor);
-doc["turboLedColor"] = std::string(hexColor);
+    writeDoc(doc, "turboPinLED", cleanPin(turboOptions.ledPin));
+    writeDoc(doc, "turboShotCount", turboOptions.shotCount);
+    writeDoc(doc, "shmupMode", turboOptions.shmupModeEnabled);
+    writeDoc(doc, "shmupMixMode", turboOptions.shmupMixMode);
+    writeDoc(doc, "shmupAlwaysOn1", turboOptions.shmupAlwaysOn1);
+    writeDoc(doc, "shmupAlwaysOn2", turboOptions.shmupAlwaysOn2);
+    writeDoc(doc, "shmupAlwaysOn3", turboOptions.shmupAlwaysOn3);
+    writeDoc(doc, "shmupAlwaysOn4", turboOptions.shmupAlwaysOn4);
+    writeDoc(doc, "pinShmupBtn1", cleanPin(turboOptions.shmupBtn1Pin));
+    writeDoc(doc, "pinShmupBtn2", cleanPin(turboOptions.shmupBtn2Pin));
+    writeDoc(doc, "pinShmupBtn3", cleanPin(turboOptions.shmupBtn3Pin));
+    writeDoc(doc, "pinShmupBtn4", cleanPin(turboOptions.shmupBtn4Pin));
+    writeDoc(doc, "shmupBtnMask1", turboOptions.shmupBtnMask1);
+    writeDoc(doc, "shmupBtnMask2", turboOptions.shmupBtnMask2);
+    writeDoc(doc, "shmupBtnMask3", turboOptions.shmupBtnMask3);
+    writeDoc(doc, "shmupBtnMask4", turboOptions.shmupBtnMask4);
+    writeDoc(doc, "pinShmupDial", cleanPin(turboOptions.shmupDialPin));
+    writeDoc(doc, "turboLedType", turboOptions.turboLedType);
+    writeDoc(doc, "turboLedIndex", turboOptions.turboLedIndex);
+    writeDoc(doc, "turboLedColor",  ((RGB)turboOptions.turboLedColor).value(LED_FORMAT_RGB));
+    writeDoc(doc, "TurboInputEnabled", turboOptions.enabled);
 
-    doc["TurboInputEnabled"] = turboOptions.enabled ? 1 : 0;
+    const WiiOptions& wiiOptions = Storage::getInstance().getAddonOptions().wiiOptions;
+    writeDoc(doc, "WiiExtensionAddonEnabled", wiiOptions.enabled);
 
-    // ==========================================
-    // 2. ログから発覚した、他の未定義アドオン有効化フラグのゼロ埋め
-    // ==========================================
-    doc["Analog1256Enabled"] = 0;
-    doc["DRV8833RumbleAddonEnabled"] = 0;
-    doc["FocusModeAddonEnabled"] = 0;
-    doc["GamepadUSBHostAddonEnabled"] = 0;
-    doc["HETriggerEnabled"] = 0;
-    doc["KeyboardHostAddonEnabled"] = 0;
-    doc["PCF8575AddonEnabled"] = 0;
-    doc["ReactiveLEDAddonEnabled"] = 0;
-    doc["RotaryAddonEnabled"] = 0;
-    doc["SNESpadAddonEnabled"] = 0;
-    doc["TG16padAddonEnabled"] = 0;
-    doc["WiiExtensionAddonEnabled"] = 0;
-    doc["encoderOneEnabled"] = 0;
-    doc["encoderTwoEnabled"] = 0;
-    doc["focusModeButtonLockEnabled"] = 0;
-    doc["focusModeMacroLockEnabled"] = 0;
+    const SNESOptions& snesOptions = Storage::getInstance().getAddonOptions().snesOptions;
+    writeDoc(doc, "snesPadClockPin", cleanPin(snesOptions.clockPin));
+    writeDoc(doc, "snesPadLatchPin", cleanPin(snesOptions.latchPin));
+    writeDoc(doc, "snesPadDataPin", cleanPin(snesOptions.dataPin));
+    writeDoc(doc, "SNESpadAddonEnabled", snesOptions.enabled);
 
-    // ==========================================
-    // 3. JinglePlayer（JQ8900）アドオン階層の処理
-    // ==========================================
-    JsonObject addonObj = doc.createNestedObject("addonOptions");
+    const KeyboardHostOptions& keyboardHostOptions = Storage::getInstance().getAddonOptions().keyboardHostOptions;
+    writeDoc(doc, "KeyboardHostAddonEnabled", keyboardHostOptions.enabled);
+    writeDoc(doc, "keyboardHostMap", "Up", keyboardHostOptions.mapping.keyDpadUp);
+    writeDoc(doc, "keyboardHostMap", "Down", keyboardHostOptions.mapping.keyDpadDown);
+    writeDoc(doc, "keyboardHostMap", "Left", keyboardHostOptions.mapping.keyDpadLeft);
+    writeDoc(doc, "keyboardHostMap", "Right", keyboardHostOptions.mapping.keyDpadRight);
+    writeDoc(doc, "keyboardHostMap", "B1", keyboardHostOptions.mapping.keyButtonB1);
+    writeDoc(doc, "keyboardHostMap", "B2", keyboardHostOptions.mapping.keyButtonB2);
+    writeDoc(doc, "keyboardHostMap", "B3", keyboardHostOptions.mapping.keyButtonB3);
+    writeDoc(doc, "keyboardHostMap", "B4", keyboardHostOptions.mapping.keyButtonB4);
+    writeDoc(doc, "keyboardHostMap", "L1", keyboardHostOptions.mapping.keyButtonL1);
+    writeDoc(doc, "keyboardHostMap", "R1", keyboardHostOptions.mapping.keyButtonR1);
+    writeDoc(doc, "keyboardHostMap", "L2", keyboardHostOptions.mapping.keyButtonL2);
+    writeDoc(doc, "keyboardHostMap", "R2", keyboardHostOptions.mapping.keyButtonR2);
+    writeDoc(doc, "keyboardHostMap", "S1", keyboardHostOptions.mapping.keyButtonS1);
+    writeDoc(doc, "keyboardHostMap", "S2", keyboardHostOptions.mapping.keyButtonS2);
+    writeDoc(doc, "keyboardHostMap", "L3", keyboardHostOptions.mapping.keyButtonL3);
+    writeDoc(doc, "keyboardHostMap", "R3", keyboardHostOptions.mapping.keyButtonR3);
+    writeDoc(doc, "keyboardHostMap", "A1", keyboardHostOptions.mapping.keyButtonA1);
+    writeDoc(doc, "keyboardHostMap", "A2", keyboardHostOptions.mapping.keyButtonA2);
+    writeDoc(doc, "keyboardHostMap", "A3", keyboardHostOptions.mapping.keyButtonA3);
+    writeDoc(doc, "keyboardHostMap", "A4", keyboardHostOptions.mapping.keyButtonA4);
+    writeDoc(doc, "keyboardHostMouseLeft", keyboardHostOptions.mouseLeft);
+    writeDoc(doc, "keyboardHostMouseMiddle", keyboardHostOptions.mouseMiddle);
+    writeDoc(doc, "keyboardHostMouseRight", keyboardHostOptions.mouseRight);
+    writeDoc(doc, "keyboardHostMouseSensitivity", keyboardHostOptions.mouseSensitivity);
+    writeDoc(doc, "keyboardHostMouseMovement", keyboardHostOptions.movementMode);
+
+    const GamepadUSBHostOptions& gamepadUSBHostOptions = Storage::getInstance().getAddonOptions().gamepadUSBHostOptions;
+    writeDoc(doc, "GamepadUSBHostAddonEnabled", gamepadUSBHostOptions.enabled);
+
+    AnalogADS1256Options& ads1256Options = Storage::getInstance().getAddonOptions().analogADS1256Options;
+    writeDoc(doc, "Analog1256Enabled", ads1256Options.enabled);
+    writeDoc(doc, "analog1256Block", ads1256Options.spiBlock);
+    writeDoc(doc, "analog1256CsPin", cleanPin(ads1256Options.csPin));
+    writeDoc(doc, "analog1256DrdyPin", cleanPin(ads1256Options.drdyPin));
+    writeDoc(doc, "analog1256AnalogMax", ads1256Options.avdd);
+    writeDoc(doc, "analog1256EnableTriggers", ads1256Options.enableTriggers);
+
+    const FocusModeOptions& focusModeOptions = Storage::getInstance().getAddonOptions().focusModeOptions;
+    writeDoc(doc, "focusModeButtonLockMask", focusModeOptions.buttonLockMask);
+    writeDoc(doc, "focusModeButtonLockEnabled", focusModeOptions.buttonLockEnabled);
+    writeDoc(doc, "focusModeMacroLockEnabled", focusModeOptions.macroLockEnabled);
+    writeDoc(doc, "FocusModeAddonEnabled", focusModeOptions.enabled);
+
+    RotaryOptions& rotaryOptions = Storage::getInstance().getAddonOptions().rotaryOptions;
+    writeDoc(doc, "RotaryAddonEnabled", rotaryOptions.enabled);
+    writeDoc(doc, "encoderOneEnabled", rotaryOptions.encoderOne.enabled);
+    writeDoc(doc, "encoderOnePinA", cleanPin(rotaryOptions.encoderOne.pinA));
+    writeDoc(doc, "encoderOnePinB", cleanPin(rotaryOptions.encoderOne.pinB));
+    writeDoc(doc, "encoderOneMode", rotaryOptions.encoderOne.mode);
+    writeDoc(doc, "encoderOnePPR", rotaryOptions.encoderOne.pulsesPerRevolution);
+    writeDoc(doc, "encoderOneResetAfter", rotaryOptions.encoderOne.resetAfter);
+    writeDoc(doc, "encoderOneAllowWrapAround", rotaryOptions.encoderOne.allowWrapAround);
+    writeDoc(doc, "encoderOneMultiplier", rotaryOptions.encoderOne.multiplier);
+    writeDoc(doc, "encoderTwoEnabled", rotaryOptions.encoderTwo.enabled);
+    writeDoc(doc, "encoderTwoPinA", cleanPin(rotaryOptions.encoderTwo.pinA));
+    writeDoc(doc, "encoderTwoPinB", cleanPin(rotaryOptions.encoderTwo.pinB));
+    writeDoc(doc, "encoderTwoMode", rotaryOptions.encoderTwo.mode);
+    writeDoc(doc, "encoderTwoPPR", rotaryOptions.encoderTwo.pulsesPerRevolution);
+    writeDoc(doc, "encoderTwoResetAfter", rotaryOptions.encoderTwo.resetAfter);
+    writeDoc(doc, "encoderTwoAllowWrapAround", rotaryOptions.encoderTwo.allowWrapAround);
+    writeDoc(doc, "encoderTwoMultiplier", rotaryOptions.encoderTwo.multiplier);
+
+    PCF8575Options& pcf8575Options = Storage::getInstance().getAddonOptions().pcf8575Options;
+    writeDoc(doc, "PCF8575AddonEnabled", pcf8575Options.enabled);
+
+    ReactiveLEDOptions& reactiveLEDOptions = Storage::getInstance().getAddonOptions().reactiveLEDOptions;
+    writeDoc(doc, "ReactiveLEDAddonEnabled", reactiveLEDOptions.enabled);
+
+    const DRV8833RumbleOptions& drv8833RumbleOptions = Storage::getInstance().getAddonOptions().drv8833RumbleOptions;
+    writeDoc(doc, "DRV8833RumbleAddonEnabled", drv8833RumbleOptions.enabled);
+    writeDoc(doc, "drv8833RumbleLeftMotorPin", cleanPin(drv8833RumbleOptions.leftMotorPin));
+    writeDoc(doc, "drv8833RumbleRightMotorPin", cleanPin(drv8833RumbleOptions.rightMotorPin));
+    writeDoc(doc, "drv8833RumbleMotorSleepPin", cleanPin(drv8833RumbleOptions.motorSleepPin));
+    writeDoc(doc, "drv8833RumblePWMFrequency", drv8833RumbleOptions.pwmFrequency);
+    writeDoc(doc, "drv8833RumbleDutyMin", drv8833RumbleOptions.dutyMin);
+    writeDoc(doc, "drv8833RumbleDutyMax", drv8833RumbleOptions.dutyMax);
+
+    TG16Options& tg16Options = Storage::getInstance().getAddonOptions().tg16Options;
+    writeDoc(doc, "TG16padAddonEnabled", tg16Options.enabled);
+    writeDoc(doc, "tg16PadOePin", cleanPin(tg16Options.oePin));
+    writeDoc(doc, "tg16PadSelectPin", cleanPin(tg16Options.selectPin));
+    writeDoc(doc, "tg16PadDataPin0", cleanPin(tg16Options.dataPin0));
+    writeDoc(doc, "tg16PadDataPin1", cleanPin(tg16Options.dataPin1));
+    writeDoc(doc, "tg16PadDataPin2", cleanPin(tg16Options.dataPin2));
+    writeDoc(doc, "tg16PadDataPin3", cleanPin(tg16Options.dataPin3));
+
+    const HETriggerOptions& heTriggerOptions = Storage::getInstance().getAddonOptions().heTriggerOptions;
+    writeDoc(doc, "HETriggerEnabled", heTriggerOptions.enabled);
+    writeDoc(doc, "muxChannels", heTriggerOptions.muxChannels);
+    writeDoc(doc, "muxSelectPin0", cleanPin(heTriggerOptions.selectPin0));
+    writeDoc(doc, "muxSelectPin1", cleanPin(heTriggerOptions.selectPin1));
+    writeDoc(doc, "muxSelectPin2", cleanPin(heTriggerOptions.selectPin2));
+    writeDoc(doc, "muxSelectPin3", cleanPin(heTriggerOptions.selectPin3));
+    writeDoc(doc, "muxADCPin0", cleanPin(heTriggerOptions.muxADCPin0));
+    writeDoc(doc, "muxADCPin1", cleanPin(heTriggerOptions.muxADCPin1));
+    writeDoc(doc, "muxADCPin2", cleanPin(heTriggerOptions.muxADCPin2));
+    writeDoc(doc, "muxADCPin3", cleanPin(heTriggerOptions.muxADCPin3));
+    writeDoc(doc, "heTriggerSmoothing", heTriggerOptions.emaSmoothing);
+    writeDoc(doc, "heTriggerSmoothingFactor", heTriggerOptions.smoothingFactor);
+
+		// --- JQ8900Addon設定の読み出し ---
+    // WebUIが読み込めるように addonOptions オブジェクトの中に潜り込ませる
+    JsonObject addonObj;
+    if (!doc.containsKey("addonOptions")) {
+        addonObj = doc.createNestedObject("addonOptions");
+    } else {
+        addonObj = doc["addonOptions"];
+    }
+
+    // Storageクラスから直接アドオン設定を取得
     const JinglePlayerOptions& jingleOptions = Storage::getInstance().getAddonOptions().jinglePlayerOptions;
     JsonObject jingleObj = addonObj.createNestedObject("jinglePlayerOptions");
     jingleObj["enabled"] = jingleOptions.enabled ? 1 : 0;
-    jingleObj["volume"] = (int)jingleOptions.volume;
-
-    // ==========================================
-    // 4. 画面側が配列として走査（.includes() 等）するピン項目「だけ」を完全空振り配列にする
-    // ==========================================
-    doc.createNestedArray("turboPin");
-    doc.createNestedArray("turboLedPin");
-    doc.createNestedArray("sliderLSPin");
-    doc.createNestedArray("sliderRSPin");
-    doc.createNestedArray("reversePin");
-    doc.createNestedArray("bootInputPin");
-    doc.createNestedArray("audioPin");
-    doc.createNestedArray("extraButtonPin");
-    doc.createNestedArray("macroPin");
-    doc.createNestedArray("corePins");
-    
-    // キーボードマッピング用の空オブジェクト
-    doc.createNestedObject("keyboardHostMap");
-
+    jingleObj["volume"] = jingleOptions.volume;
+	
     return serialize_json(doc);
 }
-
 
 std::string setMacroAddonOptions()
 {
