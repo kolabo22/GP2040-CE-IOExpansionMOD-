@@ -16,27 +16,33 @@
 #include "CRC32.h"
 #include "types.h"
 
-// 💡 フラッシュメモリへの標準書き込み用ヘッダー
-#include "hardware/flash.h"
-#include "hardware/sync.h"
-
 // Check for saves
 #include "ps4/PS4Driver.h"
 
 #include "config_utils.h"
 
 void Storage::init() {
-	systemFlashSize = System::getPhysicalFlash();
+	systemFlashSize = System::getPhysicalFlash(); // System Flash Size must be called once
 	EEPROM.start();
 	ConfigUtils::load(config);
 }
 
+/**
+ * @brief Save the config, but only if it is safe to (as in USB host is not being used.)
+ */
 bool Storage::save()
 {
 	return save(false);
 }
 
+/**
+ * @brief Save the config; if forcing a save is requested, or if USB host is not enabled, this will write to flash.
+ */
 bool Storage::save(const bool force) {
+	// Conditions for saving:
+	//   1. Force = True
+	//   2. Input Mode NOT (PS4/PS5 with USB enabled)
+	// Save will disconnect USB host, which is okay for gamepad and keyboard hosts
 	if (!force &&
 		PeripheralManager::getInstance().isUSBEnabled(0) &&
 		(DriverManager::getInstance().getInputMode() == INPUT_MODE_PS4 ||
@@ -45,48 +51,30 @@ bool Storage::save(const bool force) {
 		return false;
 	}
 
-	return ConfigUtils::save(config), EEPROM.commit(), true;
+	return ConfigUtils::save(config);
 }
 
-// ====================================================================
-// 【修正後】最終完成版の Storage::ResetSettings() 処理
-// ====================================================================
 void Storage::ResetSettings()
 {
-	// 通常のEEPROMキャッシュバッファをクリア
 	EEPROM.reset();
-
-	// 1. 縦並びの完成バイナリデータを、4096バイト（FLASH_SECTOR_SIZE）一撃で保存バッファへ全転送！
-	for (uint16_t i = 0; i < FLASH_SECTOR_SIZE; i++) {
-		FlashPROM::writeCache[i] = miniSuperPerfectStaticBinary[i];
-	}
-
-	// 2. 💥【チェックサム検閲完全突破の核心】
-	// 今流し込んだ完璧なバイナリから、実機のメインメモリ（config構造体）へ一度データを強制ロードします。
-	// その直後に、実機自身の手で最新の正しいCRC32チェックサム値を計算させ、
-	// キャッシュバッファのヘッダーを「エラーの出ない最新の指紋」へ全自動で綺麗に上書きリフレッシュ（定着）させます！
-	ConfigUtils::load(config);
-	ConfigUtils::save(this->config);
-
-	// 3. 完璧に認証を突破したデータを、満を持して物理フラッシュメモリ通常領域へ確定コミット！
-	EEPROM.commit();
-	ConfigUtils::load(config); // メモリ側を最終同期
-
-	// 💡【安全自動リブート】
-	// 2000ms（2秒）の間、ブラウザに「Success!」を表示させきってから安全にコールドリセット
 	watchdog_reboot(0, SRAM_END, 2000);
 }
-
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
 	uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
+	
+	// is this profile defined?
 	if (profileNum >= 1 && profileNum <= profileCeiling) {
+		// is this profile enabled?
+		// profile 1 (core) is always enabled, others we must check
 		if (profileNum == 1 || config.profileOptions.gpioMappingsSets[profileNum-2].enabled) {
+			// Update the profile number - reinit will be triggered automatically in gp2040.cpp
 			this->config.gamepadOptions.profileNumber = profileNum;
 			return true;
 		}
 	}
+	// if we get here, the requested profile doesn't exist or isn't enabled, so don't change it
 	return false;
 }
 
@@ -95,20 +83,24 @@ void Storage::nextProfile()
 	uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
 	uint32_t requestedProfile = (this->config.gamepadOptions.profileNumber % profileCeiling) + 1;
 	while (!setProfile(requestedProfile)) {
+		// if the set failed, try again with the next in the sequence
 		requestedProfile = (requestedProfile % profileCeiling) + 1;
 	}
 }
-
 void Storage::previousProfile()
 {
 	uint32_t profileCeiling = config.profileOptions.gpioMappingsSets_count + 1;
 	uint32_t requestedProfile = this->config.gamepadOptions.profileNumber > 1 ?
 			config.gamepadOptions.profileNumber - 1 : profileCeiling;
 	while (!setProfile(requestedProfile)) {
+		// if the set failed, try again with the next in the sequence
 		requestedProfile = requestedProfile > 1 ? requestedProfile - 1 : profileCeiling;
 	}
 }
 
+/**
+ * @brief Return the current profile label.
+ */
 char* Storage::currentProfileLabel() {
 	if (this->config.gamepadOptions.profileNumber == 1)
 		return this->config.gpioMappings.profileLabel;
@@ -129,6 +121,11 @@ void Storage::setFunctionalPinMappings()
 	}
 
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
+		// assign the functional pin to the profile pin if:
+		// 1: there was a profile to load
+		// 2: the new action isn't RESERVED or ASSIGNED_TO_ADDON (profiles can't affect special addons)
+		// 3: the old action isn't RESERVED or ASSIGNED_TO_ADDON (profiles can't affect special addons)
+		// else use whatever is in the core mapping
 		if (alts != nullptr &&
 				alts[pin].action != GpioAction::RESERVED &&
 				alts[pin].action != GpioAction::ASSIGNED_TO_ADDON &&
@@ -141,7 +138,22 @@ void Storage::setFunctionalPinMappings()
 	}
 }
 
-void Storage::SetGamepad(Gamepad * newpad) { gamepad = newpad; }
-Gamepad * Storage::GetGamepad() { return gamepad; }
-void Storage::SetProcessedGamepad(Gamepad * newpad) { processedGamepad = newpad; }
-Gamepad * Storage::GetProcessedGamepad() { return processedGamepad; }
+void Storage::SetGamepad(Gamepad * newpad)
+{
+	gamepad = newpad;
+}
+
+Gamepad * Storage::GetGamepad()
+{
+	return gamepad;
+}
+
+void Storage::SetProcessedGamepad(Gamepad * newpad)
+{
+	processedGamepad = newpad;
+}
+
+Gamepad * Storage::GetProcessedGamepad()
+{
+	return processedGamepad;
+}
