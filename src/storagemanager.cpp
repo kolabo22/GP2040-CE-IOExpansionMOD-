@@ -56,7 +56,6 @@ bool Storage::save(const bool force) {
     return ConfigUtils::save(config), true;
 }
 
-// 🎯 src/storagemanager.cpp の 2ページ目にある Storage::ResetSettings() を以下に丸ごと差し替え
 void Storage::ResetSettings()
 {
     EEPROM.reset();
@@ -72,17 +71,28 @@ void Storage::ResetSettings()
         }
     } else {
         // ⭕ 【完全初期状態 ➔ BoardConfig.h に焼き付けたマスターバイナリ配列を一括ダイレクト流し込み！】
-        // 余計な処理は何もせず、配列のサイズ分だけ一撃で保存キャッシュ（writeCache）に全上書き転送します。
         for (uint16_t i = 0; i < sizeof(miniSuperPerfectBinary); i++) {
             FlashPROM::writeCache[i] = miniSuperPerfectBinary[i];
         }
     }
 
-    // 2. 初期化・流し込み直後に自動再起動がかかるため、安全に通常領域へコミットして定着させます
+    // 2. データを通常領域のキャッシュバッファへ定着させ、config構造体に展開
     EEPROM.commit();
-    ConfigUtils::load(config); // 流し込んだバイナリを実機のメインメモリ（config構造体）に完全展開
+    ConfigUtils::load(config);
 
-    // Web サーバーを安全に閉じてブラウザに応答を返しきってから、ピホォ音自動リブート！
+    // ====================================================================
+    // 3. 💥【超重要】タイムアウト＆USBデバイスエラー（ピコ音）を物理的に根絶する
+    // ====================================================================
+    
+    // 物理フラッシュへの書き込み（消去・プログラム）が内部で完了するまでCPUを安全にスピン待機させる
+    flash_range_program_wait_forever(); 
+    
+    // ブラウザへ「リブートするでー！」というWeb通信（HTTP応答）を返しきるための猶予時間を確保
+    watchdog_update(); // ウォッチドッグタイマーのクリア（フリーズ誤判定を防止）
+    sleep_ms(800);     // 0.8秒間、物理的に処理を休止させて通信パケットを完全に逃がす
+    watchdog_update();
+
+    // フラッシュの安全と通信の切断が100%確保された状態で、満を持して自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 }
 
