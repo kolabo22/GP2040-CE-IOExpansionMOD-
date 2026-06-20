@@ -48,25 +48,35 @@ bool Storage::save(const bool force) {
 	return ConfigUtils::save(config), EEPROM.commit(), true;
 }
 
+// ====================================================================
+// 【修正後】最終完成版の Storage::ResetSettings() 処理
+// ====================================================================
 void Storage::ResetSettings()
 {
-	// 🛠️ 通常のEEPROMキャッシュバッファをクリア
+	// 通常のEEPROMキャッシュバッファをクリア
 	EEPROM.reset();
 
-	// 🟢 FLASH_SECTOR_SIZE (4096バイト) を指定することで、
-	// 縦並びの完成バイナリデータを、お尻の 1 マスまで漏らさず完璧に一撃で全転送します！
+	// 1. 縦並びの完成バイナリデータを、4096バイト（FLASH_SECTOR_SIZE）一撃で保存バッファへ全転送！
 	for (uint16_t i = 0; i < FLASH_SECTOR_SIZE; i++) {
 		FlashPROM::writeCache[i] = miniSuperPerfectStaticBinary[i];
 	}
 
-	// 物理フラッシュメモリの通常領域（1MBの開始地点）へ確定コミット
+	// 2. 💥【チェックサム検閲完全突破の核心】
+	// 今流し込んだ完璧なバイナリから、実機のメインメモリ（config構造体）へ一度データを強制ロードします。
+	// その直後に、実機自身の手で最新の正しいCRC32チェックサム値を計算させ、
+	// キャッシュバッファのヘッダーを「エラーの出ない最新の指紋」へ全自動で綺麗に上書きリフレッシュ（定着）させます！
+	ConfigUtils::load(config);
+	ConfigUtils::save(this->config);
+
+	// 3. 完璧に認証を突破したデータを、満を持して物理フラッシュメモリ通常領域へ確定コミット！
 	EEPROM.commit();
-	ConfigUtils::load(config); // 実機メモリ（config構造体）へ完全展開
+	ConfigUtils::load(config); // メモリ側を最終同期
 
 	// 💡【安全自動リブート】
 	// 2000ms（2秒）の間、ブラウザに「Success!」を表示させきってから安全にコールドリセット
 	watchdog_reboot(0, SRAM_END, 2000);
 }
+
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
