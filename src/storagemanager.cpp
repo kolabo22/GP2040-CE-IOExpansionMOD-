@@ -31,30 +31,34 @@ bool Storage::save() {
     return save(false);
 }
 
+// ====================================================================
+// 【適応前】現在の Storage::save(const bool force) 処理
+// ====================================================================
 bool Storage::save(const bool force) {
     if (!force &&
         PeripheralManager::getInstance().isUSBEnabled(0) &&
         (DriverManager::getInstance().getInputMode() == INPUT_MODE_PS4 ||
         DriverManager::getInstance().getInputMode() == INPUT_MODE_PS5) &&
-        ((PS4Driver*)DriverManager::getInstance().getDriver())->getDongleAuthRequired() == true ) {
+        ((PS4Driver*) DriverManager::getInstance().getDriver())->getDongleAuthRequired() == true) {
         return false;
     }
 
     ConfigUtils::save(this->config);
 
-    // 🛠️ 【お気に入り隔離セーブ（Backupボタン）時の挙動】
+    // * 【お気に入り隔離セーブ (Backup ボタン) 時の挙動】
     if (force) {
         uint32_t ints = save_and_disable_interrupts();
-        // 素のPico内に実在する4KBの領域（0x1F4000）を消去してRAW転送
-        flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE); 
-        flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE); 
+        // 素の Pico内に実在する4KBの領域 (0x1F4000) を消去して RAW 転送
+        flash_range_erase(MINI_SUPER_RAW_FLASH_ADDR, FLASH_SECTOR_SIZE);
+        flash_range_program(MINI_SUPER_RAW_FLASH_ADDR, FlashPROM::writeCache, FLASH_SECTOR_SIZE);
         restore_interrupts(ints);
     }
 
-    // 💡 通常セーブ時は、通信フリーズの原因である物理書き込み（EEPROM.commit）を完全カット！
-    // RAM(メモリ)上の更新だけに留めることで、素のPicoでもUSB切断エラーを構造・物理レベルで100%根絶します。
+    // 通常セーブ時は、通信フリーズの原因である物理書き込み (EEPROM.commit) を完全カット!
+    // RAM (メモリ)上の更新だけに留めることで、素のPicoでもUSB切断エラーを構造・物理レベルで100%根絶します。
     return ConfigUtils::save(config), true;
 }
+
 
 void Storage::ResetSettings()
 {
