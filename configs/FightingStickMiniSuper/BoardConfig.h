@@ -8,7 +8,7 @@
 #define BOARD_CONFIG_LABEL "MINI Super"
 
 // ====================================================================
-// 1. 物理ピン（GPIO）の完全固定マッピング
+// 1. 物理ピン（GPIO）の完全固定マッピング ＆ アドオン管轄リリース
 // ====================================================================
 
 // レバー4方向（初期設定のままネイティブロード）
@@ -27,66 +27,66 @@
 #define GPIO_PIN_12 GpioAction::BUTTON_PRESS_R1
 #define GPIO_PIN_13 GpioAction::BUTTON_PRESS_L1
 
-// 機能ボタン (S2/STARTは完全に独立した通常ボタンとして固定。工場出荷状態で動きます)
-
+// 機能ボタン (S2/STARTは完全に独立した通常ボタンとして固定)
 #define GPIO_PIN_17 GpioAction::BUTTON_PRESS_S2
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
 
 // 各種アドオン/周辺機器ピンをADDON管轄へ明示的リリース
-
 #define GPIO_PIN_00 GpioAction::ASSIGNED_TO_ADDON // I2C0 SDA (Wii)
 #define GPIO_PIN_01 GpioAction::ASSIGNED_TO_ADDON // I2C0 SCL (Wii)
+#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
+#define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_0 (S1連動)
 #define GPIO_PIN_18 GpioAction::ASSIGNED_TO_ADDON // I2C1 SDA (PCF8575)
 #define GPIO_PIN_19 GpioAction::ASSIGNED_TO_ADDON // I2C1 SCL (PCF8575)
 #define GPIO_PIN_20 GpioAction::ASSIGNED_TO_ADDON // UART1 TX (JQ8900)
 #define GPIO_PIN_21 GpioAction::ASSIGNED_TO_ADDON // UART1 RX (JQ8900)
+#define GPIO_PIN_22 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_1 (S2連動)
+#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_2 (L3連動)
+#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_3 (R3連動)
+#define GPIO_PIN_25 GpioAction::ASSIGNED_TO_ADDON // オンボードLED
 #define GPIO_PIN_26 GpioAction::ASSIGNED_TO_ADDON // Analog (Turbo VR)
 #define GPIO_PIN_27 GpioAction::ASSIGNED_TO_ADDON // RGB LED
 #define GPIO_PIN_28 GpioAction::ASSIGNED_TO_ADDON // USB0 D+
 #define GPIO_PIN_29 GpioAction::ASSIGNED_TO_ADDON // USB0 D-
 
 // ====================================================================
-// 【修正後】BoardConfig.h の各種アドオンピンリリース ＆ リアクティブLED完全アサイン
+// 2. リアクティブLED（入力連動）詳細構成
 // ====================================================================
-#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
-#define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_0 (S1連動)
-#define GPIO_PIN_22 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_1 (S2連動)
-#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_2 (L3連動)
-#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_3 (R3連動)
-#define GPIO_PIN_25 GpioAction::ASSIGNED_TO_ADDON // オンボードLED
 
-// 💥 【リアクティブLED（入力連動）アドオン機能の強制有効化】
+// リアクティブLEDアドオン機能の強制有効化
 #define REACTIVE_LED_ENABLED 1
 
-// 🎨 【リアクティブLED_0 : GP16 ➔ S1(SELECT)連動】
+// リアクティブLED_0 : GP16 ➔ S1(SELECT/COIN)連動
 #define RE_LED_00_PIN 16
 #define RE_LED_00_ACTION GpioAction::BUTTON_PRESS_S1
 #define RE_LED_00_MODE 1         // デフォルトモード: フェードイン
 #define RE_LED_00_ACTIVE_MODE 2  // アクティブモード: フェードアウト
 
-// 🎨 【リアクティブLED_1 : GP22 ➔ S2(START)連動】
+// リアクティブLED_1 : GP22 ➔ S2(START)連動
 #define RE_LED_01_PIN 22
 #define RE_LED_01_ACTION GpioAction::BUTTON_PRESS_S2
 #define RE_LED_01_MODE 1         // デフォルトモード: フェードイン
 #define RE_LED_01_ACTIVE_MODE 2  // アクティブモード: フェードアウト
 
-// 🎨 【リアクティブLED_2 : GP23 ➔ L3(左スティッククリック)連動】
+// リアクティブLED_2 : GP23 ➔ L3(左スティッククリック)連動
 #define RE_LED_02_PIN 23
 #define RE_LED_02_ACTION GpioAction::BUTTON_PRESS_L3
 #define RE_LED_02_MODE 1         // デフォルトモード: フェードイン
 #define RE_LED_02_ACTIVE_MODE 2  // アクティブモード: フェードアウト
 
-// 🎨 【リアクティブLED_3 : GP24 ➔ R3(右スティッククリック)連動】
+// リアクティブLED_3 : GP24 ➔ R3(右スティッククリック)連動
 #define RE_LED_03_PIN 24
 #define RE_LED_03_ACTION GpioAction::BUTTON_PRESS_R3
 #define RE_LED_03_MODE 1         // デフォルトモード: フェードイン
 #define RE_LED_03_ACTIVE_MODE 2  // アクティブモード: フェードアウト
 
-// 💡 【オンボードLED : GP25 ➔ 独立連動アドオンの自動構成化】
+// オンボードLED : GP25 ➔ 独立連動アドオンの自動構成化
 #define ONBOARD_LED_BLINK_ENABLED 1
 #define ONBOARD_LED_MODE 1       // 入力連動モードで起動
 
-// Keyboard Mapping Configuration
+// ====================================================================
+// 3. Keyboard Mapping Configuration
+// ====================================================================
 //                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |
 #define KEY_DPAD_UP     HID_KEY_ARROW_UP      // UP     | UP     | UP      | UP       | UP     | UP     |
 #define KEY_DPAD_DOWN   HID_KEY_ARROW_DOWN    // DOWN   | DOWN   | DOWN    | DOWN     | DOWN   | DOWN   |
@@ -109,16 +109,12 @@
 #define KEY_BUTTON_FN   -1                    // Hotkey Function                                        |
 
 // ====================================================================
-// 2. 周辺機器通信プロファイルの有効化（初期設定）
+// 4. 周辺機器通信プロファイルの有効化 ＆ アドオン初期自動ビルド強制指定
 // ====================================================================
 #define DEFAULT_INPUT_MODE INPUT_MODE_GENERIC
 
-// 💥【Wii ＆ リアクティブLED 初期自動構成ビルド定着マクロ】
-// C++やJSをごちゃごちゃ弄るのを完全廃止！
-// システムが起動時に「1（有効）」の設定ファイルを自動生成するため、初期状態に戻るのを完璧に防ぎます。
+// Wii拡張 ＆ リアクティブLED 初期自動構成ビルド定着マクロ
 #define WII_EXTENSION_ENABLED 1
-#define REACTIVE_LED_ENABLED 1
-#define ONBOARD_LED_BLINK_ENABLED 1
 
 // 周辺機器通信マニュアル有効化
 #define I2C0_ENABLED 1
@@ -137,7 +133,7 @@
 #define UART1_BAUDRATE 9600
 
 // ====================================================================
-// 3. 【16ページ完全同期】PCF8575 IOエクスパンダー 初期アサイン定数
+// 5. PCF8575 IOエクスパンダー 初期アサイン定数
 // ====================================================================
 #define I2C_PCF8575_ENABLED 1
 #define I2C_PCF8575_BLOCK i2c1
