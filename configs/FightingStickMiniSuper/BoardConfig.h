@@ -33,12 +33,6 @@
 #define GPIO_PIN_14 GpioAction::BUTTON_PRESS_TURBO
 
 // 各種アドオン/周辺機器ピンをADDON管轄へ明示的リリース
-#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
-#define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // Player LED 1 (GP16)
-#define GPIO_PIN_22 GpioAction::ASSIGNED_TO_ADDON // Player LED 2 (GP22)
-#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON // Player LED 3 (GP23)
-#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON // Player LED 4 (GP24)
-#define GPIO_PIN_25 GpioAction::ASSIGNED_TO_ADDON // オンボードLED
 
 #define GPIO_PIN_00 GpioAction::ASSIGNED_TO_ADDON // I2C0 SDA (Wii)
 #define GPIO_PIN_01 GpioAction::ASSIGNED_TO_ADDON // I2C0 SCL (Wii)
@@ -50,6 +44,47 @@
 #define GPIO_PIN_27 GpioAction::ASSIGNED_TO_ADDON // RGB LED
 #define GPIO_PIN_28 GpioAction::ASSIGNED_TO_ADDON // USB0 D+
 #define GPIO_PIN_29 GpioAction::ASSIGNED_TO_ADDON // USB0 D-
+
+// ====================================================================
+// 【修正後】BoardConfig.h の各種アドオンピンリリース ＆ リアクティブLED完全アサイン
+// ====================================================================
+#define GPIO_PIN_15 GpioAction::ASSIGNED_TO_ADDON // Turbo_LED (GP15)
+#define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_0 (S1連動)
+#define GPIO_PIN_22 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_1 (S2連動)
+#define GPIO_PIN_23 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_2 (L3連動)
+#define GPIO_PIN_24 GpioAction::ASSIGNED_TO_ADDON // リアクティブLED_3 (R3連動)
+#define GPIO_PIN_25 GpioAction::ASSIGNED_TO_ADDON // オンボードLED
+
+// 💥 【リアクティブLED（入力連動）アドオン機能の強制有効化】
+#define REACTIVE_LED_ENABLED 1
+
+// 🎨 【リアクティブLED_0 : GP16 ➔ S1(SELECT)連動】
+#define RE_LED_00_PIN 16
+#define RE_LED_00_ACTION GpioAction::BUTTON_PRESS_S1
+#define RE_LED_00_MODE 1         // デフォルトモード: フェードイン
+#define RE_LED_00_ACTIVE_MODE 2  // アクティブモード: フェードアウト
+
+// 🎨 【リアクティブLED_1 : GP22 ➔ S2(START)連動】
+#define RE_LED_01_PIN 22
+#define RE_LED_01_ACTION GpioAction::BUTTON_PRESS_S2
+#define RE_LED_01_MODE 1         // デフォルトモード: フェードイン
+#define RE_LED_01_ACTIVE_MODE 2  // アクティブモード: フェードアウト
+
+// 🎨 【リアクティブLED_2 : GP23 ➔ L3(左スティッククリック)連動】
+#define RE_LED_02_PIN 23
+#define RE_LED_02_ACTION GpioAction::BUTTON_PRESS_L3
+#define RE_LED_02_MODE 1         // デフォルトモード: フェードイン
+#define RE_LED_02_ACTIVE_MODE 2  // アクティブモード: フェードアウト
+
+// 🎨 【リアクティブLED_3 : GP24 ➔ R3(右スティッククリック)連動】
+#define RE_LED_03_PIN 24
+#define RE_LED_03_ACTION GpioAction::BUTTON_PRESS_R3
+#define RE_LED_03_MODE 1         // デフォルトモード: フェードイン
+#define RE_LED_03_ACTIVE_MODE 2  // アクティブモード: フェードアウト
+
+// 💡 【オンボードLED : GP25 ➔ 独立連動アドオンの自動構成化】
+#define ONBOARD_LED_BLINK_ENABLED 1
+#define ONBOARD_LED_MODE 1       // 入力連動モードで起動
 
 // Keyboard Mapping Configuration
 //                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |
