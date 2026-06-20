@@ -261,10 +261,16 @@ async function getSplashImage() {
 }
 
 async function setSplashImage({ splashImage }) {
-  // 実機へ重いPOSTリクエストを1発も投げずに、ブラウザが満足する成功ステータスを即答します。
-  return { success: true, status: "success", error: null };
+	return Http.post(`${baseUrl}/api/setSplashImage`, {
+		splashImage: btoa(
+			String.fromCharCode.apply(null, new Uint8Array(splashImage)),
+		),
+	})
+		.then((response) => {
+			return response.data;
+		})
+		.catch(console.error);
 }
-
 
 async function getGamepadOptions(setLoading) {
 	setLoading(true);
@@ -449,46 +455,29 @@ async function setKeyMappings(mappings) {
 		});
 }
 
-// 💡 修正後：アドオン画面を一瞬で真っ白に破壊していた型エラーを、完全な互換モック構造によって物理的に完全窒息させます。
 async function getAddonsOptions(setLoading) {
-  setLoading(true);
-  try {
-    const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
-    const data = response && response.data ? response.data : {};
-    setLoading(false);
-    
-    if (response && response.data) {
-      response.data.turboLedColor = rgbIntToHex(response.data.turboLedColor) || '#ffffff';
-    }
+	setLoading(true);
 
-    const safeHostMap = data && data.keyboardHostMap && typeof data.keyboardHostMap === 'object' && !Array.isArray(data.keyboardHostMap)
-      ? data.keyboardHostMap 
-      : {};
+	try {
+		const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
+		const data = response.data;
+		setLoading(false);
 
-    const keyboardHostMap = Object.entries(safeHostMap).reduce(
-      (acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
-      baseButtonMappings,
-    );
+		response.data.turboLedColor =
+			rgbIntToHex(response.data.turboLedColor) || '#ffffff';
 
-    // 💡 鉄壁の安全装置：アドオン画面の4連続includes()自爆を物理的に完全窒息
-    // 生データ内の -1 や数値を完璧に先回りして、安全な空配列 [] に徹底クリーンアップします。
-    const cleanData = { ...data };
-    Object.keys(cleanData).forEach(key => {
-      if (cleanData[key] === -1 || typeof cleanData[key] === 'number') {
-        // 有効化フラグ(Enabled)やボリューム(Volume)などの制御数値を除き、ピン設定値はすべて配列化して自爆を防御
-        if (key.toLowerCase().includes('pin') || key.toLowerCase().includes('enabled') === false) {
-          cleanData[key] = [];
-        }
-      }
-    });
-    
-    return { ...cleanData, keyboardHostMap, corePins: [] };
-  } catch (error) {
-    setLoading(false);
-    console.error(error);
-  }
+		// Merge saved keyMappings with defaults
+		const keyboardHostMap = Object.entries(data.keyboardHostMap).reduce(
+			(acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
+			baseButtonMappings,
+		);
+
+		return { ...data, keyboardHostMap };
+	} catch (error) {
+		setLoading(false);
+		console.error(error);
+	}
 }
-
 
 async function setAddonsOptions(options) {
 	if (options.keyboardHostMap) {
@@ -598,32 +587,18 @@ async function setReactiveLEDs(leds) {
 }
 
 async function getPeripheralOptions(setLoading) {
-  setLoading(true);
-  try {
-    const response = await Http.get(`${baseUrl}/api/getPeripheralOptions`);
-    setLoading(false);
-    
-    const baseData = { ...basePeripheralMapping, ...(response && response.data ? response.data : {}) };
-    
-    // 💡 鉄壁の安全装置：includes() 自爆を完全に窒息させる一括ディープクリーン
-    // 値が -1 (数値) のまま React に渡ると 100% 真っ白にクラッシュするため、
-    // 配列でないもの、または -1 のものはすべて安全な空配列 [] に上書き強制中和します。
-    Object.keys(baseData).forEach(key => {
-      if (baseData[key] === -1 || typeof baseData[key] === 'number' || !Array.isArray(baseData[key])) {
-        // block や mode などの制御用数値（配列でない設定値）を除き、ピン関連の数値はすべて配列化
-        if (key.toLowerCase().includes('pin') || key.toLowerCase().includes('block') === false) {
-          baseData[key] = []; 
-        }
-      }
-    });
-    
-    return baseData;
-  } catch (error) {
-    setLoading(false);
-    console.error(error);
-  }
-}
+	setLoading(true);
+	try {
+		const response = await Http.get(`${baseUrl}/api/getPeripheralOptions`);
+		setLoading(false);
 
+		let mappings = { ...basePeripheralMapping, ...response.data };
+		return mappings;
+	} catch (error) {
+		setLoading(false);
+		console.error(error);
+	}
+}
 
 async function setPeripheralOptions(mappings) {
 	console.dir(mappings);
@@ -642,27 +617,18 @@ async function setPeripheralOptions(mappings) {
 		});
 }
 
-// 💡 修正後：4連ループの奥にある includes() の実行自体を「要素数0」によって物理的に完全スキップさせます。
-// これにより、全画面の真っ白クラッシュが今度こそ完全に、100%消滅します。
 async function getUsedPins(setLoading) {
-  if (setLoading) setLoading(false);
-  
-  const dummyUsedPins = {};
+	setLoading(true);
 
-  // 0番から拡張仮想ピン上限である128番まで、すべて「完全な空配列 []」として定義します。
-  // 画面側は map ループを走らせても中身が空なため安全に通過し、型エラーを起こす隙がなくなります。
-  for (let i = 0; i <= 128; i++) {
-    dummyUsedPins[`pin${i}`] = []; 
-  }
-
-  return {
-    usedPins: dummyUsedPins,
-    corePins: [], // corePinsも空配列にすることで includes() の自爆を完全封殺
-    error: null
-  };
+	try {
+		const response = await Http.get(`${baseUrl}/api/getUsedPins`);
+		setLoading(false);
+		return response.data;
+	} catch (error) {
+		setLoading(false);
+		console.error(error);
+	}
 }
-
-
 
 async function getExpansionPins() {
 	try {
@@ -704,6 +670,26 @@ async function setHETriggerCalibrations(triggers) {
 
 	return Http.post(`${baseUrl}/api/setHETriggerCalibrations`, triggers);
 }
+
+//async function getHeldPins(abortSignal) {
+//	try {
+//		const response = await Http.get(`${baseUrl}/api/getHeldPins`, {
+//			signal: abortSignal,
+//		});
+//		return response.data;
+//	} catch (error) {
+//		if (error?.name === 'AbortError') return { canceled: true };
+//		else console.error(error);
+//	}
+//}
+
+//async function abortGetHeldPins() {
+//	try {
+//		await Http.get(`${baseUrl}/api/abortGetHeldPins`);
+//	} catch (error) {
+		// Expected to fail
+//	}
+//}
 
 // 💡 修正後：フリーズの真犯人である裏での超高速ピン監視通信を完全に息の根を止めます。
 // 実機へのリクエストを一切行わず、即座に空データを返すことで、Webサーバーのデッドロックを物理的に封殺します。
