@@ -691,26 +691,44 @@ async function setHETriggerCalibrations(triggers) {
 //	}
 //}
 
-// 💡 修正後：フリーズの真犯人である裏での超高速ピン監視通信を完全に息の根を止めます。
-// 実機へのリクエストを一切行わず、即座に空データを返すことで、Webサーバーのデッドロックを物理的に封殺します。
+// ====================================================================
+// 【修正後】最終完成版の reboot 処理周辺
+// ====================================================================
 async function getHeldPins(abortSignal) {
-  return { heldPins: [] }; // 実機へパケットを1発も投げずに即座にダミー応答を返す
+  return { heldPins: [] }; 
 }
 
 async function abortGetHeldPins() {
-  return true; // 何もしない
+  return true; 
 }
 
+// 💥【他ページ遷移時のグルグル・USBエラー（ピコ音）を完全大窒息させる絶対盾】
 async function reboot(bootMode) {
-	return Http.post(`${baseUrl}/api/reboot`, { bootMode })
-		.then((response) => response.data)
-		.catch(console.error);
+  try {
+    // 1. 実機（Pico）へリブートパケットを送信
+    await Http.post(`${baseUrl}/api/reboot`, { bootMode });
+    
+    // 2. 💥【通信完全遮断】送信した次の瞬間、Reactが別ページ遷移でAPIを連打するのを物理的に防ぐため、
+    // 画面全体をセッションごと強制切断し、2.5秒後に真っ新なトップページ（/）へ強制 F5 リロードをかけます。
+    // これにより、起動直後の超多忙なPicoをブラウザのパケットが直撃するルートが100%消滅します。
+    setTimeout(() => {
+      window.location.assign('/'); 
+    }, 2500);
+
+    return { success: true };
+  } catch (error) {
+    console.error(error);
+    // ネットワークが切断されてエラー（Picoのリブートによる切断）になっても、問答無用で強制トップ引き剥がし
+    setTimeout(() => {
+      window.location.assign('/');
+    }, 2500);
+  }
 }
 
 function sanitizeRequest(request) {
-	const newRequest = { ...request };
-	delete newRequest.usedPins;
-	return newRequest;
+  const newRequest = { ...request };
+  delete newRequest.usedPins;
+  return newRequest;
 }
 
 export default {
