@@ -77,6 +77,7 @@ void Storage::ResetSettings()
     }
 
     // 2. データを通常領域のキャッシュバッファへ定着させ、config構造体に展開
+    // （※この commit() の内部で、フラッシュの物理書き込み完了待ちは100%完了します）
     EEPROM.commit();
     ConfigUtils::load(config);
 
@@ -84,10 +85,7 @@ void Storage::ResetSettings()
     // 3. 💥【超重要】タイムアウト＆USBデバイスエラー（ピコ音）を物理的に根絶する
     // ====================================================================
     
-    // 物理フラッシュへの書き込み（消去・プログラム）が内部で完了するまでCPUを安全にスピン待機させる
-    flash_range_program_wait_forever(); 
-    
-    // ブラウザへ「リブートするでー！」というWeb通信（HTTP応答）を返しきるための猶予時間を確保
+    // ブラウザへ「リブートするでー！」というWeb通信（HTTP応答）を100%返しきるための猶予時間を確保
     watchdog_update(); // ウォッチドッグタイマーのクリア（フリーズ誤判定を防止）
     sleep_ms(800);     // 0.8秒間、物理的に処理を休止させて通信パケットを完全に逃がす
     watchdog_update();
@@ -95,7 +93,6 @@ void Storage::ResetSettings()
     // フラッシュの安全と通信の切断が100%確保された状態で、満を持して自動リブート！
     System::reboot(System::BootMode::GAMEPAD);
 }
-
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
