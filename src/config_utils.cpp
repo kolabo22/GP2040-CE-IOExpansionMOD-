@@ -812,30 +812,95 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.rotaryOptions.encoderTwo, multiplier, ENCODER_TWO_MULTIPLIER);
 
 	// ==========================================================
-	// 🛡️ MINI Super 真の実機内完結シールド（マクロ構文・完全修復版）
+	// 🛡️ MINI Super 真の実機内完結シールド（Wii＆LED同時完全展開版）
 	// ==========================================================
-	// 1. アドオンを最初から強制ON (親、プロパティ、値を3つの引数に分離)
-	INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, enabled, true);
+	// 実機が完全に初期化状態（LEDピンが-1、かつカウントが0）の瞬間だけ狙い撃ちして初期値を注入
+	if (config.addonOptions.reactiveLEDOptions.leds.pin == -1 && config.addonOptions.reactiveLEDOptions.leds_count == 0) {
+		
+		// ----------------------------------------------------------
+		// 【1】リアクティブLEDアドオンの強制展開（公式マクロ準拠）
+		// ----------------------------------------------------------
+		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, enabled, true);
 
-	// MINI Super専用の物理ピン配列と対応アクション
-	const int32_t MINI_SUPER_PINS[4] = {16, 22, 23, 24};
-	const GpioAction MINI_SUPER_ACTIONS[4] = {
-		GpioAction::BUTTON_PRESS_S1,
-		GpioAction::BUTTON_PRESS_S2,
-		GpioAction::BUTTON_PRESS_L3,
-		GpioAction::BUTTON_PRESS_R3
-	};
+		const int32_t MINI_SUPER_PINS[4] = {16, 22, 23, 24};
+		const GpioAction MINI_SUPER_ACTIONS[4] = {
+			GpioAction::BUTTON_PRESS_S1,
+			GpioAction::BUTTON_PRESS_S2,
+			GpioAction::BUTTON_PRESS_L3,
+			GpioAction::BUTTON_PRESS_R3
+		};
 
-	// 2. 正しい3引数マクロのループ処理で、各配列要素へ安全にデフォルト値を展開
-	for (uint16_t i = 0; i < 4; i++) {
-		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], pin, MINI_SUPER_PINS[i]);
-		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], action, MINI_SUPER_ACTIONS[i]);
-		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], modeDown, ReactiveLEDMode::REACTIVE_LED_FADE_OUT); // 3 (押して消える)
-		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], modeUp, ReactiveLEDMode::REACTIVE_LED_FADE_IN);   // 2 (離してじんわり)
+		for (uint16_t i = 0; i < 4; i++) {
+			INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], pin, MINI_SUPER_PINS[i]);
+			INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], action, MINI_SUPER_ACTIONS[i]);
+			INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], modeDown, ReactiveLEDMode::REACTIVE_LED_FADE_OUT); // 3 (押して消える)
+			INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], modeUp, ReactiveLEDMode::REACTIVE_LED_FADE_IN);   // 2 (離してじんわり)
+		}
+		config.addonOptions.reactiveLEDOptions.leds_count = 4;
+
+		// ----------------------------------------------------------
+		// 【2】Wii拡張アドオンの強制展開（画面間引きバグ・完全破壊処理）
+		// ----------------------------------------------------------
+		// アドオン自体を強制ON、および構造体が存在するフラグを正確にON
+		config.addonOptions.wiiOptions.enabled = true;
+		config.addonOptions.wiiOptions.has_enabled = true;
+		config.addonOptions.wiiOptions.has_controllers = true;
+
+		// A. ヌンチャク (右アナログスティック補助仕様)
+		config.addonOptions.wiiOptions.controllers.has_nunchuk = true;
+		config.addonOptions.wiiOptions.controllers.nunchuk.buttonZ = 1;
+		config.addonOptions.wiiOptions.controllers.nunchuk.buttonC = 2;
+		config.addonOptions.wiiOptions.controllers.nunchuk.has_stick = true;
+		config.addonOptions.wiiOptions.controllers.nunchuk.stick.has_x = true;
+		config.addonOptions.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
+		config.addonOptions.wiiOptions.controllers.nunchuk.stick.has_y = true;
+		config.addonOptions.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
+
+		// B. クラシックコントローラー (PlayStation カスタムストレート)
+		config.addonOptions.wiiOptions.controllers.has_classic = true;
+		config.addonOptions.wiiOptions.controllers.classic.buttonA = 2;
+		config.addonOptions.wiiOptions.controllers.classic.buttonB = 1;
+		config.addonOptions.wiiOptions.controllers.classic.buttonX = 4;
+		config.addonOptions.wiiOptions.controllers.classic.buttonY = 3;
+		config.addonOptions.wiiOptions.controllers.classic.buttonL = 7;
+		config.addonOptions.wiiOptions.controllers.classic.buttonR = 8;
+		config.addonOptions.wiiOptions.controllers.classic.buttonZL = 9;
+		config.addonOptions.wiiOptions.controllers.classic.buttonZR = 10;
+		config.addonOptions.wiiOptions.controllers.classic.buttonMinus = 5;
+		config.addonOptions.wiiOptions.controllers.classic.buttonPlus = 6;
+		config.addonOptions.wiiOptions.controllers.classic.buttonHome = 13;
+
+		// C. ギターコントローラー (音ゲー特化アサイン)
+		config.addonOptions.wiiOptions.controllers.has_guitar = true;
+		config.addonOptions.wiiOptions.controllers.guitar.buttonGreen = 1;
+		config.addonOptions.wiiOptions.controllers.guitar.buttonRed = 2;
+		config.addonOptions.wiiOptions.controllers.guitar.buttonYellow = 4;
+		config.addonOptions.wiiOptions.controllers.guitar.buttonBlue = 3;
+		config.addonOptions.wiiOptions.controllers.guitar.buttonOrange = 7;
+		config.addonOptions.wiiOptions.controllers.guitar.buttonPedal = 9;
+		config.addonOptions.wiiOptions.controllers.guitar.buttonMinus = 5;
+		config.addonOptions.wiiOptions.controllers.guitar.buttonPlus = 6;
+		config.addonOptions.wiiOptions.controllers.guitar.strumUp = 65537;
+		config.addonOptions.wiiOptions.controllers.guitar.strumDown = 131074;
+		config.addonOptions.wiiOptions.controllers.guitar.has_stick = true;
+		config.addonOptions.wiiOptions.controllers.guitar.stick.has_x = true;
+		config.addonOptions.wiiOptions.controllers.guitar.stick.x.axisType = 1;
+		config.addonOptions.wiiOptions.controllers.guitar.stick.has_y = true;
+		config.addonOptions.wiiOptions.controllers.guitar.stick.y.axisType = 2;
+		config.addonOptions.wiiOptions.controllers.guitar.has_whammyBar = true;
+		config.addonOptions.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
+
+		// D. ドラム、E. ターンテーブル、F. タイコのフラグ確保（型崩れによる画面白紙化を完全防止）
+		config.addonOptions.wiiOptions.controllers.has_drum = true;
+		config.addonOptions.wiiOptions.controllers.has_turntable = true;
+		config.addonOptions.wiiOptions.controllers.has_taiko = true;
+
+	} else {
+		// すでに一度でもセーブデータが保存されている場合は、本家バニラのカウント処理だけに安全に流します
+		if (config.addonOptions.reactiveLEDOptions.leds_count == 0) {
+			config.addonOptions.reactiveLEDOptions.leds_count = REACTIVE_LED_COUNT;
+		}
 	}
-
-	// Nanopbに配列の有効要素数が「4個」であることを正確に通知
-	config.addonOptions.reactiveLEDOptions.leds_count = 4;
 	// ==========================================================
 
 
