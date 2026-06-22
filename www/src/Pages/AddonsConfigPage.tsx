@@ -98,16 +98,89 @@ const FormContext = ({ setStoredData }) => {
 	const { setLoading } = useContext(AppContext);
 
 useEffect(() => {
-async function fetchData() {
-const data = await WebApi.getAddonsOptions(setLoading);
- 
-console.log("Pico から届いた生データ:", data); 
-const mergedData = { ...DEFAULT_VALUES, ...data };
+	async function fetchData() {
+		const data = await WebApi.getAddonsOptions(setLoading);
+		const mergedData = { ...DEFAULT_VALUES, ...data };
 
-setValues(mergedData);
-setStoredData(JSON.parse(JSON.stringify(mergedData)));
-}
-fetchData();
+		// ==========================================================
+		// 🛡️ MINI Super フロントエンド支配シールド（データ確定直前ピンポイント注入）
+		// ==========================================================
+		if (mergedData && mergedData.addonOptions) {
+			
+			// 1. Wii拡張アドオンの強制展開
+			if (!mergedData.addonOptions.wiiOptions) mergedData.addonOptions.wiiOptions = {};
+			mergedData.addonOptions.wiiOptions.enabled = 1;
+
+			// クラコンのAボタンが未設定(0)＝初期状態なら、理想アサインを安全にピンポイント上書き
+			if (
+				!mergedData.addonOptions.wiiOptions.controllers || 
+				!mergedData.addonOptions.wiiOptions.controllers.classic || 
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonA === 0
+			) {
+				if (!mergedData.addonOptions.wiiOptions.controllers) mergedData.addonOptions.wiiOptions.controllers = {};
+				if (!mergedData.addonOptions.wiiOptions.controllers.nunchuk) mergedData.addonOptions.wiiOptions.controllers.nunchuk = {};
+				if (!mergedData.addonOptions.wiiOptions.controllers.nunchuk.stick) mergedData.addonOptions.wiiOptions.controllers.nunchuk.stick = { x: {}, y: {} };
+				if (!mergedData.addonOptions.wiiOptions.controllers.classic) mergedData.addonOptions.wiiOptions.controllers.classic = {};
+				if (!mergedData.addonOptions.wiiOptions.controllers.guitar) mergedData.addonOptions.wiiOptions.controllers.guitar = {};
+				if (!mergedData.addonOptions.wiiOptions.controllers.guitar.stick) mergedData.addonOptions.wiiOptions.controllers.guitar.stick = { x: {}, y: {} };
+				if (!mergedData.addonOptions.wiiOptions.controllers.guitar.whammyBar) mergedData.addonOptions.wiiOptions.controllers.guitar.whammyBar = {};
+
+				// A. ヌンチャク
+				mergedData.addonOptions.wiiOptions.controllers.nunchuk.buttonZ = 1;
+				mergedData.addonOptions.wiiOptions.controllers.nunchuk.buttonC = 2;
+				if (mergedData.addonOptions.wiiOptions.controllers.nunchuk.stick.x) mergedData.addonOptions.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
+				if (mergedData.addonOptions.wiiOptions.controllers.nunchuk.stick.y) mergedData.addonOptions.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
+
+				// B. クラシックコントローラー
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonA = 2;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonB = 1;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonX = 4;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonY = 3;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonL = 7;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonR = 8;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonZL = 9;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonZR = 10;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonMinus = 5;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonPlus = 6;
+				mergedData.addonOptions.wiiOptions.controllers.classic.buttonHome = 13;
+
+				// C. ギターコントローラー
+				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonGreen = 1;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonRed = 2;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonYellow = 4;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonBlue = 3;
+				mergedOptions.addonOptions.wiiOptions.controllers.guitar.buttonOrange = 7;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonPedal = 9;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonMinus = 5;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonPlus = 6;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.strumUp = 65537;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.strumDown = 131074;
+				if (mergedData.addonOptions.wiiOptions.controllers.guitar.stick.x) mergedData.addonOptions.wiiOptions.controllers.guitar.stick.x.axisType = 1;
+				if (mergedData.addonOptions.wiiOptions.controllers.guitar.stick.y) mergedData.addonOptions.wiiOptions.controllers.guitar.stick.y.axisType = 2;
+				if (mergedData.addonOptions.wiiOptions.controllers.guitar.whammyBar) mergedData.addonOptions.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
+			}
+
+			// 2. リアクティブLEDアドオンの強制展開
+			if (!mergedData.addonOptions.reactiveLEDOptions) mergedData.addonOptions.reactiveLEDOptions = {};
+			mergedData.addonOptions.reactiveLEDOptions.enabled = 1;
+
+			// 1番目のLEDピンが未設定(0 または存在しない)＝初期状態なら、実機の物理ピンアサインを強制上書き
+			if (!mergedData.addonOptions.reactiveLEDOptions.leds || mergedData.addonOptions.reactiveLEDOptions.leds.length === 0 || !mergedData.addonOptions.reactiveLEDOptions.leds[0] || mergedData.addonOptions.reactiveLEDOptions.leds[0].pin <= 0) {
+				mergedData.addonOptions.reactiveLEDOptions.leds = [
+					// modeDown(押した時): 3=FADE_OUT(消える) / modeUp(離した時): 2=FADE_IN(じんわり光る)
+					{ pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
+					{ pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
+					{ pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
+					{ pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
+				];
+			}
+		}
+		// ==========================================================
+
+		setValues(mergedData);
+		setStoredData(JSON.parse(JSON.stringify(mergedData)));
+	}
+	fetchData();
 }, [setValues]);
 
 
@@ -187,63 +260,10 @@ export default function AddonsConfigPage() {
 	};
 
 	return (
-		<Formik 
-			enableReinitialize={true} 
-			validationSchema={schema} 
-			onSubmit={onSuccess} 
-			initialValues={{
-				...DEFAULT_VALUES,
-				addonOptions: {
-					...DEFAULT_VALUES?.addonOptions,
-					// 1. Wii拡張アドオンの初期値を理想型に強制適用
-					wiiOptions: {
-						enabled: 1,
-						controllers: {
-							nunchuk: {
-								buttonZ: 1, buttonC: 2,
-								stick: { x: { axisType: 3 }, y: { axisType: 4 } }
-							},
-							classic: {
-								buttonA: 2, buttonB: 1, buttonX: 4, buttonY: 3,
-								buttonL: 7, buttonR: 8, buttonZL: 9, buttonZR: 10,
-								buttonMinus: 5, buttonPlus: 6, buttonHome: 13
-							},
-							guitar: {
-								buttonGreen: 1, buttonRed: 2, buttonYellow: 4, buttonBlue: 3, buttonOrange: 7, buttonPedal: 9, buttonMinus: 5, buttonPlus: 6,
-								strumUp: 65537, strumDown: 131074,
-								stick: { x: { axisType: 1 }, y: { axisType: 2 } },
-								whammyBar: { axisType: 5 }
-							},
-							// ドラム、ターンテーブル、タイコもFormikが要求する型を完全維持して間引きを防止
-							drum: {
-								buttonRed: 0, buttonBlue: 0, buttonGreen: 0, buttonYellow: 0, buttonOrange: 0, buttonBass: 0, buttonMinus: 0, buttonPlus: 0,
-								stick: { x: { axisType: 0 }, y: { axisType: 0 } }
-							},
-							turntable: {
-								buttonLeftGreen: 0, buttonLeftRed: 0, buttonLeftBlue: 0, buttonRightGreen: 0, buttonRightRed: 0, buttonRightBlue: 0, buttonCrossfader: 0,
-								stick: { x: { axisType: 0 }, y: { axisType: 0 } }
-							},
-							taiko: {
-								buttonDonLeft: 0, buttonKatLeft: 0, buttonDonRight: 0, buttonKatRight: 0
-							}
-						}
-					},
-					// 2. リアクティブLEDアドオンの初期値を物理ピン・フェード仕様に強制適用
-					reactiveLEDOptions: {
-						enabled: 1,
-						leds: [
-							// modeDown(押した時): 3=FADE_OUT(消える) / modeUp(離した時): 2=FADE_IN(じんわり光る)
-							{ pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
-							{ pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
-							{ pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
-							{ pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
-						]
-					}
-				}
-			}}
-		>
+		<Formik enableReinitialize={true} validationSchema={schema} onSubmit={onSuccess} initialValues={DEFAULT_VALUES}>
 			{({ handleSubmit, handleChange, values, errors, setFieldValue }) => (
 				<Form noValidate onSubmit={handleSubmit}>
+
 					<h1>{t('AddonsConfig:header-text')}</h1>
 					<p>{t('AddonsConfig:sub-header-text')}</p>
 					{ADDONS.map((Addon, index) => (
