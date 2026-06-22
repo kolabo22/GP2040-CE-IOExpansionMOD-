@@ -467,56 +467,58 @@ async function getAddonsOptions(setLoading) {
       // 1. 強制ON
       response.data.wiiOptions.enabled = 1;
 
-      // 2. コントローラー設定が空、またはクラコンのAが未設定(0)の場合、100%強制的に初期アサインを展開する
+      // 2. 初期状態を検知した場合に、既存の枠組みを壊さずピンポイントで数値を上書き
       if (
         !response.data.wiiOptions.controllers || 
         !response.data.wiiOptions.controllers.classic || 
-        response.data.wiiOptions.controllers.classic.buttonA === 0 || 
+        response.data.wiiOptions.controllers.classic.buttonA === 0 ||
         response.data.wiiOptions.controllers.classic.buttonA === undefined
       ) {
-        // 構造を根底から完全に上書き構築する
-        response.data.wiiOptions.controllers = {
-          nunchuk: {
-            buttonZ: 1,
-            buttonC: 2,
-            stick: {
-              x: { axisType: 3 },
-              y: { axisType: 4 }
-            }
-          },
-          classic: {
-            buttonA: 2,
-            buttonB: 1,
-            buttonX: 4,
-            buttonY: 3,
-            buttonL: 7,
-            buttonR: 8,
-            buttonZL: 9,
-            buttonZR: 10,
-            buttonMinus: 5,
-            buttonPlus: 6,
-            buttonHome: 13
-          },
-          guitar: {
-            buttonGreen: 1,
-            buttonRed: 2,
-            buttonYellow: 4,
-            buttonBlue: 3,
-            buttonOrange: 7,
-            buttonPedal: 9,
-            buttonMinus: 5,
-            buttonPlus: 6,
-            strumUp: 65537,
-            strumDown: 131074,
-            stick: {
-              x: { axisType: 1 },
-              y: { axisType: 2 }
-            },
-            whammyBar: { axisType: 5 }
-          }
-        };
+        // 階層がなければ安全に作成
+        if (!response.data.wiiOptions.controllers) response.data.wiiOptions.controllers = {};
+        
+        // A. ヌンチャク設定のピンポイント注入（既存の型を壊さない）
+        if (!response.data.wiiOptions.controllers.nunchuk) response.data.wiiOptions.controllers.nunchuk = {};
+        if (!response.data.wiiOptions.controllers.nunchuk.stick) response.data.wiiOptions.controllers.nunchuk.stick = { x: {}, y: {} };
+        response.data.wiiOptions.controllers.nunchuk.buttonZ = 1;
+        response.data.wiiOptions.controllers.nunchuk.buttonC = 2;
+        response.data.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
+        response.data.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
+
+        // B. クラシックコントローラー設定のピンポイント注入
+        if (!response.data.wiiOptions.controllers.classic) response.data.wiiOptions.controllers.classic = {};
+        response.data.wiiOptions.controllers.classic.buttonA = 2;
+        response.data.wiiOptions.controllers.classic.buttonB = 1;
+        response.data.wiiOptions.controllers.classic.buttonX = 4;
+        response.data.wiiOptions.controllers.classic.buttonY = 3;
+        response.data.wiiOptions.controllers.classic.buttonL = 7;
+        response.data.wiiOptions.controllers.classic.buttonR = 8;
+        response.data.wiiOptions.controllers.classic.buttonZL = 9;
+        response.data.wiiOptions.controllers.classic.buttonZR = 10;
+        response.data.wiiOptions.controllers.classic.buttonMinus = 5;
+        response.data.wiiOptions.controllers.classic.buttonPlus = 6;
+        response.data.wiiOptions.controllers.classic.buttonHome = 13;
+
+        // C. ギターコントローラー設定のピンポイント注入
+        if (!response.data.wiiOptions.controllers.guitar) response.data.wiiOptions.controllers.guitar = {};
+        if (!response.data.wiiOptions.controllers.guitar.stick) response.data.wiiOptions.controllers.guitar.stick = { x: {}, y: {} };
+        if (!response.data.wiiOptions.controllers.guitar.whammyBar) response.data.wiiOptions.controllers.guitar.whammyBar = {};
+        response.data.wiiOptions.controllers.guitar.buttonGreen = 1;
+        response.data.wiiOptions.controllers.guitar.buttonRed = 2;
+        response.data.wiiOptions.controllers.guitar.buttonYellow = 4;
+        response.data.wiiOptions.controllers.guitar.buttonBlue = 3;
+        response.data.wiiOptions.controllers.guitar.buttonOrange = 7;
+        response.data.wiiOptions.controllers.guitar.buttonPedal = 9;
+        response.data.wiiOptions.controllers.guitar.buttonMinus = 5;
+        response.data.wiiOptions.controllers.guitar.buttonPlus = 6;
+        response.data.wiiOptions.controllers.guitar.strumUp = 65537;
+        response.data.wiiOptions.controllers.guitar.strumDown = 131074;
+        response.data.wiiOptions.controllers.guitar.stick.x.axisType = 1;
+        response.data.wiiOptions.controllers.guitar.stick.y.axisType = 2;
+        response.data.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
       }
     }
+
 
     // ==========================================================
 
