@@ -467,49 +467,57 @@ async function getAddonsOptions(setLoading) {
       // 1. 強制ON
       response.data.wiiOptions.enabled = 1;
 
-      // 2. クラコンのAが0（初期状態）なら理想アサインを強制注入
-      if (!response.data.wiiOptions.controllers || response.data.wiiOptions.controllers.classic?.buttonA === 0) {
-        // オブジェクトのディープコピーと初期化を確実に実行
-        response.data.wiiOptions.controllers = response.data.wiiOptions.controllers || {};
-        response.data.wiiOptions.controllers.nunchuk = response.data.wiiOptions.controllers.nunchuk || { stick: { x: {}, y: {} } };
-        response.data.wiiOptions.controllers.classic = response.data.wiiOptions.controllers.classic || {};
-        response.data.wiiOptions.controllers.guitar = response.data.wiiOptions.controllers.guitar || { stick: { x: {}, y: {} }, whammyBar: {} };
-
-        // A. ヌンチャク
-        response.data.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
-        response.data.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
-        response.data.wiiOptions.controllers.nunchuk.buttonZ = 1;
-        response.data.wiiOptions.controllers.nunchuk.buttonC = 2;
-
-        // B. クラシックコントローラー
-        response.data.wiiOptions.controllers.classic.buttonA = 2;
-        response.data.wiiOptions.controllers.classic.buttonB = 1;
-        response.data.wiiOptions.controllers.classic.buttonX = 4;
-        response.data.wiiOptions.controllers.classic.buttonY = 3;
-        response.data.wiiOptions.controllers.classic.buttonL = 7;
-        response.data.wiiOptions.controllers.classic.buttonR = 8;
-        response.data.wiiOptions.controllers.classic.buttonZL = 9;
-        response.data.wiiOptions.controllers.classic.buttonZR = 10;
-        response.data.wiiOptions.controllers.classic.buttonMinus = 5;
-        response.data.wiiOptions.controllers.classic.buttonPlus = 6;
-        response.data.wiiOptions.controllers.classic.buttonHome = 13;
-
-        // C. ギターコントローラー
-        response.data.wiiOptions.controllers.guitar.buttonGreen = 1;
-        response.data.wiiOptions.controllers.guitar.buttonRed = 2;
-        response.data.wiiOptions.controllers.guitar.buttonYellow = 4;
-        response.data.wiiOptions.controllers.guitar.buttonBlue = 3;
-        response.data.wiiOptions.controllers.guitar.buttonOrange = 7;
-        response.data.wiiOptions.controllers.guitar.buttonPedal = 9;
-        response.data.wiiOptions.controllers.guitar.buttonMinus = 5;
-        response.data.wiiOptions.controllers.guitar.buttonPlus = 6;
-        response.data.wiiOptions.controllers.guitar.strumUp = 65537;
-        response.data.wiiOptions.controllers.guitar.strumDown = 131074;
-        response.data.wiiOptions.controllers.guitar.stick.x.axisType = 1;
-        response.data.wiiOptions.controllers.guitar.stick.y.axisType = 2;
-        response.data.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
+      // 2. コントローラー設定が空、またはクラコンのAが未設定(0)の場合、100%強制的に初期アサインを展開する
+      if (
+        !response.data.wiiOptions.controllers || 
+        !response.data.wiiOptions.controllers.classic || 
+        response.data.wiiOptions.controllers.classic.buttonA === 0 || 
+        response.data.wiiOptions.controllers.classic.buttonA === undefined
+      ) {
+        // 構造を根底から完全に上書き構築する
+        response.data.wiiOptions.controllers = {
+          nunchuk: {
+            buttonZ: 1,
+            buttonC: 2,
+            stick: {
+              x: { axisType: 3 },
+              y: { axisType: 4 }
+            }
+          },
+          classic: {
+            buttonA: 2,
+            buttonB: 1,
+            buttonX: 4,
+            buttonY: 3,
+            buttonL: 7,
+            buttonR: 8,
+            buttonZL: 9,
+            buttonZR: 10,
+            buttonMinus: 5,
+            buttonPlus: 6,
+            buttonHome: 13
+          },
+          guitar: {
+            buttonGreen: 1,
+            buttonRed: 2,
+            buttonYellow: 4,
+            buttonBlue: 3,
+            buttonOrange: 7,
+            buttonPedal: 9,
+            buttonMinus: 5,
+            buttonPlus: 6,
+            strumUp: 65537,
+            strumDown: 131074,
+            stick: {
+              x: { axisType: 1 },
+              y: { axisType: 2 }
+            },
+            whammyBar: { axisType: 5 }
+          }
+        };
       }
     }
+
     // ==========================================================
 
     const data = response.data;
@@ -633,13 +641,14 @@ async function getReactiveLEDs(setLoading) {
       // 1. 強制ON
       response.data.enabled = 1;
 
-      // 2. ピンが未設定、または配列が空、または1番目のピンが-1なら理想値を注入
-      if (!response.data.leds || response.data.leds.length === 0 || response.data.leds[0]?.pin === -1 || response.data.leds[0]?.pin === undefined) {
+      // 2. ピンが未設定、または配列が空、または1番目のピンが未指定なら、実機の物理ピンアサインを強制マージ
+      if (!response.data.leds || response.data.leds.length === 0 || response.data.leds?.pin === -1 || response.data.leds?.pin === 0 || response.data.leds?.pin === undefined) {
         response.data.leds = [
-          { pin: 10, action: 5,  modeDown: 1, modeUp: 2 }, // GP10: B1
-          { pin: 11, action: 6,  modeDown: 1, modeUp: 2 }, // GP11: B2
-          { pin: 12, action: 7,  modeDown: 1, modeUp: 2 }, // GP12: B3
-          { pin: 13, action: 8,  modeDown: 1, modeUp: 2 }  // GP13: B4
+          // modeDown(押した時): 3=FADE_OUT(消えていく) / modeUp(離した時): 2=FADE_IN(じんわり光る)
+          { pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
+          { pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
+          { pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
+          { pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
         ];
       }
     }
