@@ -812,10 +812,10 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.rotaryOptions.encoderTwo, multiplier, ENCODER_TWO_MULTIPLIER);
 
 	// ==========================================================
-	// 🛡️ MINI Super 真の実機内完結シールド（Wii＆LED同時完全展開版）
+	// 🛡️ MINI Super 真の実機内完結シールド（Wii＆LED同時完全展開版・完全修復）
 	// ==========================================================
-	// 実機が完全に初期化状態（LEDピンが-1、かつカウントが0）の瞬間だけ狙い撃ちして初期値を注入
-	if (config.addonOptions.reactiveLEDOptions.leds.pin == -1 && config.addonOptions.reactiveLEDOptions.leds_count == 0) {
+	// 実機が完全に初期化状態（1番目のLEDピンが-1、かつカウントが0）の瞬間だけ狙い撃ちして初期値を注入
+	if (config.addonOptions.reactiveLEDOptions.leds[0].pin == -1 && config.addonOptions.reactiveLEDOptions.leds_count == 0) {
 		
 		// ----------------------------------------------------------
 		// 【1】リアクティブLEDアドオンの強制展開（公式マクロ準拠）
