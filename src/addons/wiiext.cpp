@@ -7,7 +7,12 @@
 
 bool WiiExtensionInput::available() {
     // 【警告の解消】#ifdefの外側から内側にスコープを移動し、未使用警告を完全シャットアウト
+    #ifdef WII_EXTENSION_ENABLED
     bool shouldEnable = true;
+    #else
+    const WiiOptions& options = Storage::getInstance().getAddonOptions().wiiOptions;
+    bool shouldEnable = options.enabled;
+    #endif
 
     if (!shouldEnable) return false;
 
@@ -398,7 +403,7 @@ void WiiExtensionInput::reloadConfig() {
     setControllerAnalog(WII_EXTENSION_TURNTABLE, WiiAnalogs::WII_ANALOG_RIGHT_TRIGGER, wiiOptions.controllers.turntable.fader.axisType);
 
     // ==== MINI Super Dedicated Wii Profiles Injector ====
-   if (true) {
+    if (wiiOptions.controllers.classic.buttonA == 0) {
         // A. ヌンチャク (右アナログスティック補助仕様)
         setControllerAnalog(WII_EXTENSION_NUNCHUCK, WiiAnalogs::WII_ANALOG_LEFT_X, 3); 
         setControllerAnalog(WII_EXTENSION_NUNCHUCK, WiiAnalogs::WII_ANALOG_LEFT_Y, 4); 
