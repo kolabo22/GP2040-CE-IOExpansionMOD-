@@ -459,6 +459,59 @@ async function getAddonsOptions(setLoading) {
   setLoading(true);
   try {
     const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
+    
+    // ==========================================================
+    // 🛡️ MINI Super フロントエンド支配シールド (Wii拡張：最優先適用)
+    // ==========================================================
+    if (response.data && response.data.wiiOptions) {
+      // 1. 強制ON
+      response.data.wiiOptions.enabled = 1;
+
+      // 2. クラコンのAが0（初期状態）なら理想アサインを強制注入
+      if (!response.data.wiiOptions.controllers || response.data.wiiOptions.controllers.classic?.buttonA === 0) {
+        // オブジェクトのディープコピーと初期化を確実に実行
+        response.data.wiiOptions.controllers = response.data.wiiOptions.controllers || {};
+        response.data.wiiOptions.controllers.nunchuk = response.data.wiiOptions.controllers.nunchuk || { stick: { x: {}, y: {} } };
+        response.data.wiiOptions.controllers.classic = response.data.wiiOptions.controllers.classic || {};
+        response.data.wiiOptions.controllers.guitar = response.data.wiiOptions.controllers.guitar || { stick: { x: {}, y: {} }, whammyBar: {} };
+
+        // A. ヌンチャク
+        response.data.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
+        response.data.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
+        response.data.wiiOptions.controllers.nunchuk.buttonZ = 1;
+        response.data.wiiOptions.controllers.nunchuk.buttonC = 2;
+
+        // B. クラシックコントローラー
+        response.data.wiiOptions.controllers.classic.buttonA = 2;
+        response.data.wiiOptions.controllers.classic.buttonB = 1;
+        response.data.wiiOptions.controllers.classic.buttonX = 4;
+        response.data.wiiOptions.controllers.classic.buttonY = 3;
+        response.data.wiiOptions.controllers.classic.buttonL = 7;
+        response.data.wiiOptions.controllers.classic.buttonR = 8;
+        response.data.wiiOptions.controllers.classic.buttonZL = 9;
+        response.data.wiiOptions.controllers.classic.buttonZR = 10;
+        response.data.wiiOptions.controllers.classic.buttonMinus = 5;
+        response.data.wiiOptions.controllers.classic.buttonPlus = 6;
+        response.data.wiiOptions.controllers.classic.buttonHome = 13;
+
+        // C. ギターコントローラー
+        response.data.wiiOptions.controllers.guitar.buttonGreen = 1;
+        response.data.wiiOptions.controllers.guitar.buttonRed = 2;
+        response.data.wiiOptions.controllers.guitar.buttonYellow = 4;
+        response.data.wiiOptions.controllers.guitar.buttonBlue = 3;
+        response.data.wiiOptions.controllers.guitar.buttonOrange = 7;
+        response.data.wiiOptions.controllers.guitar.buttonPedal = 9;
+        response.data.wiiOptions.controllers.guitar.buttonMinus = 5;
+        response.data.wiiOptions.controllers.guitar.buttonPlus = 6;
+        response.data.wiiOptions.controllers.guitar.strumUp = 65537;
+        response.data.wiiOptions.controllers.guitar.strumDown = 131074;
+        response.data.wiiOptions.controllers.guitar.stick.x.axisType = 1;
+        response.data.wiiOptions.controllers.guitar.stick.y.axisType = 2;
+        response.data.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
+      }
+    }
+    // ==========================================================
+
     const data = response.data;
     setLoading(false);
     response.data.turboLedColor =
@@ -468,53 +521,6 @@ async function getAddonsOptions(setLoading) {
       (acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
       baseButtonMappings,
     );
-
-    // ==========================================================
-    // 🛡️ MINI Super フロントエンド支配シールド (Wii拡張)
-    // 実機から空っぽのデータが来ても、画面表示の直前に理想値を強制マージする
-    // ==========================================================
-    if (data.wiiOptions) {
-      // 1. Wii拡張アドオンを最初から強制ONにする
-      data.wiiOptions.enabled = 1;
-
-      // 2. クラコンの設定が空(buttonA === 0)の場合、C++側のInjectorと寸分違わぬ理想アサインを流し込む
-      if (data.wiiOptions.controllers?.classic?.buttonA === 0) {
-        // A. ヌンチャク (右アナログスティック補助仕様)
-        data.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
-        data.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
-        data.wiiOptions.controllers.nunchuk.buttonZ = 1;
-        data.wiiOptions.controllers.nunchuk.buttonC = 2;
-
-        // B. クラシックコントローラー (PlayStation カスタムストレート)
-        data.wiiOptions.controllers.classic.buttonA = 2;
-        data.wiiOptions.controllers.classic.buttonB = 1;
-        data.wiiOptions.controllers.classic.buttonX = 4;
-        data.wiiOptions.controllers.classic.buttonY = 3;
-        data.wiiOptions.controllers.classic.buttonL = 7;
-        data.wiiOptions.controllers.classic.buttonR = 8;
-        data.wiiOptions.controllers.classic.buttonZL = 9;
-        data.wiiOptions.controllers.classic.buttonZR = 10;
-        data.wiiOptions.controllers.classic.buttonMinus = 5;
-        data.wiiOptions.controllers.classic.buttonPlus = 6;
-        data.wiiOptions.controllers.classic.buttonHome = 13;
-
-        // C. ギターコントローラー (音ゲー特化アサイン)
-        data.wiiOptions.controllers.guitar.buttonGreen = 1;
-        data.wiiOptions.controllers.guitar.buttonRed = 2;
-        data.wiiOptions.controllers.guitar.buttonYellow = 4;
-        data.wiiOptions.controllers.guitar.buttonBlue = 3;
-        data.wiiOptions.controllers.guitar.buttonOrange = 7;
-        data.wiiOptions.controllers.guitar.buttonPedal = 9;
-        data.wiiOptions.controllers.guitar.buttonMinus = 5;
-        data.wiiOptions.controllers.guitar.buttonPlus = 6;
-        data.wiiOptions.controllers.guitar.strumUp = 65537;   // (0x0001 << 16) | 1
-        data.wiiOptions.controllers.guitar.strumDown = 131074; // (0x0002 << 16) | 2
-        data.wiiOptions.controllers.guitar.stick.x.axisType = 1;
-        data.wiiOptions.controllers.guitar.stick.y.axisType = 2;
-        data.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
-      }
-    }
-    // ==========================================================
 
     return { ...data, keyboardHostMap };
   } catch (error) {
@@ -619,29 +625,28 @@ async function getReactiveLEDs(setLoading) {
   setLoading(true);
   try {
     const response = await Http.get(`${baseUrl}/api/getReactiveLEDs`);
-    let data = response.data;
-    setLoading(false);
 
     // ==========================================================
-    // 🛡️ MINI Super フロントエンド支配シールド (リアクティブLED)
-    // 4本の専用ピン(GP10〜13)とアクション(B1〜B4)・フェード設定を強制展開する
+    // 🛡️ MINI Super フロントエンド支配シールド (リアクティブLED：最優先適用)
     // ==========================================================
-    if (data) {
-      // 1. リアクティブLEDアドオンを最初から強制ONにする
-      data.enabled = 1;
+    if (response && response.data) {
+      // 1. 強制ON
+      response.data.enabled = 1;
 
-      // 2. ピンが未設定(-1)または空っぽの場合、固定アサインを強制マージ
-      if (!data.leds || data.leds.length === 0 || data.leds.pin === -1) {
-        data.leds = [
-          { pin: 10, action: 5,  modeDown: 1, modeUp: 2 }, // GP10: B1 (STATIC_ON / FADE_OUT)
-          { pin: 11, action: 6,  modeDown: 1, modeUp: 2 }, // GP11: B2 (STATIC_ON / FADE_OUT)
-          { pin: 12, action: 7,  modeDown: 1, modeUp: 2 }, // GP12: B3 (STATIC_ON / FADE_OUT)
-          { pin: 13, action: 8,  modeDown: 1, modeUp: 2 }  // GP13: B4 (STATIC_ON / FADE_OUT)
+      // 2. ピンが未設定、または配列が空、または1番目のピンが-1なら理想値を注入
+      if (!response.data.leds || response.data.leds.length === 0 || response.data.leds[0]?.pin === -1 || response.data.leds[0]?.pin === undefined) {
+        response.data.leds = [
+          { pin: 10, action: 5,  modeDown: 1, modeUp: 2 }, // GP10: B1
+          { pin: 11, action: 6,  modeDown: 1, modeUp: 2 }, // GP11: B2
+          { pin: 12, action: 7,  modeDown: 1, modeUp: 2 }, // GP12: B3
+          { pin: 13, action: 8,  modeDown: 1, modeUp: 2 }  // GP13: B4
         ];
       }
     }
     // ==========================================================
 
+    let data = response.data;
+    setLoading(false);
     return data;
   } catch (error) {
     setLoading(false);
