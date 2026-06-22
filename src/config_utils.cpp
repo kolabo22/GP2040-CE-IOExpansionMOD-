@@ -812,31 +812,61 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.rotaryOptions.encoderTwo, multiplier, ENCODER_TWO_MULTIPLIER);
 
 	// ==========================================================
-	// 🛡️ MINI Super 真の実機内完結シールド（C++超軽量メモリ上書き・完全修復版）
+	// 🛡️ MINI Super 真の実機内完結シールド（通常代入・完全修復版）
 	// ==========================================================
 	// 1. アドオンを最初から強制ON
 	config.addonOptions.reactiveLEDOptions.enabled = true;
 	config.addonOptions.reactiveLEDOptions.has_enabled = true;
 
-	// 2. もしフラッシュが初期状態で、1番目のピンが未設定（-1）なら理想配列を丸ごとコピー
+	// 2. もしフラッシュが初期状態で、1番目のピンが未設定（-1）なら理想数値をピンポイント強制代入
 	if (config.addonOptions.reactiveLEDOptions.leds[0].pin == -1) {
-		// MINI Super専用の完璧な4行の設定データを静的に作成（タイポを完全に修復）
-		ReactiveLEDInfo miniSuperLeds[4] = {
-			{ .pin = 16, .action = GpioAction::BUTTON_PRESS_S1, .modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT, .modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN, .has_pin = true, .has_action = true, .has_modeDown = true, .has_modeUp = true }, // LED #0 ➔ GP16: S1
-			{ .pin = 22, .action = GpioAction::BUTTON_PRESS_S2, .modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT, .modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN, .has_pin = true, .has_action = true, .has_modeDown = true, .has_modeUp = true }, // LED #1 ➔ GP22: S2
-			{ .pin = 23, .action = GpioAction::BUTTON_PRESS_L3, .modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT, .modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN, .has_pin = true, .has_action = true, .has_modeDown = true, .has_modeUp = true }, // LED #2 ➔ GP23: L3
-			{ .pin = 24, .action = GpioAction::BUTTON_PRESS_R3, .modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT, .modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN, .has_pin = true, .has_action = true, .has_modeDown = true, .has_modeUp = true }  // LED #3 ➔ GP24: R3
-		};
 		
-		// メモリを直接丸ごと上書きコピー（マクロやループを使わないため、バッファ破裂は物理的に100%起きません）
-		memcpy(config.addonOptions.reactiveLEDOptions.leds, miniSuperLeds, sizeof(miniSuperLeds));
+		// LED #0 ➔ GP16: S1
+		config.addonOptions.reactiveLEDOptions.leds[0].pin = 16;
+		config.addonOptions.reactiveLEDOptions.leds[0].has_pin = true;
+		config.addonOptions.reactiveLEDOptions.leds[0].action = GpioAction::BUTTON_PRESS_S1;
+		config.addonOptions.reactiveLEDOptions.leds[0].has_action = true;
+		config.addonOptions.reactiveLEDOptions.leds[0].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
+		config.addonOptions.reactiveLEDOptions.leds[0].has_modeDown = true;
+		config.addonOptions.reactiveLEDOptions.leds[0].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
+		config.addonOptions.reactiveLEDOptions.leds[0].has_modeUp = true;
+
+		// LED #1 ➔ GP22: S2
+		config.addonOptions.reactiveLEDOptions.leds[1].pin = 22;
+		config.addonOptions.reactiveLEDOptions.leds[1].has_pin = true;
+		config.addonOptions.reactiveLEDOptions.leds[1].action = GpioAction::BUTTON_PRESS_S2;
+		config.addonOptions.reactiveLEDOptions.leds[1].has_action = true;
+		config.addonOptions.reactiveLEDOptions.leds[1].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
+		config.addonOptions.reactiveLEDOptions.leds[1].has_modeDown = true;
+		config.addonOptions.reactiveLEDOptions.leds[1].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
+		config.addonOptions.reactiveLEDOptions.leds[1].has_modeUp = true;
+
+		// LED #2 ➔ GP23: L3
+		config.addonOptions.reactiveLEDOptions.leds[2].pin = 23;
+		config.addonOptions.reactiveLEDOptions.leds[2].has_pin = true;
+		config.addonOptions.reactiveLEDOptions.leds[2].action = GpioAction::BUTTON_PRESS_L3;
+		config.addonOptions.reactiveLEDOptions.leds[2].has_action = true;
+		config.addonOptions.reactiveLEDOptions.leds[2].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
+		config.addonOptions.reactiveLEDOptions.leds[2].has_modeDown = true;
+		config.addonOptions.reactiveLEDOptions.leds[2].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
+		config.addonOptions.reactiveLEDOptions.leds[2].has_modeUp = true;
+
+		// LED #3 ➔ GP24: R3
+		config.addonOptions.reactiveLEDOptions.leds[3].pin = 24;
+		config.addonOptions.reactiveLEDOptions.leds[3].has_pin = true;
+		config.addonOptions.reactiveLEDOptions.leds[3].action = GpioAction::BUTTON_PRESS_R3;
+		config.addonOptions.reactiveLEDOptions.leds[3].has_action = true;
+		config.addonOptions.reactiveLEDOptions.leds[3].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
+		config.addonOptions.reactiveLEDOptions.leds[3].has_modeDown = true;
+		config.addonOptions.reactiveLEDOptions.leds[3].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
+		config.addonOptions.reactiveLEDOptions.leds[3].has_modeUp = true;
+
+		// 有効カウント数を 4 個にセット
 		config.addonOptions.reactiveLEDOptions.leds_count = 4;
 	} else {
 		config.addonOptions.reactiveLEDOptions.leds_count = REACTIVE_LED_COUNT;
 	}
 	// ==========================================================
-
-
 
     // addonOptions.heTriggerOptions
     INIT_UNSET_PROPERTY(config.addonOptions.heTriggerOptions, enabled, !!HETRIGGER_ENABLED);
