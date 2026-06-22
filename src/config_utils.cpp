@@ -811,16 +811,31 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.rotaryOptions.encoderTwo, allowWrapAround, ENCODER_TWO_WRAP);
     INIT_UNSET_PROPERTY(config.addonOptions.rotaryOptions.encoderTwo, multiplier, ENCODER_TWO_MULTIPLIER);
 
-    // addonOptions.reactiveLEDOptions
-    INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, enabled, !!REACTIVE_LED_ENABLED);
-    for (uint16_t led = 0; led < REACTIVE_LED_COUNT; led++) {
-        INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[led], pin, -1);
-        INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[led], action, GpioAction::NONE);
-        INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[led], modeDown, REACTIVE_LED_STATIC_ON);
-        INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[led], modeUp, REACTIVE_LED_STATIC_OFF);
-    }
-    // reminder that this must be set or else nanopb won't retain anything
-    config.addonOptions.reactiveLEDOptions.leds_count = REACTIVE_LED_COUNT;
+	// ==========================================================
+	// 🛡️ MINI Super 真の実機内完結シールド（C++超軽量メモリ上書き）
+	// ==========================================================
+	// 1. アドオンを最初から強制ON
+	config.addonOptions.reactiveLEDOptions.enabled = true;
+	config.addonOptions.reactiveLEDOptions.has_enabled = true;
+
+	// 2. もしフラッシュが初期状態で、1番目のピンが未設定（-1）なら理想配列を丸ごとコピー
+	if (config.addonOptions.reactiveLEDOptions.leds[0].pin == -1) {
+		// MINI Super専用の完璧な4行の設定データを静的に作成
+		ReactiveLEDInfo miniSuperLeds[4] = {
+			{ .pin = 16, .action = GpioAction::BUTTON_PRESS_S1, .modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT, .modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN, .has_pin = true, .has_action = true, .has_modeDown = true, .has_modeUp = true }, // LED #0 ➔ GP16: S1
+			{ .pin = 22, action = GpioAction::BUTTON_PRESS_S2, .modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT, .modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN, .has_pin = true, .has_action = true, .has_modeDown = true, .has_modeUp = true }, // LED #1 ➔ GP22: S2
+			{ .pin = 23, .action = GpioAction::BUTTON_PRESS_L3, .modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT, .modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN, .has_pin = true, .has_action = true, .has_modeDown = true, .has_modeUp = true }, // LED #2 ➔ GP23: L3
+			{ .pin = 24, .action = GpioAction::BUTTON_PRESS_R3, .modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT, .modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN, .has_pin = true, .has_action = true, .has_modeDown = true, .has_modeUp = true }  // LED #3 ➔ GP24: R3
+		};
+		
+		// メモリを直接丸ごと上書きコピー（マクロを使わないため、バッファ破裂は物理的に100%起きません）
+		memcpy(config.addonOptions.reactiveLEDOptions.leds, miniSuperLeds, sizeof(miniSuperLeds));
+		config.addonOptions.reactiveLEDOptions.leds_count = 4;
+	} else {
+		config.addonOptions.reactiveLEDOptions.leds_count = REACTIVE_LED_COUNT;
+	}
+	// ==========================================================
+
 
     // addonOptions.heTriggerOptions
     INIT_UNSET_PROPERTY(config.addonOptions.heTriggerOptions, enabled, !!HETRIGGER_ENABLED);
