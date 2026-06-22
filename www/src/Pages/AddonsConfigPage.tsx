@@ -97,19 +97,101 @@ const FormContext = ({ setStoredData }) => {
 	const { values, setValues } = useFormikContext();
 	const { setLoading } = useContext(AppContext);
 
-	useEffect(() => {
-		async function fetchData() {
-			const data = await WebApi.getAddonsOptions(setLoading);
-   	  
-			// ★この一行を追加して、ブラウザのコンソールで「data」の中身を見てください
-   	  console.log("Picoから届いた生データ:", data); 			
-			
-			const mergedData = { ...DEFAULT_VALUES, ...data };
-			setValues(mergedData);
-			setStoredData(JSON.parse(JSON.stringify(mergedData)));
-		}
-		fetchData();
-	}, [setValues]);
+useEffect(() => {
+async function fetchData() {
+const data = await WebApi.getAddonsOptions(setLoading);
+ 
+console.log("Pico から届いた生データ:", data); 
+const mergedData = { ...DEFAULT_VALUES, ...data };
+
+// ==========================================================
+// 🛡️ MINI Super フロントエンド支配シールド（Wii拡張 ＆ リアクティブLED）
+// ==========================================================
+
+// --- 1. Wii拡張アドオンの強制展開 ---
+if (mergedData.wiiOptions) {
+  // アドオンを最初から強制ONにする
+  mergedData.wiiOptions.enabled = 1;
+
+  // クラコンのAボタンが未設定(0)＝初期状態なら、理想アサインを安全にピンポイント注入
+  if (
+    !mergedData.wiiOptions.controllers || 
+    !mergedData.wiiOptions.controllers.classic || 
+    mergedData.wiiOptions.controllers.classic.buttonA === 0
+  ) {
+    // 階層の存在チェック（型崩れ防止の安全弁）
+    if (!mergedData.wiiOptions.controllers) mergedData.wiiOptions.controllers = {};
+    if (!mergedData.wiiOptions.controllers.nunchuk) mergedData.wiiOptions.controllers.nunchuk = {};
+    if (!mergedData.wiiOptions.controllers.nunchuk.stick) mergedData.wiiOptions.controllers.nunchuk.stick = { x: {}, y: {} };
+    if (!mergedData.wiiOptions.controllers.classic) mergedData.wiiOptions.controllers.classic = {};
+    if (!mergedData.wiiOptions.controllers.guitar) mergedData.wiiOptions.controllers.guitar = {};
+    if (!mergedData.wiiOptions.controllers.guitar.stick) mergedData.wiiOptions.controllers.guitar.stick = { x: {}, y: {} };
+    if (!mergedData.wiiOptions.controllers.guitar.whammyBar) mergedData.wiiOptions.controllers.guitar.whammyBar = {};
+
+    // A. ヌンチャク（既存の構造を壊さず値だけを代入）
+    mergedData.wiiOptions.controllers.nunchuk.buttonZ = 1;
+    mergedData.wiiOptions.controllers.nunchuk.buttonC = 2;
+    if (mergedData.wiiOptions.controllers.nunchuk.stick.x) mergedData.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
+    if (mergedData.wiiOptions.controllers.nunchuk.stick.y) mergedData.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
+
+    // B. クラシックコントローラー
+    mergedData.wiiOptions.controllers.classic.buttonA = 2;
+    mergedData.wiiOptions.controllers.classic.buttonB = 1;
+    mergedData.wiiOptions.controllers.classic.buttonX = 4;
+    mergedData.wiiOptions.controllers.classic.buttonY = 3;
+    mergedData.wiiOptions.controllers.classic.buttonL = 7;
+    mergedData.wiiOptions.controllers.classic.buttonR = 8;
+    mergedData.wiiOptions.controllers.classic.buttonZL = 9;
+    mergedData.wiiOptions.controllers.classic.buttonZR = 10;
+    mergedData.wiiOptions.controllers.classic.buttonMinus = 5;
+    mergedData.wiiOptions.controllers.classic.buttonPlus = 6;
+    mergedData.wiiOptions.controllers.classic.buttonHome = 13;
+
+    // C. ギターコントローラー
+    mergedData.wiiOptions.controllers.guitar.buttonGreen = 1;
+    mergedData.wiiOptions.controllers.guitar.buttonRed = 2;
+    mergedData.wiiOptions.controllers.guitar.buttonYellow = 4;
+    mergedData.wiiOptions.controllers.guitar.buttonBlue = 3;
+    mergedData.wiiOptions.controllers.guitar.buttonOrange = 7;
+    mergedData.wiiOptions.controllers.guitar.buttonPedal = 9;
+    mergedData.wiiOptions.controllers.guitar.buttonMinus = 5;
+    mergedData.wiiOptions.controllers.guitar.buttonPlus = 6;
+    mergedData.wiiOptions.controllers.guitar.strumUp = 65537;
+    mergedData.wiiOptions.controllers.guitar.strumDown = 131074;
+    if (mergedData.wiiOptions.controllers.guitar.stick.x) mergedData.wiiOptions.controllers.guitar.stick.x.axisType = 1;
+    if (mergedData.wiiOptions.controllers.guitar.stick.y) mergedData.wiiOptions.controllers.guitar.stick.y.axisType = 2;
+    if (mergedData.wiiOptions.controllers.guitar.whammyBar) mergedData.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
+    
+    // 【重要】ドラム、ターンテーブル、タイコ（drum, turntable, taiko）には一切触れない
+    // これにより、DEFAULT_VALUES が用意した完璧な構造がそのまま維持され、間引きが消滅します
+  }
+}
+
+// --- 2. リアクティブLEDアドオンの強制展開 ---
+if (mergedData.reactiveLEDOptions) {
+  // アドオンを最初から強制ONにする
+  mergedData.reactiveLEDOptions.enabled = 1;
+
+  // 1番目のLEDピンが未設定(0 または -1)＝初期状態なら、実機の物理ピンアサインを強制上書き
+  if (!mergedData.reactiveLEDOptions.leds || mergedData.reactiveLEDOptions.leds.length === 0 || mergedData.reactiveLEDOptions.leds[0]?.pin <= 0) {
+    mergedData.reactiveLEDOptions.leds = [
+      // modeDown(押した時): 3=FADE_OUT(消える) / modeUp(離した時): 2=FADE_IN(じんわり光る)
+      { pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
+      { pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
+      { pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
+      { pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
+    ];
+  }
+}
+
+// ==========================================================
+
+setValues(mergedData);
+setStoredData(JSON.parse(JSON.stringify(mergedData)));
+}
+fetchData();
+}, [setValues]);
+
 
 	useEffect(() => {
 		sanitizeData(values);
