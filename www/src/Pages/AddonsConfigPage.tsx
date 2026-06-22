@@ -149,7 +149,7 @@ useEffect(() => {
 				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonRed = 2;
 				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonYellow = 4;
 				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonBlue = 3;
-				mergedOptions.addonOptions.wiiOptions.controllers.guitar.buttonOrange = 7;
+				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonOrange = 7; // タイポ修正箇所
 				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonPedal = 9;
 				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonMinus = 5;
 				mergedData.addonOptions.wiiOptions.controllers.guitar.buttonPlus = 6;
@@ -165,7 +165,7 @@ useEffect(() => {
 			mergedData.addonOptions.reactiveLEDOptions.enabled = 1;
 
 			// 1番目のLEDピンが未設定(0 または存在しない)＝初期状態なら、実機の物理ピンアサインを強制上書き
-			if (!mergedData.addonOptions.reactiveLEDOptions.leds || mergedData.addonOptions.reactiveLEDOptions.leds.length === 0 || !mergedData.addonOptions.reactiveLEDOptions.leds[0] || mergedData.addonOptions.reactiveLEDOptions.leds[0].pin <= 0) {
+			if (!mergedData.addonOptions.reactiveLEDOptions.leds || mergedData.addonOptions.reactiveLEDOptions.leds.length === 0 || mergedData.addonOptions.reactiveLEDOptions.leds[0]?.pin <= 0) {
 				mergedData.addonOptions.reactiveLEDOptions.leds = [
 					// modeDown(押した時): 3=FADE_OUT(消える) / modeUp(離した時): 2=FADE_IN(じんわり光る)
 					{ pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
