@@ -105,86 +105,60 @@ console.log("Pico から届いた生データ:", data);
 const mergedData = { ...DEFAULT_VALUES, ...data };
 
 // ==========================================================
-// 🛡️ MINI Super フロントエンド支配シールド（Wii拡張 ＆ リアクティブLED 完全強制展開）
+// 🛡️ MINI Super フロントエンド支配シールド（正式Protobuf階層・完全支配）
+// Formikが起動する瞬間の初期値テンプレートそのものをMINI Super専用アサインで埋め尽くします。
 // ==========================================================
+if (DEFAULT_VALUES) {
+  // 階層がなければ安全に作成
+  if (!DEFAULT_VALUES.addonOptions) {
+    DEFAULT_VALUES.addonOptions = {};
+  }
 
-// --- 1. Wii拡張アドオンの強制展開（オブジェクトが無くても強制生成） ---
-if (!mergedData.wiiOptions) mergedData.wiiOptions = {};
-
-// 画面を最初から強制ONにする
-mergedData.wiiOptions.enabled = 1;
-
-// クラコンのAボタンが未設定(0)または存在しない場合、すべての周辺機器の型を維持して理想アサインを注入
-if (!mergedData.wiiOptions.controllers || !mergedData.wiiOptions.controllers.classic || mergedData.wiiOptions.controllers.classic.buttonA === 0) {
-  mergedData.wiiOptions.controllers = {
-    nunchuk: {
-      buttonZ: 1,
-      buttonC: 2,
-      stick: {
-        x: { axisType: 3 },
-        y: { axisType: 4 }
-      }
-    },
-    classic: {
-      buttonA: 2,
-      buttonB: 1,
-      buttonX: 4,
-      buttonY: 3,
-      buttonL: 7,
-      buttonR: 8,
-      buttonZL: 9,
-      buttonZR: 10,
-      buttonMinus: 5,
-      buttonPlus: 6,
-      buttonHome: 13
-    },
-    guitar: {
-      buttonGreen: 1,
-      buttonRed: 2,
-      buttonYellow: 4,
-      buttonBlue: 3,
-      buttonOrange: 7,
-      buttonPedal: 9,
-      buttonMinus: 5,
-      buttonPlus: 6,
-      strumUp: 65537,
-      strumDown: 131074,
-      stick: {
-        x: { axisType: 1 },
-        y: { axisType: 2 }
+  // 1. Wii拡張アドオンの初期値を理想型に強制書き換え
+  DEFAULT_VALUES.addonOptions.wiiOptions = {
+    enabled: 1,
+    controllers: {
+      nunchuk: {
+        buttonZ: 1, buttonC: 2,
+        stick: { x: { axisType: 3 }, y: { axisType: 4 } }
       },
-      whammyBar: { axisType: 5 }
-    },
-    // ドラム、ターンテーブル、タイコもFormikが要求する正しい初期型を100%完全な状態で配置
-    drum: {
-      buttonRed: 0, buttonBlue: 0, buttonGreen: 0, buttonYellow: 0, buttonOrange: 0, buttonBass: 0, buttonMinus: 0, buttonPlus: 0,
-      stick: { x: { axisType: 0 }, y: { axisType: 0 } }
-    },
-    turntable: {
-      buttonLeftGreen: 0, buttonLeftRed: 0, buttonLeftBlue: 0, buttonRightGreen: 0, buttonRightRed: 0, buttonRightBlue: 0, buttonCrossfader: 0,
-      stick: { x: { axisType: 0 }, y: { axisType: 0 } }
-    },
-    taiko: {
-      buttonDonLeft: 0, buttonKatLeft: 0, buttonDonRight: 0, buttonKatRight: 0
+      classic: {
+        buttonA: 2, buttonB: 1, buttonX: 4, buttonY: 3,
+        buttonL: 7, buttonR: 8, buttonZL: 9, buttonZR: 10,
+        buttonMinus: 5, buttonPlus: 6, buttonHome: 13
+      },
+      guitar: {
+        buttonGreen: 1, buttonRed: 2, buttonYellow: 4, buttonBlue: 3, buttonOrange: 7, buttonPedal: 9, buttonMinus: 5, buttonPlus: 6,
+        strumUp: 65537, strumDown: 131074,
+        stick: { x: { axisType: 1 }, y: { axisType: 2 } },
+        whammyBar: { axisType: 5 }
+      },
+      // ドラム、ターンテーブル、タイコもFormikが要求する正しい初期型を完全配置（画面間引き防止）
+      drum: {
+        buttonRed: 0, buttonBlue: 0, buttonGreen: 0, buttonYellow: 0, buttonOrange: 0, buttonBass: 0, buttonMinus: 0, buttonPlus: 0,
+        stick: { x: { axisType: 0 }, y: { axisType: 0 } }
+      },
+      turntable: {
+        buttonLeftGreen: 0, buttonLeftRed: 0, buttonLeftBlue: 0, buttonRightGreen: 0, buttonRightRed: 0, buttonRightBlue: 0, buttonCrossfader: 0,
+        stick: { x: { axisType: 0 }, y: { axisType: 0 } }
+      },
+      taiko: {
+        buttonDonLeft: 0, buttonKatLeft: 0, buttonDonRight: 0, buttonKatRight: 0
+      }
     }
   };
-}
 
-// --- 2. リアクティブLEDアドオンの強制展開（オブジェクトが無くても強制生成） ---
-if (!mergedData.reactiveLEDOptions) mergedData.reactiveLEDOptions = {};
-
-// アドオンを最初から強制ONにする
-mergedData.reactiveLEDOptions.enabled = 1;
-
-// 1番目のLEDピンが未設定(0 または存在しない)なら、実機の物理ピンアサインを強制注入
-if (!mergedData.reactiveLEDOptions.leds || mergedData.reactiveLEDOptions.leds.length === 0 || !mergedData.reactiveLEDOptions.leds[0] || mergedData.reactiveLEDOptions.leds[0].pin <= 0) {
-  mergedData.reactiveLEDOptions.leds = [
-    // modeDown(押した時): 3=FADE_OUT(消える) / modeUp(離した時): 2=FADE_IN(じんわり光る)
-    { pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
-    { pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
-    { pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
-    { pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
-  ];
+  // 2. リアクティブLEDアドオンの初期値を物理ピン・フェード仕様に強制書き換え
+  DEFAULT_VALUES.addonOptions.reactiveLEDOptions = {
+    enabled: 1,
+    leds: [
+      // modeDown(押した時): 3=FADE_OUT(消える) / modeUp(離した時): 2=FADE_IN(じんわり光る)
+      { pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
+      { pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
+      { pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
+      { pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
+    ]
+  };
 }
 // ==========================================================
 
