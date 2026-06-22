@@ -818,55 +818,33 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 	config.addonOptions.reactiveLEDOptions.enabled = true;
 	config.addonOptions.reactiveLEDOptions.has_enabled = true;
 
-	// 2. もしフラッシュが初期状態で、1番目のピンが未設定（-1）なら理想数値をピンポイント強制代入
-	if (config.addonOptions.reactiveLEDOptions.leds[0].pin == -1) {
-		
-		// LED #0 ➔ GP16: S1
-		config.addonOptions.reactiveLEDOptions.leds[0].pin = 16;
-		config.addonOptions.reactiveLEDOptions.leds[0].has_pin = true;
-		config.addonOptions.reactiveLEDOptions.leds[0].action = GpioAction::BUTTON_PRESS_S1;
-		config.addonOptions.reactiveLEDOptions.leds[0].has_action = true;
-		config.addonOptions.reactiveLEDOptions.leds[0].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
-		config.addonOptions.reactiveLEDOptions.leds[0].has_modeDown = true;
-		config.addonOptions.reactiveLEDOptions.leds[0].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
-		config.addonOptions.reactiveLEDOptions.leds[0].has_modeUp = true;
-
-		// LED #1 ➔ GP22: S2
-		config.addonOptions.reactiveLEDOptions.leds[1].pin = 22;
-		config.addonOptions.reactiveLEDOptions.leds[1].has_pin = true;
-		config.addonOptions.reactiveLEDOptions.leds[1].action = GpioAction::BUTTON_PRESS_S2;
-		config.addonOptions.reactiveLEDOptions.leds[1].has_action = true;
-		config.addonOptions.reactiveLEDOptions.leds[1].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
-		config.addonOptions.reactiveLEDOptions.leds[1].has_modeDown = true;
-		config.addonOptions.reactiveLEDOptions.leds[1].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
-		config.addonOptions.reactiveLEDOptions.leds[1].has_modeUp = true;
-
-		// LED #2 ➔ GP23: L3
-		config.addonOptions.reactiveLEDOptions.leds[2].pin = 23;
-		config.addonOptions.reactiveLEDOptions.leds[2].has_pin = true;
-		config.addonOptions.reactiveLEDOptions.leds[2].action = GpioAction::BUTTON_PRESS_L3;
-		config.addonOptions.reactiveLEDOptions.leds[2].has_action = true;
-		config.addonOptions.reactiveLEDOptions.leds[2].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
-		config.addonOptions.reactiveLEDOptions.leds[2].has_modeDown = true;
-		config.addonOptions.reactiveLEDOptions.leds[2].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
-		config.addonOptions.reactiveLEDOptions.leds[2].has_modeUp = true;
-
-		// LED #3 ➔ GP24: R3
-		config.addonOptions.reactiveLEDOptions.leds[3].pin = 24;
-		config.addonOptions.reactiveLEDOptions.leds[3].has_pin = true;
-		config.addonOptions.reactiveLEDOptions.leds[3].action = GpioAction::BUTTON_PRESS_R3;
-		config.addonOptions.reactiveLEDOptions.leds[3].has_action = true;
-		config.addonOptions.reactiveLEDOptions.leds[3].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
-		config.addonOptions.reactiveLEDOptions.leds[3].has_modeDown = true;
-		config.addonOptions.reactiveLEDOptions.leds[3].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
-		config.addonOptions.reactiveLEDOptions.leds[3].has_modeUp = true;
-
-		// 有効カウント数を 4 個にセット
-		config.addonOptions.reactiveLEDOptions.leds_count = 4;
-	} else {
-		config.addonOptions.reactiveLEDOptions.leds_count = REACTIVE_LED_COUNT;
-	}
 	// ==========================================================
+	// 🛡️ MINI Super 真の実機内完結シールド（配列インデックス完全修復版）
+	// ==========================================================
+	// 1. アドオンを最初から強制ON
+	INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.enabled, true);
+
+	// MINI Super専用の物理ピン配列と対応アクション、フェードモードの静的定義
+	const int32_t MINI_SUPER_PINS[4] = {16, 22, 23, 24};
+	const GpioAction MINI_SUPER_ACTIONS[4] = {
+		GpioAction::BUTTON_PRESS_S1,
+		GpioAction::BUTTON_PRESS_S2,
+		GpioAction::BUTTON_PRESS_L3,
+		GpioAction::BUTTON_PRESS_R3
+	};
+
+	// 2. 公式マクロを使って、4つの配列要素へ安全かつ正確に初期値を展開
+	for (uint16_t i = 0; i < 4; i++) {
+		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i].pin, MINI_SUPER_PINS[i]);
+		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i].action, MINI_SUPER_ACTIONS[i]);
+		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i].modeDown, ReactiveLEDMode::REACTIVE_LED_FADE_OUT); // 3 (押して消える)
+		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i].modeUp, ReactiveLEDMode::REACTIVE_LED_FADE_IN);   // 2 (離してじんわり)
+	}
+
+	// Nanopbに配列の有効要素数が「4個」であることを正確に通知
+	config.addonOptions.reactiveLEDOptions.leds_count = 4;
+	// ==========================================================
+
 
     // addonOptions.heTriggerOptions
     INIT_UNSET_PROPERTY(config.addonOptions.heTriggerOptions, enabled, !!HETRIGGER_ENABLED);
