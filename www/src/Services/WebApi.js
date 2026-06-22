@@ -477,7 +477,7 @@ async function getAddonsOptions(setLoading) {
         // 階層がなければ安全に作成
         if (!response.data.wiiOptions.controllers) response.data.wiiOptions.controllers = {};
         
-        // A. ヌンチャク設定のピンポイント注入（既存の型を壊さない）
+        // A. ヌンチャク設定のピンポイント注入
         if (!response.data.wiiOptions.controllers.nunchuk) response.data.wiiOptions.controllers.nunchuk = {};
         if (!response.data.wiiOptions.controllers.nunchuk.stick) response.data.wiiOptions.controllers.nunchuk.stick = { x: {}, y: {} };
         response.data.wiiOptions.controllers.nunchuk.buttonZ = 1;
@@ -516,9 +516,23 @@ async function getAddonsOptions(setLoading) {
         response.data.wiiOptions.controllers.guitar.stick.x.axisType = 1;
         response.data.wiiOptions.controllers.guitar.stick.y.axisType = 2;
         response.data.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
+
+        // D. ドラム設定の安全確保（型崩れ防止）
+        if (!response.data.wiiOptions.controllers.drum) {
+          response.data.wiiOptions.controllers.drum = { stick: { x: {}, y: {} } };
+        }
+
+        // E. ターンテーブル設定の安全確保（型崩れ防止）
+        if (!response.data.wiiOptions.controllers.turntable) {
+          response.data.wiiOptions.controllers.turntable = { stick: { x: {}, y: {} } };
+        }
+
+        // F. タイコ設定の安全確保（型崩れ防止）
+        if (!response.data.wiiOptions.controllers.taiko) {
+          response.data.wiiOptions.controllers.taiko = {};
+        }
       }
     }
-
 
     // ==========================================================
 
