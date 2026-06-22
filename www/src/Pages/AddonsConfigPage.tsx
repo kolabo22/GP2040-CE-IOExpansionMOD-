@@ -244,3 +244,29 @@ export default function AddonsConfigPage() {
 		>
 			{({ handleSubmit, handleChange, values, errors, setFieldValue }) => (
 				<Form noValidate onSubmit={handleSubmit}>
+					<h1>{t('AddonsConfig:header-text')}</h1>
+					<p>{t('AddonsConfig:sub-header-text')}</p>
+					{ADDONS.map((Addon, index) => (
+						<Addon
+							key={`addon-${index}`}
+							values={values}
+							errors={errors}
+							handleChange={handleChange}
+							handleCheckbox={(name: string) => {
+								const currentValue = get(values, name);
+								setFieldValue(name, currentValue === 1 ? 0 : 1);
+							}}
+							setFieldValue={setFieldValue}
+						/>
+					))}
+					<div className="mt-3">
+						<Button type="submit" id="save">
+							{t('Common:button-save-label')}
+						</Button>
+						{saveMessage ? <span className="alert">{saveMessage}</span> : null}
+					</div>
+					<FormContext setStoredData={setStoredData} />
+				</Form>
+			)}
+		</Formik>
+	);
