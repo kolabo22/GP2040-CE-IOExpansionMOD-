@@ -456,105 +456,28 @@ async function setKeyMappings(mappings) {
 }
 
 async function getAddonsOptions(setLoading) {
-  setLoading(true);
-  try {
-    const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
-    
-    // ==========================================================
-    // 🛡️ MINI Super フロントエンド支配シールド (Wii拡張：最優先適用)
-    // ==========================================================
-    if (response.data && response.data.wiiOptions) {
-      // 1. 強制ON
-      response.data.wiiOptions.enabled = 1;
+	setLoading(true);
 
-      // 2. 初期状態を検知した場合に、既存の枠組みを壊さずピンポイントで数値を上書き
-      if (
-        !response.data.wiiOptions.controllers || 
-        !response.data.wiiOptions.controllers.classic || 
-        response.data.wiiOptions.controllers.classic.buttonA === 0 ||
-        response.data.wiiOptions.controllers.classic.buttonA === undefined
-      ) {
-        // 階層がなければ安全に作成
-        if (!response.data.wiiOptions.controllers) response.data.wiiOptions.controllers = {};
-        
-        // A. ヌンチャク設定のピンポイント注入
-        if (!response.data.wiiOptions.controllers.nunchuk) response.data.wiiOptions.controllers.nunchuk = {};
-        if (!response.data.wiiOptions.controllers.nunchuk.stick) response.data.wiiOptions.controllers.nunchuk.stick = { x: {}, y: {} };
-        response.data.wiiOptions.controllers.nunchuk.buttonZ = 1;
-        response.data.wiiOptions.controllers.nunchuk.buttonC = 2;
-        response.data.wiiOptions.controllers.nunchuk.stick.x.axisType = 3;
-        response.data.wiiOptions.controllers.nunchuk.stick.y.axisType = 4;
+	try {
+		const response = await Http.get(`${baseUrl}/api/getAddonsOptions`);
+		const data = response.data;
+		setLoading(false);
 
-        // B. クラシックコントローラー設定のピンポイント注入
-        if (!response.data.wiiOptions.controllers.classic) response.data.wiiOptions.controllers.classic = {};
-        response.data.wiiOptions.controllers.classic.buttonA = 2;
-        response.data.wiiOptions.controllers.classic.buttonB = 1;
-        response.data.wiiOptions.controllers.classic.buttonX = 4;
-        response.data.wiiOptions.controllers.classic.buttonY = 3;
-        response.data.wiiOptions.controllers.classic.buttonL = 7;
-        response.data.wiiOptions.controllers.classic.buttonR = 8;
-        response.data.wiiOptions.controllers.classic.buttonZL = 9;
-        response.data.wiiOptions.controllers.classic.buttonZR = 10;
-        response.data.wiiOptions.controllers.classic.buttonMinus = 5;
-        response.data.wiiOptions.controllers.classic.buttonPlus = 6;
-        response.data.wiiOptions.controllers.classic.buttonHome = 13;
+		response.data.turboLedColor =
+			rgbIntToHex(response.data.turboLedColor) || '#ffffff';
 
-        // C. ギターコントローラー設定のピンポイント注入
-        if (!response.data.wiiOptions.controllers.guitar) response.data.wiiOptions.controllers.guitar = {};
-        if (!response.data.wiiOptions.controllers.guitar.stick) response.data.wiiOptions.controllers.guitar.stick = { x: {}, y: {} };
-        if (!response.data.wiiOptions.controllers.guitar.whammyBar) response.data.wiiOptions.controllers.guitar.whammyBar = {};
-        response.data.wiiOptions.controllers.guitar.buttonGreen = 1;
-        response.data.wiiOptions.controllers.guitar.buttonRed = 2;
-        response.data.wiiOptions.controllers.guitar.buttonYellow = 4;
-        response.data.wiiOptions.controllers.guitar.buttonBlue = 3;
-        response.data.wiiOptions.controllers.guitar.buttonOrange = 7;
-        response.data.wiiOptions.controllers.guitar.buttonPedal = 9;
-        response.data.wiiOptions.controllers.guitar.buttonMinus = 5;
-        response.data.wiiOptions.controllers.guitar.buttonPlus = 6;
-        response.data.wiiOptions.controllers.guitar.strumUp = 65537;
-        response.data.wiiOptions.controllers.guitar.strumDown = 131074;
-        response.data.wiiOptions.controllers.guitar.stick.x.axisType = 1;
-        response.data.wiiOptions.controllers.guitar.stick.y.axisType = 2;
-        response.data.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
+		// Merge saved keyMappings with defaults
+		const keyboardHostMap = Object.entries(data.keyboardHostMap).reduce(
+			(acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
+			baseButtonMappings,
+		);
 
-        // D. ドラム設定の安全確保（型崩れ防止・画面白紙化ガード）
-        if (!response.data.wiiOptions.controllers.drum) {
-          response.data.wiiOptions.controllers.drum = { stick: { x: {}, y: {} } };
-        }
-
-        // E. ターンテーブル設定の安全確保（型崩れ防止・画面白紙化ガード）
-        if (!response.data.wiiOptions.controllers.turntable) {
-          response.data.wiiOptions.controllers.turntable = { stick: { x: {}, y: {} } };
-        }
-
-        // F. タイコ設定の安全確保（型崩れ防止・画面白紙化ガード）
-        if (!response.data.wiiOptions.controllers.taiko) {
-          response.data.wiiOptions.controllers.taiko = {};
-        }
-      }
-    }
-
-
-
-    // ==========================================================
-
-    const data = response.data;
-    setLoading(false);
-    response.data.turboLedColor =
-      rgbIntToHex(response.data.turboLedColor) || '#ffffff';
-    // Merge saved keyMappings with defaults
-    const keyboardHostMap = Object.entries(data.keyboardHostMap).reduce(
-      (acc, [key, value]) => ({ ...acc, [key]: { ...acc[key], key: value } }),
-      baseButtonMappings,
-    );
-
-    return { ...data, keyboardHostMap };
-  } catch (error) {
-    setLoading(false);
-    console.error(error);
-  }
+		return { ...data, keyboardHostMap };
+	} catch (error) {
+		setLoading(false);
+		console.error(error);
+	}
 }
-
 
 async function setAddonsOptions(options) {
 	if (options.keyboardHostMap) {
@@ -648,55 +571,14 @@ async function setWiiControls(mappings) {
 }
 
 async function getReactiveLEDs(setLoading) {
-  setLoading(true);
-  try {
-    const response = await Http.get(`${baseUrl}/api/getReactiveLEDs`);
-
-    // ==========================================================
-    // 🛡️ MINI Super フロントエンド支配シールド (リアクティブLED：物理ピン完全準拠)
-    // ==========================================================
-    if (response && response.data) {
-      // 1. 強制ON
-      response.data.enabled = 1;
-
-      // 2. ピンが未設定、または配列が空、または1番目のピンが未指定なら、実機の物理ピンアサイン数値を注入
-      if (!response.data.leds || response.data.leds.length === 0 || response.data.leds.pin === -1 || response.data.leds.pin === 0 || response.data.leds.pin === undefined) {
-        response.data.leds = [
-          // modeDown(押した時): 3=FADE_OUT(消える) / modeUp(離した時): 2=FADE_IN(じんわり光る)
-          { pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
-          { pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
-          { pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
-          { pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
-        ];
-      } else {
-        // すでに有効な設定が入っている場合も、型崩れを防ぐために安全にクリーニング
-        response.data.leds = response.data.leds.map((led, index) => {
-          const defaults = [
-            { pin: 16, action: 13, modeDown: 3, modeUp: 2 },
-            { pin: 22, action: 14, modeDown: 3, modeUp: 2 },
-            { pin: 23, action: 17, modeDown: 3, modeUp: 2 },
-            { pin: 24, action: 18, modeDown: 3, modeUp: 2 }
-          ];
-          return {
-            pin: led.pin !== undefined && led.pin !== -1 ? led.pin : defaults[index].pin,
-            action: led.action !== undefined ? led.action : defaults[index].action,
-            modeDown: led.modeDown !== undefined ? led.modeDown : defaults[index].modeDown,
-            modeUp: led.modeUp !== undefined ? led.modeUp : defaults[index].modeUp
-          };
-        });
-      }
-    }
-    // ==========================================================
-
-    let data = response.data;
-    setLoading(false);
-    return data;
-  } catch (error) {
-    setLoading(false);
-    console.error(error);
-  }
+	setLoading(true);
+	try {
+		const response = await Http.get(`${baseUrl}/api/getReactiveLEDs`);
+		return response.data;
+	} catch (error) {
+		console.error(error);
+	}
 }
-
 
 async function setReactiveLEDs(leds) {
 	console.dir(leds);
