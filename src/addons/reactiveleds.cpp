@@ -5,30 +5,29 @@
 #include "helper.h"
 #include "config.pb.h"
 
-// ====================================================
-// MINI Super 専用：リアクティブLED 初期値防衛シールド
-// ====================================================
-
 bool ReactiveLEDAddon::available() {
-    // セーブデータが空（バニラ）でも常にアドオンを強制有効化
-    return true; 
+    bool pinsEnabled = false;
+    const ReactiveLEDOptions& options = Storage::getInstance().getAddonOptions().reactiveLEDOptions;
+    for (uint8_t led = 0; led < REACTIVE_LED_COUNT; led++) {
+        if (isValidPin(options.leds[led].pin)) {
+            pinsEnabled = true;
+            break;
+        }
+    }
+    return options.enabled && pinsEnabled;
 }
 
 void ReactiveLEDAddon::setup() {
-    // ➔ ここでMINI Super専用の初期ピン・ボタンアサインを強制セット！
-    ledPins[0].pinNumber = 16; ledPins[0].action = GpioAction::BUTTON_PRESS_S1;
-    ledPins[1].pinNumber = 22; ledPins[1].action = GpioAction::BUTTON_PRESS_S2;
-    ledPins[2].pinNumber = 23; ledPins[2].action = GpioAction::BUTTON_PRESS_L3;
-    ledPins[3].pinNumber = 24; ledPins[3].action = GpioAction::BUTTON_PRESS_R3;
+    const ReactiveLEDOptions& options = Storage::getInstance().getAddonOptions().reactiveLEDOptions;
 
-    // 初期状態の動作モード（フェードイン / フェードアウト）を強制指定
-    for (uint8_t i = 0; i < 4; i++) {
-        ledPins[i].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_IN;
-        ledPins[i].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_OUT;
-    }
-
-    // 元のPWM初期化処理（全維持・触りません）
     for (uint8_t led = 0; led < REACTIVE_LED_COUNT; led++) {
+        ReactiveLEDInfo ledInfo = options.leds[led];
+
+        ledPins[led].pinNumber = ledInfo.pin;
+        ledPins[led].action = ledInfo.action;
+        ledPins[led].modeDown = ledInfo.modeDown;
+        ledPins[led].modeUp = ledInfo.modeUp;
+
         if (isValidPin(ledPins[led].pinNumber)) {
             gpio_init(ledPins[led].pinNumber);
             gpio_set_dir(ledPins[led].pinNumber, GPIO_OUT);
@@ -43,6 +42,7 @@ void ReactiveLEDAddon::setup() {
         }
     }
 }
+
 void ReactiveLEDAddon::process() {
     Gamepad * gamepad = Storage::getInstance().GetProcessedGamepad();
 
