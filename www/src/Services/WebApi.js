@@ -534,6 +534,7 @@ async function getAddonsOptions(setLoading) {
       }
     }
 
+
     // ==========================================================
 
     const data = response.data;
@@ -653,21 +654,41 @@ async function getReactiveLEDs(setLoading) {
     // ==========================================================
     // 🛡️ MINI Super フロントエンド支配シールド (リアクティブLED：最優先適用)
     // ==========================================================
-    if (response && response.data) {
-      // 1. 強制ON
-      response.data.enabled = 1;
+    // 完全にディープコピーして実機データとの「不意な連動」を遮断
+    let data = response.data ? JSON.parse(JSON.stringify(response.data)) : {};
+    
+    // 強制ON
+    data.enabled = 1;
 
-      // 2. ピンが未設定、または配列が空、または1番目のピンが未指定なら、実機の物理ピンアサインを強制マージ
-      if (!response.data.leds || response.data.leds.length === 0 || response.data.leds?.pin === -1 || response.data.leds?.pin === 0 || response.data.leds?.pin === undefined) {
-        response.data.leds = [
-          // modeDown(押した時): 3=FADE_OUT(消えていく) / modeUp(離した時): 2=FADE_IN(じんわり光る)
-          { pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
-          { pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
-          { pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
-          { pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
+    // leds配列が存在しない、空、または不正な値（最初の要素のpinが不正）な場合に、完全な構造を上書き
+    if (!data.leds || data.leds.length === 0 || !data.leds[0] || data.leds[0].pin === -1 || data.leds[0].pin === 0 || data.leds[0].pin === undefined) {
+      data.leds = [
+        { pin: 16, action: 13, modeDown: 3, modeUp: 2 }, // LED #0 ➔ GP16: S1
+        { pin: 22, action: 14, modeDown: 3, modeUp: 2 }, // LED #1 ➔ GP22: S2
+        { pin: 23, action: 17, modeDown: 3, modeUp: 2 }, // LED #2 ➔ GP23: L3
+        { pin: 24, action: 18, modeDown: 3, modeUp: 2 }  // LED #3 ➔ GP24: R3
+      ];
+    } else {
+      // 既に有効なデータがある場合も、型崩れを防ぐために値を安全にクリーニング
+      data.leds = data.leds.map((led, index) => {
+        const defaults = [
+          { pin: 16, action: 13, modeDown: 3, modeUp: 2 },
+          { pin: 22, action: 14, modeDown: 3, modeUp: 2 },
+          { pin: 23, action: 17, modeDown: 3, modeUp: 2 },
+          { pin: 24, action: 18, modeDown: 3, modeUp: 2 }
         ];
-      }
+        return {
+          pin: led.pin !== undefined && led.pin !== -1 ? led.pin : defaults[index].pin,
+          action: led.action !== undefined ? led.action : defaults[index].action,
+          modeDown: led.modeDown !== undefined ? led.modeDown : defaults[index].modeDown,
+          modeUp: led.modeUp !== undefined ? led.modeUp : defaults[index].modeUp
+        };
+      });
     }
+
+    setLoading(false);
+    return data;
+
     // ==========================================================
 
     let data = response.data;
