@@ -812,36 +812,42 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.rotaryOptions.encoderTwo, multiplier, ENCODER_TWO_MULTIPLIER);
 
 	// ==========================================================
-	// 🛡️ MINI Super 真の実機内完結シールド（Wii＆LED同時完全展開版・完全修復）
+	// 🛡️ MINI Super 真の実機内完結シールド（通常代入・完全修復版）
 	// ==========================================================
 	// 実機が完全に初期化状態（1番目のLEDピンが-1、かつカウントが0）の瞬間だけ狙い撃ちして初期値を注入
 	if (config.addonOptions.reactiveLEDOptions.leds[0].pin == -1 && config.addonOptions.reactiveLEDOptions.leds_count == 0) {
 		
-		// ----------------------------------------------------------
-		// 【1】リアクティブLEDアドオンの強制展開（公式マクロ準拠）
-		// ----------------------------------------------------------
+		// 1. リアクティブLEDアドオンの強制展開 (親オブジェクトのフラグは存在するのでON)
 		INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions, enabled, true);
 
-		const int32_t MINI_SUPER_PINS[4] = {16, 22, 23, 24};
-		const GpioAction MINI_SUPER_ACTIONS[4] = {
-			GpioAction::BUTTON_PRESS_S1,
-			GpioAction::BUTTON_PRESS_S2,
-			GpioAction::BUTTON_PRESS_L3,
-			GpioAction::BUTTON_PRESS_R3
-		};
+		// LED #0 ➔ GP16: S1 (余分な has_ フラグを完全排除してメモリ破壊を防止)
+		config.addonOptions.reactiveLEDOptions.leds[0].pin = 16;
+		config.addonOptions.reactiveLEDOptions.leds[0].action = GpioAction::BUTTON_PRESS_S1;
+		config.addonOptions.reactiveLEDOptions.leds[0].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
+		config.addonOptions.reactiveLEDOptions.leds[0].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
 
-		for (uint16_t i = 0; i < 4; i++) {
-			INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], pin, MINI_SUPER_PINS[i]);
-			INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], action, MINI_SUPER_ACTIONS[i]);
-			INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], modeDown, ReactiveLEDMode::REACTIVE_LED_FADE_OUT); // 3 (押して消える)
-			INIT_UNSET_PROPERTY(config.addonOptions.reactiveLEDOptions.leds[i], modeUp, ReactiveLEDMode::REACTIVE_LED_FADE_IN);   // 2 (離してじんわり)
-		}
+		// LED #1 ➔ GP22: S2
+		config.addonOptions.reactiveLEDOptions.leds[1].pin = 22;
+		config.addonOptions.reactiveLEDOptions.leds[1].action = GpioAction::BUTTON_PRESS_S2;
+		config.addonOptions.reactiveLEDOptions.leds[1].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
+		config.addonOptions.reactiveLEDOptions.leds[1].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
+
+		// LED #2 ➔ GP23: L3
+		config.addonOptions.reactiveLEDOptions.leds[2].pin = 23;
+		config.addonOptions.reactiveLEDOptions.leds[2].action = GpioAction::BUTTON_PRESS_L3;
+		config.addonOptions.reactiveLEDOptions.leds[2].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
+		config.addonOptions.reactiveLEDOptions.leds[2].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
+
+		// LED #3 ➔ GP24: R3
+		config.addonOptions.reactiveLEDOptions.leds[3].pin = 24;
+		config.addonOptions.reactiveLEDOptions.leds[3].action = GpioAction::BUTTON_PRESS_R3;
+		config.addonOptions.reactiveLEDOptions.leds[3].modeDown = ReactiveLEDMode::REACTIVE_LED_FADE_OUT; // 3
+		config.addonOptions.reactiveLEDOptions.leds[3].modeUp = ReactiveLEDMode::REACTIVE_LED_FADE_IN;   // 2
+
+		// Nanopbに配列の有効要素数が「4個」であることを正確に通知
 		config.addonOptions.reactiveLEDOptions.leds_count = 4;
 
-		// ----------------------------------------------------------
-		// 【2】Wii拡張アドオンの強制展開（画面間引きバグ・完全破壊処理）
-		// ----------------------------------------------------------
-		// アドオン自体を強制ON、および構造体が存在するフラグを正確にON
+		// 2. Wii拡張アドオンの強制展開（画面間引きバグ・完全破壊処理）
 		config.addonOptions.wiiOptions.enabled = true;
 		config.addonOptions.wiiOptions.has_enabled = true;
 		config.addonOptions.wiiOptions.has_controllers = true;
@@ -890,7 +896,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 		config.addonOptions.wiiOptions.controllers.guitar.has_whammyBar = true;
 		config.addonOptions.wiiOptions.controllers.guitar.whammyBar.axisType = 5;
 
-		// D. ドラム、E. ターンテーブル、F. タイコのフラグ確保（型崩れによる画面白紙化を完全防止）
+		// D. ドラム、E. ターンテーブル、F. タイコのフラグ確保
 		config.addonOptions.wiiOptions.controllers.has_drum = true;
 		config.addonOptions.wiiOptions.controllers.has_turntable = true;
 		config.addonOptions.wiiOptions.controllers.has_taiko = true;
@@ -902,6 +908,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 		}
 	}
 	// ==========================================================
+
 
 
     // addonOptions.heTriggerOptions
