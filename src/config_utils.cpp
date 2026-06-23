@@ -2055,12 +2055,15 @@ bool ConfigUtils::save(Config& config)
     }
 
     // Set all has_XXX flags to true, we want to save all fields.
-    // If we didn't do this we would have to remember to set the has_XXX flag manually whenever we change a field from
-    // its default value.
     setHasFlags(Config_fields, &config);
 
-	
+    // 【16MB紫基板対応】ネストが深すぎて一括処理から漏れるアドオンの保存フラグを強制的に完全有効化
+    config.has_addonOptions = true;
+    config.addonOptions.has_peripheralOptions = true;
+    config.has_ledOptions = true;
+
     // Encode the data directly into the cache of FlashPROM
+
     // 物理的な最大値である 32KB（EEPROM_SIZE_BYTES）を上限として、Nanopbにフルサイズでの書き込みを強制許可する
     pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
     
