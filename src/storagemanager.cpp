@@ -57,8 +57,14 @@ bool Storage::save(const bool force) {
 void Storage::ResetSettings()
 {
 	EEPROM.reset();
+	
+	// 【16MB紫基板対応】FlashPROMの遅延(50ms)＋物理書き込み時間を考慮し、
+	// 安全のために100ミリ秒だけ処理を一時停止させて書き込みを完全に完了させる
+	sleep_ms(100);
+
 	watchdog_reboot(0, SRAM_END, 2000);
 }
+
 
 bool Storage::setProfile(const uint32_t profileNum)
 {
