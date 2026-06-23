@@ -41,21 +41,33 @@ const API_BINDING = {
 		get: WebApi.getPinMappings,
 		set: WebApi.setPinMappings,
 	},
-	profiles: {
-		get: WebApi.getProfileOptions,
-		set: WebApi.setProfileOptions,
-	},
-	heTrigger: {
-		get: WebApi.getHETriggerCalibrations,
-		set: WebApi.setHETriggerCalibrations,
-	},
-	addons: {
-		get: WebApi.getAddonsOptions,
-		set: WebApi.setAddonsOptions,
-	},
-	// new api, add it here
-	// "example":	{get: WebApi.getNewAPI,			set: WebApi.setNewAPI},
-};
+ 
+ profiles: {
+ get: WebApi.getProfileOptions,
+ set: WebApi.setProfileOptions,
+ },
+ heTrigger: {
+ get: WebApi.getHETriggerCalibrations,
+ set: WebApi.setHETriggerCalibrations,
+ },
+ addons: {
+ get: WebApi.getAddonsOptions,
+ set: WebApi.setAddonsOptions,
+ },
+ reactiveLEDOptions: {
+ get: WebApi.getReactiveLEDs,
+ set: WebApi.setReactiveLEDs,
+ },
+ wiiOptions: {
+ get: WebApi.getWiiControls,
+ set: WebApi.setWiiControls,
+ },
+ peripheralOptions: {
+ get: WebApi.getPeripheralOptions,
+ set: WebApi.setPeripheralOptions,
+ },
+ };
+
 
 export default function BackupPage() {
 	const inputFileSelect = useRef();
