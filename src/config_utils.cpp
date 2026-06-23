@@ -1905,6 +1905,7 @@ static const uint32_t FOOTER_MAGIC = 0xd2f1e365;
     #error "Maximum size of Config cannot be determined statically, make sure that you do not use any dynamically sized arrays or strings"
 #endif
 
+
 static bool loadConfigInner(Config& config)
 {
     config = Config_init_zero;
@@ -1937,19 +1938,6 @@ static bool loadConfigInner(Config& config)
     return pb_decode(&inputStream, Config_fields, &config);
 }
 
-
-    const uint8_t* dataPtr = flashEnd - sizeof(ConfigFooter) - footer.dataSize;
-
-    // Verify CRC32 hash
-    if (CRC32::calculate(dataPtr, footer.dataSize) != footer.dataCrc)
-    {
-        return false;
-    }
-
-    // We are now sufficiently confident that the data is valid so we run the deserialization
-    pb_istream_t inputStream = pb_istream_from_buffer(dataPtr, footer.dataSize);
-    return pb_decode(&inputStream, Config_fields, &config);
-}
 
 void ConfigUtils::load(Config& config)
 {
