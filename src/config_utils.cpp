@@ -1907,7 +1907,7 @@ static const uint32_t FOOTER_MAGIC = 0xd2f1e365;
 
 static bool loadConfigInner(Config& config)
 {
-    config = Config Config_init_zero;
+    config = Config_init_zero;
 
     const uint8_t* flashEnd = reinterpret_cast<const uint8_t*>(EEPROM_ADDRESS_START) + EEPROM_SIZE_BYTES;
     const ConfigFooter& footer = *reinterpret_cast<const ConfigFooter*>(flashEnd - sizeof(ConfigFooter));
@@ -1918,11 +1918,25 @@ static bool loadConfigInner(Config& config)
         return false;
     }
 
-        // Check if dataSize exceeds the reserved space
+    // Check if dataSize exceeds the reserved space
     if (footer.dataSize + sizeof(ConfigFooter) > EEPROM_SIZE_BYTES)
     {
         return false;
     }
+
+    const uint8_t* dataPtr = flashEnd - sizeof(ConfigFooter) - footer.dataSize;
+
+    // Verify CRC32 hash
+    if (CRC32::calculate(dataPtr, footer.dataSize) != footer.dataCrc)
+    {
+        return false;
+    }
+
+    // We are now sufficiently confident that the data is valid so we run the deserialization
+    pb_istream_t inputStream = pb_istream_from_buffer(dataPtr, footer.dataSize);
+    return pb_decode(&inputStream, Config_fields, &config);
+}
+
 
     const uint8_t* dataPtr = flashEnd - sizeof(ConfigFooter) - footer.dataSize;
 
@@ -2062,7 +2076,7 @@ bool ConfigUtils::save(Config& config)
     const uint32_t FIXED_SAVE_SIZE = 16384;
 
     // Encode the data directly into the cache of FlashPROM
-    pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, FIXED_SAVE_SIZE - sizeof(ConfigFooter));
+    pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
     if (!pb_encode(&outputStream, Config_fields, &config))
     {
         return false;
@@ -2075,7 +2089,7 @@ bool ConfigUtils::save(Config& config)
     newFooter.magic = FOOTER_MAGIC;
 
     // The data has changed when the footer content has changed. Only then do we acutally need to save.
-    const ConfigFooter& oldFooter = *reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + FIXED_SAVE_SIZE - sizeof(ConfigFooter));
+    const ConfigFooter& oldFooter = *reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
     if (newFooter == oldFooter)
     {
         // The data has not changed, no saving neccessary.
@@ -2083,12 +2097,12 @@ bool ConfigUtils::save(Config& config)
     }
 
     // Write the footer
-    ConfigFooter* cacheFooter = reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + FIXED_SAVE_SIZE - sizeof(ConfigFooter));
+    ConfigFooter* cacheFooter = reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
     memcpy(cacheFooter, &newFooter, sizeof(ConfigFooter));
 
     // Move the encoded data in memory down to the footer
-    memmove(EEPROM.writeCache + FIXED_SAVE_SIZE - sizeof(ConfigFooter) - newFooter.dataSize, EEPROM.writeCache, newFooter.dataSize);
-    memset(EEPROM.writeCache, 0, FIXED_SAVE_SIZE - sizeof(ConfigFooter) - newFooter.dataSize);
+    memmove(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize, EEPROM.writeCache, newFooter.dataSize);
+    memset(EEPROM.writeCache, 0, EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize);
 
 
     EEPROM.commit();
