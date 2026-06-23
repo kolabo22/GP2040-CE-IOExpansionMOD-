@@ -37,8 +37,8 @@
 #include "addons/input_macro.h"
 
 #define PATH_CGI_ACTION "/cgi/action"
-// Webサーバーの最大受信バッファを 64KB までガバッと解放！
-#define LWIP_HTTPD_POST_MAX_PAYLOAD_LEN (1024 * 64)
+// 64KBから24KBへ引き下げ、RAMのスタックパンク（USB切断バグ）を完全に防止
+#define LWIP_HTTPD_POST_MAX_PAYLOAD_LEN (1024 * 24)
 extern struct fsdata_file file__index_html[];
 
 
