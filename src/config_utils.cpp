@@ -2057,9 +2057,9 @@ bool ConfigUtils::save(Config& config)
     // Set all has_XXX flags to true, we want to save all fields.
     setHasFlags(Config_fields, &config);
 
-    // 【16MB紫基板対応】ネストが深すぎて一括処理から漏れるアドオンの保存フラグを強制的に完全有効化
+    // 【16MB紫基板対応】一括フラグ漏れが起きる各主要アドオンの「親フラグ」を正しい構造で強制的に完全有効化
     config.has_addonOptions = true;
-    config.addonOptions.has_peripheralOptions = true;
+    config.has_peripheralOptions = true;
     config.has_ledOptions = true;
 
     // Encode the data directly into the cache of FlashPROM
