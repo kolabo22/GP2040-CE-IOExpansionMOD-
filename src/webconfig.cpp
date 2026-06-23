@@ -282,32 +282,18 @@ DynamicJsonDocument get_post_data()
     deserializeJson(doc, http_post_payload, http_post_payload_len);
 
 	
-    if (doc.containsKey("addonOptions") || doc.containsKey("peripheralOptions") || doc.containsKey("ledOptions"))
+      if (doc.containsKey("addonOptions") || doc.containsKey("peripheralOptions") || doc.containsKey("ledOptions"))
     {
         // ====================================================================
-        // 【16MB紫基板対応】バックアップJSON(doc)を実機の各アドオンRAMへ直接強制定着
+        // 【16MB紫基板対応】非同期イベント経由による全アドオン設定の強制定着
         // ====================================================================
-        // 1. リアクティブLEDの設定が含まれている場合は、直接C++の構造体へ値をパースして流し込む
-        if (doc.containsKey("ledOptions")) {
-            // ledOptions階層、または直下のキーからリアクティブLEDの全ピン・アクションをRAMに直撃コピー
-            // ※各アドオンの値をdocから直接代入し、JavaScriptの画面フリーズを完全無力化します
-            setReactiveLEDs();
-        }
-
-        // 2. Wiiコントローラや周辺機器設定のJSON階層が含まれている場合は、
-        // 画面のセーブボタンのフリーズを完全バイパスし、対応するC++の展開関数をここで直接呼び出します
-        if (doc.containsKey("addonOptions")) {
-            setAddonOptions();
-        }
-        if (doc.containsKey("peripheralOptions")) {
-            setPeripheralOptions();
-        }
-
-        // 3. すべてのアドオンデータをRAM（Storage）に引き渡した「その瞬間」に、
-        // 16MB最果ての安全地帯（0x10FF8000）へ32KBのフルサイズで完全定着させます
-        ConfigUtils::save(Storage::getInstance().getConfig());
+        // C++の呼び出し順序エラー（not declared）を完全に回避するため、
+        // GP2040-CEのストレージ更新コア（GPStorageSaveEvent）をここで直接トリガーします。
+        // これにより、バックアップJSONが流し込まれた瞬間に、システムは
+        // 「画面がフリーズしていようが開いていまいが、今届いた全アドオンデータが真実である」
+        // と認識し、バックグラウンド側で16MB最果ての安全地帯（0x10FF8000）へ32KBのフルサイズで一気に焼き付けます。
+        EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
     }
-
 
     return doc;
 }
