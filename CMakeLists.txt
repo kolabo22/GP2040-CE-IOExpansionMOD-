@@ -171,9 +171,21 @@ set(PICO_USE_FASTEST_SUPPORTED_CLOCK 1)
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+# ====================================================================
+# 【16MB紫基板対応】メモリマップ及び物理サイズのオーバーライド定義
+# ====================================================================
+# 1. コンパイラ全体に 16MB フラッシュであることを強制的に認識させる
+add_compile_definitions(PICO_FLASH_SIZE_BYTES=16777216)
+
+# 2. リンカに対して、16MB(16384K)からセーブ領域32Kを引いた「16352K」をプログラムの最大長として強制上書き
+add_link_options(-Wl,--defsym=__flash_binary_start=0x10000000)
+add_link_options(-Wl,--defsym=__flash_binary_length=16744448) 
+# ※ 16352K = 16744448 バイト（末尾 32KB を完全隔離）
+
 # Remove unused code and data
 add_compile_options(-fdata-sections -ffunction-sections)
 add_link_options(-Wl,--gc-sections)
+
 
 add_subdirectory(lib)
 
