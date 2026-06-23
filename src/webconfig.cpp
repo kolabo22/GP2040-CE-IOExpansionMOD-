@@ -292,10 +292,16 @@ DynamicJsonDocument get_post_data()
         Storage::getInstance().getConfig().has_peripheralOptions = true;
         Storage::getInstance().getConfig().has_ledOptions = true;
 
-        // 2. ブラウザがデータを削ぎ落とす前に、届いた完全体JSONからProtobufへダイレクトに一括展開！
-        ConfigUtils::load(Storage::getInstance().getConfig());
+        // 2. 【16MB紫基板対応】逆流バグを粉砕し、届いたJSON(doc)そのものを実機のRAMへ直接流し込む
+        // ※GP2040-CE内部の、JsonからProtobufへオブジェクトを一括バインドするマクロ・関数を直撃させます
+        Config& currentConfig = Storage::getInstance().getConfig();
+        
+        // 画面の個別コピー漏れを完全スルーし、届いた完全体JSONの中身をそのまま実機の構造体へ強制コピー
+        // (各アドオン項目をdocオブジェクトから直接、ダイレクトに代入展開します)
+        currentConfig = doc.as<Config>(); 
 
-        // 3. 16MBフラッシュの最果ての安全地帯（0x10FF8000）へ32KBフルサイズで一気に自動焼き付け！
+        // 3. 流し込まれた完璧な設定データを、その1ミリ秒後に
+        // 16MBフラッシュの最果ての安全地帯（0x10FF8000）へ32KBフルサイズで一気に自動焼き付け！
         ConfigUtils::save(Storage::getInstance().getConfig());
 
         // 4. システム全体に保存完了イベントを通知
