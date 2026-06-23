@@ -2071,10 +2071,6 @@ bool ConfigUtils::save(Config& config)
     // its default value.
     setHasFlags(Config_fields, &config);
 
-	
-    // 【16MB紫基板対応】セーブデータの詰め込み位置を 16KB（16384バイト）スケールに完全固定
-    const uint32_t FIXED_SAVE_SIZE = 16384;
-
     // Encode the data directly into the cache of FlashPROM
     pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
     if (!pb_encode(&outputStream, Config_fields, &config))
@@ -2104,11 +2100,11 @@ bool ConfigUtils::save(Config& config)
     memmove(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize, EEPROM.writeCache, newFooter.dataSize);
     memset(EEPROM.writeCache, 0, EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize);
 
-
     EEPROM.commit();
 
     return true;
 }
+
 
 // -----------------------------------------------------
 // To JSON
