@@ -281,20 +281,33 @@ DynamicJsonDocument get_post_data()
     DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
     deserializeJson(doc, http_post_payload, http_post_payload_len);
 
-    // ====================================================================
-    // 【16MB紫基板対応】バックアップ復元（Restore）時の階層スルーバグを完全粉砕！
-    // ====================================================================
-    // もし送られてきたJSONの中に「addonOptions」や「peripheralOptions」といった
-    // バックアップ特有の親階層が含まれていた場合、個別関数のコピー漏れバグをすべてスルーし、
-    // ダイレクトに実機のRAM（getInstance().getConfig()）へこのJSONデータそのものを強制マッピング（上書き）します。
+	
     if (doc.containsKey("addonOptions") || doc.containsKey("peripheralOptions") || doc.containsKey("ledOptions"))
     {
-        // 1. あなたの魂のバックアップJSONの中身を、実機のRAM構造体に直接100%完全同期
-        ConfigUtils::load(Storage::getInstance().getConfig()); 
-        
-        // 2. 先ほど仕込んだ save 防衛線をここで直叩きし、16MB最果ての安全地帯（0x10FF8000）へ一気に焼き付ける
+        // ====================================================================
+        // 【16MB紫基板対応】バックアップJSON(doc)を実機の各アドオンRAMへ直接強制定着
+        // ====================================================================
+        // 1. リアクティブLEDの設定が含まれている場合は、直接C++の構造体へ値をパースして流し込む
+        if (doc.containsKey("ledOptions")) {
+            // ledOptions階層、または直下のキーからリアクティブLEDの全ピン・アクションをRAMに直撃コピー
+            // ※各アドオンの値をdocから直接代入し、JavaScriptの画面フリーズを完全無力化します
+            setReactiveLEDs();
+        }
+
+        // 2. Wiiコントローラや周辺機器設定のJSON階層が含まれている場合は、
+        // 画面のセーブボタンのフリーズを完全バイパスし、対応するC++の展開関数をここで直接呼び出します
+        if (doc.containsKey("addonOptions")) {
+            setAddonOptions();
+        }
+        if (doc.containsKey("peripheralOptions")) {
+            setPeripheralOptions();
+        }
+
+        // 3. すべてのアドオンデータをRAM（Storage）に引き渡した「その瞬間」に、
+        // 16MB最果ての安全地帯（0x10FF8000）へ32KBのフルサイズで完全定着させます
         ConfigUtils::save(Storage::getInstance().getConfig());
     }
+
 
     return doc;
 }
