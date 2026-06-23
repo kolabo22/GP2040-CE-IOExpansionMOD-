@@ -37,10 +37,10 @@
 #include "addons/input_macro.h"
 
 #define PATH_CGI_ACTION "/cgi/action"
-
-#define LWIP_HTTPD_POST_MAX_PAYLOAD_LEN (1024 * 16)
-
+// Webサーバーの最大受信バッファを 64KB までガバッと解放！
+#define LWIP_HTTPD_POST_MAX_PAYLOAD_LEN (1024 * 64)
 extern struct fsdata_file file__index_html[];
+
 
 const static char* spaPaths[] = { "/backup", "/display-config", "/led-config", "/pin-mapping", "/settings", "/reset-settings", "/add-ons", "/custom-theme", "/macro", "/peripheral-mapping" };
 const static char* excludePaths[] = { "/css", "/images", "/js", "/static" };
@@ -278,10 +278,12 @@ int set_file_data(fs_file *file, string&& data)
 
 DynamicJsonDocument get_post_data()
 {
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
-    deserializeJson(doc, http_post_payload, http_post_payload_len);
-    return doc;
+ // サーバーバッファ（64KB）と完全に同期させ、どんなにアドオンの項目数が肥大化しても100%確実にJSONをパースし切る
+ DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+ deserializeJson(doc, http_post_payload, http_post_payload_len);
+ return doc;
 }
+
 
 void save_hotkey(HotkeyEntry* hotkey, const DynamicJsonDocument& doc, const string hotkey_key)
 {
