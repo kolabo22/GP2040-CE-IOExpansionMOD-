@@ -541,10 +541,10 @@ async function setPS4Options(options) {
 		});
 }
 
-// 【16MB紫基板対応】Wiiアサインの逆流リセットバグを完全粉砕！
+
 async function getWiiControls(setLoading, restoreData = null) {
 if (restoreData) {
-    return { ...baseWiiControls, ...restoreData }; // 👈 ロードした一瞬で音ゲー公式完全準拠アサインを完全復元！
+    return { ...baseWiiControls, ...restoreData };
 }
 setLoading(true);
 try {
@@ -573,11 +573,10 @@ async function setWiiControls(mappings) {
 		});
 }
 
-// 【16MB紫基板対応】バックアップデータ（restoreData）が直接渡された場合は、
-// 空っぽの実機へ通信を飛ばしにいく自爆バグを回避し、そのJSONの中身をそのまま画面に返却します。
+
 async function getReactiveLEDs(setLoading, restoreData = null) {
 if (restoreData) {
-    return restoreData; // 👈 画面のバグを空中スルーして、バックアップから1撃で復活！
+    return restoreData;
 }
 setLoading(true);
 try {
@@ -594,10 +593,11 @@ async function setReactiveLEDs(leds) {
 	return Http.post(`${baseUrl}/api/setReactiveLEDs`, leds);
 }
 
-// 【16MB紫基板対応】周辺機器設定（USBホスト）の逆流リセットバグを完全粉砕！
+
 async function getPeripheralOptions(setLoading, restoreData = null) {
 if (restoreData) {
-    return { ...basePeripheralMapping, ...restoreData }; // 👈 ロードした一瞬でUSBホストなどのアサインを完全復元！
+    return { ...basePeripheralMapping, ...restoreData };
+
 }
 setLoading(true);
 try {
@@ -704,14 +704,13 @@ async function setHETriggerCalibrations(triggers) {
 //	}
 //}
 
-// 💡 修正後：フリーズの真犯人である裏での超高速ピン監視通信を完全に息の根を止めます。
-// 実機へのリクエストを一切行わず、即座に空データを返すことで、Webサーバーのデッドロックを物理的に封殺します。
+
 async function getHeldPins(abortSignal) {
-  return { heldPins: [] }; // 実機へパケットを1発も投げずに即座にダミー応答を返す
+  return { heldPins: [] }; 
 }
 
 async function abortGetHeldPins() {
-  return true; // 何もしない
+  return true;
 }
 
 async function reboot(bootMode) {
@@ -768,4 +767,3 @@ export default {
 	abortGetHeldPins,
 	reboot,
 };
-
