@@ -281,8 +281,7 @@ DynamicJsonDocument get_post_data()
     DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
     deserializeJson(doc, http_post_payload, http_post_payload_len);
 
-	
-      if (doc.containsKey("addonOptions") || doc.containsKey("peripheralOptions") || doc.containsKey("ledOptions"))
+    if (doc.containsKey("addonOptions") || doc.containsKey("peripheralOptions") || doc.containsKey("ledOptions"))
     {
         // ====================================================================
         // 【16MB紫基板対応】非同期イベント経由による全アドオン設定の強制定着
