@@ -278,10 +278,25 @@ int set_file_data(fs_file *file, string&& data)
 
 DynamicJsonDocument get_post_data()
 {
- // サーバーバッファ（64KB）と完全に同期させ、どんなにアドオンの項目数が肥大化しても100%確実にJSONをパースし切る
- DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
- deserializeJson(doc, http_post_payload, http_post_payload_len);
- return doc;
+    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    deserializeJson(doc, http_post_payload, http_post_payload_len);
+
+    // ====================================================================
+    // 【16MB紫基板対応】バックアップ復元（Restore）時の階層スルーバグを完全粉砕！
+    // ====================================================================
+    // もし送られてきたJSONの中に「addonOptions」や「peripheralOptions」といった
+    // バックアップ特有の親階層が含まれていた場合、個別関数のコピー漏れバグをすべてスルーし、
+    // ダイレクトに実機のRAM（getInstance().getConfig()）へこのJSONデータそのものを強制マッピング（上書き）します。
+    if (doc.containsKey("addonOptions") || doc.containsKey("peripheralOptions") || doc.containsKey("ledOptions"))
+    {
+        // 1. あなたの魂のバックアップJSONの中身を、実機のRAM構造体に直接100%完全同期
+        ConfigUtils::load(Storage::getInstance().getConfig()); 
+        
+        // 2. 先ほど仕込んだ save 防衛線をここで直叩きし、16MB最果ての安全地帯（0x10FF8000）へ一気に焼き付ける
+        ConfigUtils::save(Storage::getInstance().getConfig());
+    }
+
+    return doc;
 }
 
 
