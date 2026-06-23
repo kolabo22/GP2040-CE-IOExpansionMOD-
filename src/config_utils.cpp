@@ -2057,8 +2057,12 @@ bool ConfigUtils::save(Config& config)
     // its default value.
     setHasFlags(Config_fields, &config);
 
+	
+    // 【16MB紫基板対応】セーブデータの詰め込み位置を 16KB（16384バイト）スケールに完全固定
+    const uint32_t FIXED_SAVE_SIZE = 16384;
+
     // Encode the data directly into the cache of FlashPROM
-    pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
+    pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, FIXED_SAVE_SIZE - sizeof(ConfigFooter));
     if (!pb_encode(&outputStream, Config_fields, &config))
     {
         return false;
@@ -2071,7 +2075,7 @@ bool ConfigUtils::save(Config& config)
     newFooter.magic = FOOTER_MAGIC;
 
     // The data has changed when the footer content has changed. Only then do we acutally need to save.
-    const ConfigFooter& oldFooter = *reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
+    const ConfigFooter& oldFooter = *reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + FIXED_SAVE_SIZE - sizeof(ConfigFooter));
     if (newFooter == oldFooter)
     {
         // The data has not changed, no saving neccessary.
@@ -2079,12 +2083,13 @@ bool ConfigUtils::save(Config& config)
     }
 
     // Write the footer
-    ConfigFooter* cacheFooter = reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
+    ConfigFooter* cacheFooter = reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + FIXED_SAVE_SIZE - sizeof(ConfigFooter));
     memcpy(cacheFooter, &newFooter, sizeof(ConfigFooter));
 
     // Move the encoded data in memory down to the footer
-    memmove(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize, EEPROM.writeCache, newFooter.dataSize);
-    memset(EEPROM.writeCache, 0, EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize);
+    memmove(EEPROM.writeCache + FIXED_SAVE_SIZE - sizeof(ConfigFooter) - newFooter.dataSize, EEPROM.writeCache, newFooter.dataSize);
+    memset(EEPROM.writeCache, 0, FIXED_SAVE_SIZE - sizeof(ConfigFooter) - newFooter.dataSize);
+
 
     EEPROM.commit();
 
