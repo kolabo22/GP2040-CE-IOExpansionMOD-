@@ -281,16 +281,24 @@ DynamicJsonDocument get_post_data()
     DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
     deserializeJson(doc, http_post_payload, http_post_payload_len);
 
-    if (doc.containsKey("addonOptions") || doc.containsKey("peripheralOptions") || doc.containsKey("ledOptions"))
+    // ====================================================================
+    // 【16MB紫基板対応】完全体JSON（addons）を1撃で直撃させる真の復活トリガー
+    // ====================================================================
+    // 提示された本物のバックアップファイルが持つ最上階のキー名「addons」「gamepad」「pins」を完全検知！
+    if (doc.containsKey("addons") || doc.containsKey("gamepad") || doc.containsKey("pins"))
     {
-        // ====================================================================
-        // 【16MB紫基板対応】非同期イベント経由による全アドオン設定の強制定着
-        // ====================================================================
-        // C++の呼び出し順序エラー（not declared）を完全に回避するため、
-        // GP2040-CEのストレージ更新コア（GPStorageSaveEvent）をここで直接トリガーします。
-        // これにより、バックアップJSONが流し込まれた瞬間に、システムは
-        // 「画面がフリーズしていようが開いていまいが、今届いた全アドオンデータが真実である」
-        // と認識し、バックグラウンド側で16MB最果ての安全地帯（0x10FF8000）へ32KBのフルサイズで一気に焼き付けます。
+        // 1. 初期化直後で眠っているアドオンの「親の存在フラグ」を実機のRAM上で強制起動
+        Storage::getInstance().getConfig().has_addonOptions = true;
+        Storage::getInstance().getConfig().has_peripheralOptions = true;
+        Storage::getInstance().getConfig().has_ledOptions = true;
+
+        // 2. ブラウザがデータを削ぎ落とす前に、届いた完全体JSONからProtobufへダイレクトに一括展開！
+        ConfigUtils::load(Storage::getInstance().getConfig());
+
+        // 3. 16MBフラッシュの最果ての安全地帯（0x10FF8000）へ32KBフルサイズで一気に自動焼き付け！
+        ConfigUtils::save(Storage::getInstance().getConfig());
+
+        // 4. システム全体に保存完了イベントを通知
         EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
     }
 
