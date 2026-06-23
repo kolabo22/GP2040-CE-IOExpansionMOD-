@@ -1396,10 +1396,17 @@ std::string setPeripheralOptions()
         profiles.gpioMappingsSets[1].pins[oldPinDplus+adjacent].action = GpioAction::NONE;
         profiles.gpioMappingsSets[2].pins[oldPinDplus+adjacent].action = GpioAction::NONE;
     }
+ 
+	// ====================================================================
+ // 【16MB紫基板対応】周辺機器保存の瞬間にフラッシュへ直接逃げ切る防衛線
+ // ====================================================================
+ // イベントシステムのバックグラウンド遅延を完全にバイパスし、
+ // 画面上で「保存完了」が出るまさにその瞬間に、RAM上の最新の全アサインデータを
+ // 1ビットの漏れもなく16MB最果ての安全地帯（0x10FF8000）へ強制的に定着させます。
+ ConfigUtils::save(Storage::getInstance().getConfig());
 
-    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
-
-    return serialize_json(doc);
+ EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+ return serialize_json(doc);
 }
 
 std::string getExpansionPins()
@@ -1658,22 +1665,24 @@ std::string getReactiveLEDs()
 
 std::string setReactiveLEDs()
 {
-    DynamicJsonDocument doc = get_post_data();
-
-    ReactiveLEDInfo* ledInfo = Storage::getInstance().getAddonOptions().reactiveLEDOptions.leds;
-
-    for (uint16_t led = 0; led < 10; led++) {
-        ledInfo[led].pin = doc["leds"][led]["pin"];
-        ledInfo[led].action = doc["leds"][led]["action"];
-        ledInfo[led].modeDown = doc["leds"][led]["modeDown"];
-        ledInfo[led].modeUp = doc["leds"][led]["modeUp"];
-    }
-    Storage::getInstance().getAddonOptions().reactiveLEDOptions.leds_count = 10;
-
-    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
-
-    return serialize_json(doc);
+ DynamicJsonDocument doc = get_post_data();
+ ReactiveLEDInfo* ledInfo = 
+Storage::getInstance().getAddonOptions().reactiveLEDOptions.leds;
+ for (uint16_t led = 0; led < 10; led++) {
+ ledInfo[led].pin = doc["leds"][led]["pin"];
+ ledInfo[led].action = doc["leds"][led]["action"];
+ ledInfo[led].modeDown = doc["leds"][led]["modeDown"];
+ ledInfo[led].modeUp = doc["leds"][led]["modeUp"];
+ }
+ Storage::getInstance().getAddonOptions().reactiveLEDOptions.leds_count = 10;
+ 
+ // 【16MB紫基板対応】フロントのフリーズを回避するため、イベントに頼らず
+ // 直接C++コアの保存関数をここで直撃させ、確実に16MB最果てへ書き込みを完了させます
+ ConfigUtils::save(Storage::getInstance().getConfig());
+ EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+ return serialize_json(doc);
 }
+
 
 std::string setAddonOptions()
 {
@@ -2054,9 +2063,11 @@ std::string setWiiControls()
     readDoc(wiiOptions.controllers.turntable.effects.axisType, doc, "turntable.analogEffects.axisType");
     readDoc(wiiOptions.controllers.turntable.fader.axisType, doc, "turntable.analogFader.axisType");
 
-    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
-
-    return "{\"success\":true}";
+ // 【16MB紫基板対応】直接保存関数を叩き、返却を正規のserialize_jsonに統一して
+ // ブラウザに「保存成功パケット」を正しくオウム返しすることでボタンの無反応フリーズを完全撃破します
+ ConfigUtils::save(Storage::getInstance().getConfig());
+ EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+ return serialize_json(doc);
 }
 
 std::string getWiiControls()
