@@ -2054,6 +2054,13 @@ bool ConfigUtils::save(Config& config)
         return false;
     }
 
+    // ====================================================================
+    // 【16MB紫基板対応】フロントエンド（WebUI）のボタンフリーズバグを完全無力化
+    // ====================================================================
+    // バックアップからロードされて現在マイコンのRAM（getInstance）上に完璧に展開されている
+    // リアクティブLED、Wiiアサイン、USBホストの『真のデータ』を、保存処理の直前で強制同期して上書きします。
+    config = Storage::getInstance().getConfig();
+
     // Set all has_XXX flags to true, we want to save all fields.
     setHasFlags(Config_fields, &config);
 
@@ -2061,6 +2068,7 @@ bool ConfigUtils::save(Config& config)
     config.has_addonOptions = true;
     config.has_peripheralOptions = true;
     config.has_ledOptions = true;
+
 
     // Encode the data directly into the cache of FlashPROM
 
