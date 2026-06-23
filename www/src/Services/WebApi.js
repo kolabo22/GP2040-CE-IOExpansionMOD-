@@ -541,20 +541,23 @@ async function setPS4Options(options) {
 		});
 }
 
-async function getWiiControls(setLoading) {
-	setLoading(true);
-
-	try {
-		const response = await Http.get(`${baseUrl}/api/getWiiControls`);
-		setLoading(false);
-
-		let mappings = { ...baseWiiControls, ...response.data };
-		return mappings;
-	} catch (error) {
-		setLoading(false);
-		console.error(error);
-	}
+// 【16MB紫基板対応】Wiiアサインの逆流リセットバグを完全粉砕！
+async function getWiiControls(setLoading, restoreData = null) {
+if (restoreData) {
+    return { ...baseWiiControls, ...restoreData }; // 👈 ロードした一瞬で音ゲー公式完全準拠アサインを完全復元！
 }
+setLoading(true);
+try {
+const response = await Http.get(`${baseUrl}/api/getWiiControls`);
+setLoading(false);
+let mappings = { ...baseWiiControls, ...response.data };
+return mappings;
+} catch (error) {
+setLoading(false);
+console.error(error);
+}
+}
+
 
 async function setWiiControls(mappings) {
 	console.dir(mappings);
@@ -570,14 +573,19 @@ async function setWiiControls(mappings) {
 		});
 }
 
-async function getReactiveLEDs(setLoading) {
-	setLoading(true);
-	try {
-		const response = await Http.get(`${baseUrl}/api/getReactiveLEDs`);
-		return response.data;
-	} catch (error) {
-		console.error(error);
-	}
+// 【16MB紫基板対応】バックアップデータ（restoreData）が直接渡された場合は、
+// 空っぽの実機へ通信を飛ばしにいく自爆バグを回避し、そのJSONの中身をそのまま画面に返却します。
+async function getReactiveLEDs(setLoading, restoreData = null) {
+if (restoreData) {
+    return restoreData; // 👈 画面のバグを空中スルーして、バックアップから1撃で復活！
+}
+setLoading(true);
+try {
+const response = await Http.get(`${baseUrl}/api/getReactiveLEDs`);
+return response.data;
+} catch (error) {
+console.error(error);
+}
 }
 
 async function setReactiveLEDs(leds) {
@@ -586,19 +594,24 @@ async function setReactiveLEDs(leds) {
 	return Http.post(`${baseUrl}/api/setReactiveLEDs`, leds);
 }
 
-async function getPeripheralOptions(setLoading) {
-	setLoading(true);
-	try {
-		const response = await Http.get(`${baseUrl}/api/getPeripheralOptions`);
-		setLoading(false);
-
-		let mappings = { ...basePeripheralMapping, ...response.data };
-		return mappings;
-	} catch (error) {
-		setLoading(false);
-		console.error(error);
-	}
+// 【16MB紫基板対応】周辺機器設定（USBホスト）の逆流リセットバグを完全粉砕！
+async function getPeripheralOptions(setLoading, restoreData = null) {
+if (restoreData) {
+    return { ...basePeripheralMapping, ...restoreData }; // 👈 ロードした一瞬でUSBホストなどのアサインを完全復元！
 }
+setLoading(true);
+try {
+const response = await 
+Http.get(`${baseUrl}/api/getPeripheralOptions`);
+setLoading(false);
+let mappings = { ...basePeripheralMapping, ...response.data };
+return mappings;
+} catch (error) {
+setLoading(false);
+console.error(error);
+}
+}
+
 
 async function setPeripheralOptions(mappings) {
 	console.dir(mappings);
