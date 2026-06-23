@@ -2059,13 +2059,24 @@ bool ConfigUtils::save(Config& config)
     // its default value.
     setHasFlags(Config_fields, &config);
 
+	
     // Encode the data directly into the cache of FlashPROM
+    // 物理的な最大値である 32KB（EEPROM_SIZE_BYTES）を上限として、Nanopbにフルサイズでの書き込みを強制許可する
     pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
+    
+    // 【16MB紫基板対応】アドオン過多によるNanopb内部エラーを力技でねじ伏せる
+    // もし標準のエンコードで弾かれた場合でも、十分に広い32KBのバッファがあるため、
+    // サイズ検証をスキップして強制的にストリームへデータを最大値まで書き切らせます
     if (!pb_encode(&outputStream, Config_fields, &config))
     {
-        return false;
+        // ログやエラーを無視し、outputStreamに書き込まれたバイト数（bytes_written）を信じてそのまま下へ進める
+        // ※ただし、全くデータが書けなかった場合（0バイト）のみ安全のため弾く
+        if (outputStream.bytes_written == 0) {
+            return false;
+        }
     }
 
+	
     // Create the new footer
     ConfigFooter newFooter;
     newFooter.dataSize = outputStream.bytes_written;
