@@ -145,21 +145,21 @@ const API_BINDING = {
 
  if (fileData.addons || fileData.pins || fileData.gamepad) {
      
-     if (fileData.addons) {
-         fileData.addons.wiiOptions = fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.wiiOptions ? { ...fileData.wiiOptions } : {});
-         fileData.addons.reactiveLEDOptions = fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : (fileData.led ? { ...fileData.led } : (fileData.ledOptions ? { ...fileData.ledOptions } : {}));
-         fileData.addons.peripheralOptions = fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.peripheralOptions ? { ...fileData.peripheralOptions } : {});
-         fileData.addons = { ...fileData.addons };
-     }
+			if (fileData.addons) {
+				fileData.addons.wiiOptions = fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.wiiOptions ? { ...fileData.wiiOptions } : {});
+				fileData.addons.reactiveLEDOptions = fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : (fileData.led ? { ...fileData.led } : (fileData.ledOptions ? { ...fileData.ledOptions } : {}));
+				fileData.addons.peripheralOptions = fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.peripheralOptions ? { ...fileData.peripheralOptions } : {});
+				fileData.addons = { ...fileData.addons };
+			}
+			setOptionsToAPIStorage(fileData).then(() => {
+				location.reload();
+			}).catch((err) => console.error('Restore Error:', err));
+			
+			// 【16MB紫基板対応】古い画面システムが空データを強制上書きして自爆するループへの突入を完全にブロック！
+			return; 
+		}
+		let filteredData = {};
 
-     setOptionsToAPIStorage(fileData).then(() => {
-         location.reload();
-     }).catch((err) => console.error('Restore Error:', err));
-     
-     return;
- }
-
- let filteredData = {};
  Object.keys(API_BINDING).forEach((bindingKey) => {
  if (fileData[bindingKey]) {
  filteredData[bindingKey] = fileData[bindingKey];
