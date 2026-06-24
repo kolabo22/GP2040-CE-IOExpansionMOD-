@@ -203,12 +203,9 @@ const FormContext = ({
 
 	useEffect(() => {
 		async function fetchData() {
-			let data = await WebApi.getLedOptions(setLoading);
-			const saved = localStorage.getItem('localBackup');
-			if (saved) {
-				const backup = JSON.parse(saved);
-				if (backup.led) data = { ...data, ...backup.led };
-				if (backup.ledOptions) data = { ...data, ...backup.ledOptions };
+			const data = await WebApi.getLedOptions(setLoading);
+			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
+				data.buttonPressColorCooldownTimeInMs = 0;
 			}
 			const dataSources = createDataSource(
 				data.ledButtonMap,
