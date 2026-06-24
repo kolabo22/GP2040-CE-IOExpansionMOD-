@@ -24,10 +24,8 @@ const API_BINDING = {
 	profiles: { get: WebApi.getProfileOptions, set: WebApi.setProfileOptions },
 	heTrigger: { get: WebApi.getHETriggerCalibrations, set: WebApi.setHETriggerCalibrations },
 	addons: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
-	addonOptions: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
-	peripheralOptions: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
-	ledOptions: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
 };
+
 
 
  export default function BackupPage() {
@@ -146,14 +144,14 @@ const API_BINDING = {
  }
 
  if (fileData.addons || fileData.pins || fileData.gamepad) {
-     fileData.addonOptions = fileData.addons ? { ...fileData.addons } : {};
-     fileData.peripheralOptions = fileData.addons && fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.addons ? { ...fileData.addons } : {});
-     fileData.wiiOptions = fileData.addons && fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.addons ? { ...fileData.addons } : {});
-     fileData.reactiveLEDOptions = fileData.led ? { ...fileData.led } : (fileData.addons && fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : {});
-
-     fileData.peripheralOptions = { ...fileData.peripheralOptions, ...fileData.addonOptions };
-     fileData.wiiOptions = { ...fileData.wiiOptions, ...fileData.addonOptions };
-     fileData.reactiveLEDOptions = { ...fileData.reactiveLEDOptions, ...fileData.addonOptions };
+     
+     if (fileData.addons) {
+         fileData.addons.wiiOptions = fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.wiiOptions ? { ...fileData.wiiOptions } : {});
+         fileData.addons.reactiveLEDOptions = fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : (fileData.led ? { ...fileData.led } : (fileData.ledOptions ? { ...fileData.ledOptions } : {}));
+         fileData.addons.peripheralOptions = fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.peripheralOptions ? { ...fileData.peripheralOptions } : {});
+         
+                 fileData.addons = { ...fileData.addons };
+     }
 
      setOptionsToAPIStorage(fileData).then(() => {
          location.reload();
