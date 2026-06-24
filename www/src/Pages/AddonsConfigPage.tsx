@@ -99,11 +99,9 @@ const FormContext = ({ setStoredData }) => {
 
 	useEffect(() => {
 		async function fetchData() {
-			let data = await WebApi.getAddonsOptions(setLoading);
-			const saved = localStorage.getItem('localBackup');
-			if (saved) {
-				const backup = JSON.parse(saved);
-				if (backup.addons) data = { ...data, ...backup.addons };
+			const data = await WebApi.getAddonsOptions(setLoading);
+			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
+				data.buttonPressColorCooldownTimeInMs = 0;
 			}
 			const mergedData = { ...DEFAULT_VALUES, ...data };
 			setValues(mergedData);
