@@ -21,9 +21,12 @@ const API_BINDING = {
     ledTheme: { get: WebApi.getCustomTheme, set: WebApi.setCustomTheme },
     macros: { get: WebApi.getMacroAddonOptions, set: WebApi.setMacroAddonOptions },
     pins: { get: WebApi.getPinMappings, set: WebApi.setPinMappings },
-    profiles: { get: WebApi.getProfileOptions, set: WebApi.setProfileOptions },
-    heTrigger: { get: WebApi.getHETriggerCalibrations, set: WebApi.setHETriggerCalibrations },
-    addons: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
+	profiles: { get: WebApi.getProfileOptions, set: WebApi.setProfileOptions },
+	heTrigger: { get: WebApi.getHETriggerCalibrations, set: WebApi.setHETriggerCalibrations },
+	addons: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
+	addonOptions: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
+	peripheralOptions: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
+	ledOptions: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
 };
 
 
@@ -143,21 +146,24 @@ const API_BINDING = {
  }
 
  if (fileData.addons || fileData.pins || fileData.gamepad) {
-     
      fileData.addonOptions = fileData.addons ? { ...fileData.addons } : {};
      fileData.peripheralOptions = fileData.addons && fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.addons ? { ...fileData.addons } : {});
      fileData.wiiOptions = fileData.addons && fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.addons ? { ...fileData.addons } : {});
      fileData.reactiveLEDOptions = fileData.led ? { ...fileData.led } : (fileData.addons && fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : {});
 
-     setOptionsToAPIStorage(fileData).then(() => {
+     fileData.peripheralOptions = { ...fileData.peripheralOptions, ...fileData.addonOptions };
+     fileData.wiiOptions = { ...fileData.wiiOptions, ...fileData.addonOptions };
+     fileData.reactiveLEDOptions = { ...fileData.reactiveLEDOptions, ...fileData.addonOptions };
 
+     setOptionsToAPIStorage(fileData).then(() => {
          location.reload();
      }).catch((err) => console.error('Restore Error:', err));
      
-     return; 
+     return;
  }
-
  let filteredData = {};
+
+
  Object.keys(API_BINDING).forEach((bindingKey) => {
  if (fileData[bindingKey]) {
  filteredData[bindingKey] = fileData[bindingKey];
