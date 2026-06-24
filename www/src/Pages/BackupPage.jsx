@@ -11,6 +11,7 @@ import WebApi from '../Services/WebApi';
 const FILE_EXTENSION = '.gp2040';
 const FILENAME = 'gp2040ce_backup_{DATE}' + FILE_EXTENSION;
 
+
 const API_BINDING = {
     display: { get: WebApi.getDisplayOptions, set: WebApi.setDisplayOptions },
     splash: { get: WebApi.getSplashImage, set: WebApi.setSplashImage },
@@ -141,10 +142,10 @@ const API_BINDING = {
  return;
  }
 
- if (fileData.addons || fileData.peripheralOptions || fileData.ledOptions) {
+ if (fileData.addons || fileData.gamepad || fileData.pins) {
      const addonsPayload = fileData.addons ? { ...fileData.addons } : fileData;
-     const peripheralPayload = fileData.peripheralOptions ? { ...fileData.peripheralOptions } : fileData;
-     const ledPayload = fileData.ledOptions ? { ...fileData.ledOptions } : fileData;
+     const peripheralPayload = fileData.addons ? { ...fileData.addons } : fileData;
+     const ledPayload = fileData.led ? { ...fileData.led } : fileData;
 
      fetch('/api/setAddonsOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(addonsPayload) })
      .then(() => fetch('/api/setPeripheralOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(peripheralPayload) }))
