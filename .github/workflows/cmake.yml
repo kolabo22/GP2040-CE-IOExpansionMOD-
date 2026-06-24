@@ -53,6 +53,7 @@ jobs:
           cd www
           npm ci
           npm run build
+          node makefsdata.js
           cd ..
 
       - name: Get core count
