@@ -143,17 +143,22 @@ const API_BINDING = {
  }
 
 			
- if (fileData.addons || fileData.pins || fileData.gamepad) {
-     fileData.addonOptions = fileData.addons ? { ...fileData.addons } : {};
-     fileData.peripheralOptions = fileData.addons && fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.addons ? { ...fileData.addons } : {});
-     fileData.wiiOptions = fileData.addons && fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.addons ? { ...fileData.addons } : {});
-     fileData.reactiveLEDOptions = fileData.led ? { ...fileData.led } : (fileData.addons && fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : {});
-
-     setOptionsToAPIStorage(fileData).then(() => {
-         location.reload();
-     }).catch((err) => console.error('Restore Error:', err));
+ if (!fileData) {
+ setNoticeMessage(`No file data found for ${fileName}`);
+ return;
  }
 
+ if (fileData.addons || fileData.gamepad || fileData.pins) {
+     fetch('/cgi/action', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(fileData)
+     })
+     .then(() => {
+         setNoticeMessage(`Successfully restored all 16MB configuration directly into flash! Please reconnect USB.`);
+     })
+     .catch((err) => console.error('Restore Error:', err));
+ }
 
  let filteredData = {};
 
