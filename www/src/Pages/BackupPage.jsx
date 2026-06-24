@@ -12,50 +12,19 @@ const FILE_EXTENSION = '.gp2040';
 const FILENAME = 'gp2040ce_backup_{DATE}' + FILE_EXTENSION;
 
 const API_BINDING = {
-	display: {
-		get: WebApi.getDisplayOptions,
-		set: WebApi.setDisplayOptions,
-	},
-	splash: {
-		get: WebApi.getSplashImage,
-		set: WebApi.setSplashImage,
-	},
-	gamepad: {
-		get: WebApi.getGamepadOptions,
-		set: WebApi.setGamepadOptions,
-	},
-	keyboard: {
-		get: WebApi.getKeyMappings,
-		set: WebApi.setKeyMappings,
-	},
-	led: { get: WebApi.getLedOptions, set: WebApi.setLedOptions },
-	ledTheme: {
-		get: WebApi.getCustomTheme,
-		set: WebApi.setCustomTheme,
-	},
-	macros: {
-		get: WebApi.getMacroAddonOptions,
-		set: WebApi.setMacroAddonOptions,
-	},
-	pins: {
-		get: WebApi.getPinMappings,
-		set: WebApi.setPinMappings,
-	},
- 
- profiles: {
- get: WebApi.getProfileOptions,
- set: WebApi.setProfileOptions,
- },
- heTrigger: {
- get: WebApi.getHETriggerCalibrations,
- set: WebApi.setHETriggerCalibrations,
- },
+    display: { get: WebApi.getDisplayOptions, set: WebApi.setDisplayOptions },
+    splash: { get: WebApi.getSplashImage, set: WebApi.setSplashImage },
+    gamepad: { get: WebApi.getGamepadOptions, set: WebApi.setGamepadOptions },
+    keyboard: { get: WebApi.getKeyMappings, set: WebApi.setKeyMappings },
+    led: { get: WebApi.getLedOptions, set: WebApi.setLedOptions },
+    ledTheme: { get: WebApi.getCustomTheme, set: WebApi.setCustomTheme },
+    macros: { get: WebApi.getMacroAddonOptions, set: WebApi.setMacroAddonOptions },
+    pins: { get: WebApi.getPinMappings, set: WebApi.setPinMappings },
+    profiles: { get: WebApi.getProfileOptions, set: WebApi.setProfileOptions },
+    heTrigger: { get: WebApi.getHETriggerCalibrations, set: WebApi.setHETriggerCalibrations },
+    addons: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
+};
 
- addons: {
- get: WebApi.getAddonsOptions,
- set: WebApi.setAddonsOptions,
- },
- };
 
  export default function BackupPage() {
 	const inputFileSelect = useRef();
