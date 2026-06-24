@@ -24,9 +24,6 @@ const API_BINDING = {
     profiles: { get: WebApi.getProfileOptions, set: WebApi.setProfileOptions },
     heTrigger: { get: WebApi.getHETriggerCalibrations, set: WebApi.setHETriggerCalibrations },
     addons: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
-    reactiveLEDOptions: { get: WebApi.getReactiveLEDs, set: WebApi.setReactiveLEDs },
-    wiiOptions: { get: WebApi.getWiiControls, set: WebApi.setWiiControls },
-    peripheralOptions: { get: WebApi.getPeripheralOptions, set: WebApi.setPeripheralOptions },
 };
 
 
