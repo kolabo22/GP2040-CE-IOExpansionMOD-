@@ -50,26 +50,14 @@ const API_BINDING = {
  get: WebApi.getHETriggerCalibrations,
  set: WebApi.setHETriggerCalibrations,
  },
+
  addons: {
  get: WebApi.getAddonsOptions,
  set: WebApi.setAddonsOptions,
  },
- reactiveLEDOptions: {
- get: WebApi.getReactiveLEDs,
- set: WebApi.setReactiveLEDs,
- },
- wiiOptions: {
- get: WebApi.getWiiControls,
- set: WebApi.setWiiControls,
- },
- peripheralOptions: {
- get: WebApi.getPeripheralOptions,
- set: WebApi.setPeripheralOptions,
- },
  };
 
-
-export default function BackupPage() {
+ export default function BackupPage() {
 	const inputFileSelect = useRef();
 
 	const [optionState, setOptionStateData] = useState({});
@@ -179,20 +167,26 @@ export default function BackupPage() {
 			}
 
 			
- if (!fileData) {
+  if (!fileData) {
  setNoticeMessage(`No file data found for ${fileName}`);
  return;
  }
- if (fileData.addons || fileData.gamepad || fileData.pins) {
-     fetch('/api/setAddonsOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fileData) })
-     .then(() => fetch('/api/setPeripheralOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fileData) }))
+
+
+ if (fileData.addons || fileData.peripheralOptions || fileData.ledOptions) {
+     
+     const addonsPayload = fileData.addons ? { ...fileData.addons } : fileData;
+     const peripheralPayload = fileData.peripheralOptions ? { ...fileData.peripheralOptions } : fileData;
+     const ledPayload = fileData.ledOptions ? { ...fileData.ledOptions } : fileData;
+
+     fetch('/api/setAddonsOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(addonsPayload) })
+     .then(() => fetch('/api/setPeripheralOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(peripheralPayload) }))
+     .then(() => fetch('/api/setReactiveLEDs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ledPayload) }))
      .then(() => {
-         if (typeof changeAddonOptions === 'function') changeAddonOptions(fileData.addons || fileData);
-         if (typeof changePeripheralOptions === 'function') changePeripheralOptions(fileData.peripheralOptions || fileData);
-         if (typeof changeLedOptions === 'function') changeLedOptions(fileData.ledOptions || fileData);
-         
-         setNoticeMessage(`Successfully restored and synced all configuration!`);
-     });
+
+         location.reload();
+     })
+     .catch((err) => console.error('Restore Error:', err));
  }
 
  let filteredData = {};
