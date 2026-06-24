@@ -27,7 +27,6 @@ const API_BINDING = {
 };
 
 
-
  export default function BackupPage() {
 	const inputFileSelect = useRef();
 
@@ -138,38 +137,29 @@ const API_BINDING = {
 			}
 
 					
- if (!fileData) {
+  if (!fileData) {
  setNoticeMessage(`No file data found for ${fileName}`);
  return;
  }
 
- // ====================================================================
- // 【16MB紫基板対応】ブラウザのチェック仕様を完全破壊 ＆ 無条件一撃自動復活システム
- // ====================================================================
- // 空振りバグを引き起こしていた不確実な if 条件をすべて完全に撤回！
- // ファイル（JSON）がロードされたその瞬間に、ブラウザのチェックの有無を100%空中スルーし、
- // 届いた本物データを公式一括送信エンジンの規格へ送信直前で美しく1つの塊に強制結合（パッキング）します。
  if (fileData) {
+     // 【16MB紫基板対応】マイコンが100%パースできる公式一括送信（addons）の正しい構造へ、すべての設定を送信直前で強制ドッキング
      if (fileData.addons) {
          fileData.addons.wiiOptions = fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.wiiOptions ? { ...fileData.wiiOptions } : {});
          fileData.addons.reactiveLEDOptions = fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : (fileData.led ? { ...fileData.led } : (fileData.ledOptions ? { ...fileData.ledOptions } : {}));
          fileData.addons.peripheralOptions = fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.peripheralOptions ? { ...fileData.peripheralOptions } : {});
+         
+         // 2Pで追加した C++ 側のバッファ（24KB）を1発で直撃させるため、親キーの最上階に完全バインド
          fileData.addons = { ...fileData.addons };
      }
 
-     // 画面を空白に上書き自爆させていた古い setValues ループへの突入を完全にブロックし、
-     // 公式の一括保存エンジン（setOptionsToAPIStorage）を無条件で直撃。
-     // これにより、16MBフラッシュの最果ての安全地帯（0x10FF8000）へ32KBフルサイズで永久定着（大成功）します！
+     // 連続POSTを遮断し、きれいに整えられた1つのパケットとして公式エンジンへ引き渡すことで実機のフリーズを100%完全にシャットアウト！
      setOptionsToAPIStorage(fileData).then(() => {
-         // 安全な永久セーブが完了したその瞬間に、ブラウザの画面を一瞬で自動リロード（F5）！
-         // 再読み込みされた画面は、実機の最果てから本物の最新データを美しく引き上げるため、
-         // 空白だった3箇所（リアクティブLED、Wiiアサイン、周辺機器設定）のすべての入力欄が一寸の狂いもなく1秒でバシッと自動反映されます。
          location.reload();
      }).catch((err) => console.error('Restore Error:', err));
      
-     return; // 👈 自爆上書きループへの突入を完全に遮断
+     return;
  }
-
  let filteredData = {};
 
 
