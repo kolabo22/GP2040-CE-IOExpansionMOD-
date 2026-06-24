@@ -142,19 +142,19 @@ const API_BINDING = {
  return;
  }
 
- if (fileData.addons || fileData.gamepad || fileData.pins) {
-     const addonsPayload = fileData.addons ? { ...fileData.addons } : fileData;
-     const peripheralPayload = fileData.addons ? { ...fileData.addons } : fileData;
-     const ledPayload = fileData.led ? { ...fileData.led } : fileData;
 
-     fetch('/api/setAddonsOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(addonsPayload) })
-     .then(() => fetch('/api/setPeripheralOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(peripheralPayload) }))
-     .then(() => fetch('/api/setReactiveLEDs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ledPayload) }))
-     .then(() => {
+ if (fileData.addons || fileData.pins || fileData.gamepad) {
+     
+     fileData.addonOptions = { ...fileData.addons };
+     fileData.peripheralOptions = { ...fileData.addons };
+     fileData.ledOptions = { ...fileData.led };
+
+	 setOptionsToAPIStorage(fileData).then(() => {
+
          location.reload();
-     })
-     .catch((err) => console.error('Restore Error:', err));
+     }).catch((err) => console.error('Restore Error:', err));
  }
+
 
  let filteredData = {};
 
