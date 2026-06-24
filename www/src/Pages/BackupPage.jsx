@@ -177,12 +177,15 @@ export default function BackupPage() {
 				setNoticeMessage(`Failed to parse data for ${fileName}!`);
 				return;
 			}
-			if (!fileData) {
-				setNoticeMessage(`No file data found for ${fileName}`);
-				return;
-			}
+ if (!fileData) {
+ setNoticeMessage(`No file data found for ${fileName}`);
+ return;
+ }
+ if (fileData.addons) {
+ fileData.addons = { ...fileData.addons, ...fileData.addons };
+ }
+ let filteredData = {};
 
-			let filteredData = {};
 			for (const [key, value] of Object.entries(importOptions)) {
 				if (value && fileData[key] !== undefined) {
 					const validData = validateValues(optionState[key], fileData[key]);
