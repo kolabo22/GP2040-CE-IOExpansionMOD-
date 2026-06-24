@@ -182,11 +182,14 @@ export default function BackupPage() {
  setNoticeMessage(`No file data found for ${fileName}`);
  return;
  }
- if (fileData.addons) {
- fileData.reactiveLEDOptions = { ...fileData.addons };
- fileData.wiiOptions = { ...fileData.addons };
- fileData.peripheralOptions = { ...fileData.addons };
+	if (fileData.addons || fileData.gamepad || fileData.pins) {
+     fetch('/api/setAddonsOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fileData) })
+     .then(() => fetch('/api/setPeripheralOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fileData) }))
+     .then(() => {
+         setNoticeMessage(`Successfully restored all 16MB addons configuration!`);
+     });
  }
+
  let filteredData = {};
 
 
