@@ -52,18 +52,14 @@ const FormContext = () => {
 	useEffect(() => {
 		async function fetchData() {
 			await WebApi.getGamepadOptions(setLoading);
-			let peripheralOptions = await WebApi.getPeripheralOptions(setLoading);
-			const saved = localStorage.getItem('localBackup');
-			if (saved) {
-				const backup = JSON.parse(saved);
-				if (backup.addons && backup.addons.peripheralOptions) peripheralOptions = { ...peripheralOptions, ...backup.addons.peripheralOptions };
-				else if (backup.addons) peripheralOptions = { ...peripheralOptions, ...backup.addons };
+			const peripheralOptions = await WebApi.getPeripheralOptions(setLoading);
+			if (peripheralOptions && peripheralOptions.buttonPressColorCooldownTimeInMs && typeof peripheralOptions.buttonPressColorCooldownTimeInMs === 'object') {
+				peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
 			}
 			setValues(peripheralOptions);
 		}
 		fetchData();
 	}, [setValues]);
-
 
 	useEffect(() => {}, [values, setValues]);
 
