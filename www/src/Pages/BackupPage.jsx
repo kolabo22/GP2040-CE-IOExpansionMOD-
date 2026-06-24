@@ -24,6 +24,9 @@ const API_BINDING = {
     profiles: { get: WebApi.getProfileOptions, set: WebApi.setProfileOptions },
     heTrigger: { get: WebApi.getHETriggerCalibrations, set: WebApi.setHETriggerCalibrations },
     addons: { get: WebApi.getAddonsOptions, set: WebApi.setAddonsOptions },
+    reactiveLEDOptions: { get: WebApi.getReactiveLEDs, set: WebApi.setReactiveLEDs },
+    wiiOptions: { get: WebApi.getWiiControls, set: WebApi.setWiiControls },
+    peripheralOptions: { get: WebApi.getPeripheralOptions, set: WebApi.setPeripheralOptions },
 };
 
 
@@ -142,17 +145,13 @@ const API_BINDING = {
  return;
  }
 
-
  if (fileData.addons || fileData.pins || fileData.gamepad) {
-     
-     if (fileData.addons) {
-         fileData.addons.wiiOptions = { ...fileData.addons.wiiOptions };
-         fileData.addons.reactiveLEDOptions = { ...fileData.led };
-         fileData.addons.peripheralOptions = { ...fileData.addons };
-     }
+     fileData.addonOptions = { ...fileData.addons };
+     fileData.peripheralOptions = { ...fileData.addons.peripheralOptions || fileData.addons };
+     fileData.wiiOptions = { ...fileData.addons.wiiOptions || fileData.addons };
+     fileData.reactiveLEDOptions = { ...fileData.led || fileData.addons };
 
      setOptionsToAPIStorage(fileData).then(() => {
-
          location.reload();
      }).catch((err) => console.error('Restore Error:', err));
  }
