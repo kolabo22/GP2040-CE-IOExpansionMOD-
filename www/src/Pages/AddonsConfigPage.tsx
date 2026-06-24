@@ -99,17 +99,19 @@ const FormContext = ({ setStoredData }) => {
 
 	useEffect(() => {
 		async function fetchData() {
-			const data = await WebApi.getAddonsOptions(setLoading);
-   	  
-			// ★この一行を追加して、ブラウザのコンソールで「data」の中身を見てください
-   	  console.log("Picoから届いた生データ:", data); 			
-			
+			let data = await WebApi.getAddonsOptions(setLoading);
+			const saved = localStorage.getItem('localBackup');
+			if (saved) {
+				const backup = JSON.parse(saved);
+				if (backup.addons) data = { ...data, ...backup.addons };
+			}
 			const mergedData = { ...DEFAULT_VALUES, ...data };
 			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
 		fetchData();
 	}, [setValues]);
+
 
 	useEffect(() => {
 		sanitizeData(values);
