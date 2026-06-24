@@ -203,7 +203,13 @@ const FormContext = ({
 
 	useEffect(() => {
 		async function fetchData() {
-			const data = await WebApi.getLedOptions(setLoading);
+			let data = await WebApi.getLedOptions(setLoading);
+			const saved = localStorage.getItem('localBackup');
+			if (saved) {
+				const backup = JSON.parse(saved);
+				if (backup.led) data = { ...data, ...backup.led };
+				if (backup.ledOptions) data = { ...data, ...backup.ledOptions };
+			}
 			const dataSources = createDataSource(
 				data.ledButtonMap,
 				buttonLabelType,
@@ -214,6 +220,7 @@ const FormContext = ({
 		}
 		fetchData();
 	}, []);
+
 
 	useEffect(() => {
 		const dataSources = createDataSource(
