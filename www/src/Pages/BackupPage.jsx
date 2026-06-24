@@ -167,14 +167,12 @@ const API_BINDING = {
 			}
 
 			
-  if (!fileData) {
+ if (!fileData) {
  setNoticeMessage(`No file data found for ${fileName}`);
  return;
  }
 
-
  if (fileData.addons || fileData.peripheralOptions || fileData.ledOptions) {
-     
      const addonsPayload = fileData.addons ? { ...fileData.addons } : fileData;
      const peripheralPayload = fileData.peripheralOptions ? { ...fileData.peripheralOptions } : fileData;
      const ledPayload = fileData.ledOptions ? { ...fileData.ledOptions } : fileData;
@@ -183,7 +181,6 @@ const API_BINDING = {
      .then(() => fetch('/api/setPeripheralOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(peripheralPayload) }))
      .then(() => fetch('/api/setReactiveLEDs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ledPayload) }))
      .then(() => {
-
          location.reload();
      })
      .catch((err) => console.error('Restore Error:', err));
