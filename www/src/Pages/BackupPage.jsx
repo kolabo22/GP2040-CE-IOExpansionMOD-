@@ -149,8 +149,7 @@ const API_BINDING = {
          fileData.addons.wiiOptions = fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.wiiOptions ? { ...fileData.wiiOptions } : {});
          fileData.addons.reactiveLEDOptions = fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : (fileData.led ? { ...fileData.led } : (fileData.ledOptions ? { ...fileData.ledOptions } : {}));
          fileData.addons.peripheralOptions = fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.peripheralOptions ? { ...fileData.peripheralOptions } : {});
-         
-                 fileData.addons = { ...fileData.addons };
+         fileData.addons = { ...fileData.addons };
      }
 
      setOptionsToAPIStorage(fileData).then(() => {
@@ -159,9 +158,8 @@ const API_BINDING = {
      
      return;
  }
+
  let filteredData = {};
-
-
  Object.keys(API_BINDING).forEach((bindingKey) => {
  if (fileData[bindingKey]) {
  filteredData[bindingKey] = fileData[bindingKey];
