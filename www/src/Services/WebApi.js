@@ -479,22 +479,25 @@ async function getAddonsOptions(setLoading) {
 	}
 }
 
-async function setAddonsOptions(options) {
-	if (options.keyboardHostMap) {
-		let data = {};
-		Object.keys(options.keyboardHostMap).map(
-			(button) => (data[button] = options.keyboardHostMap[button].key),
-		);
-		options.keyboardHostMap = data;
-	}
 
-	return Http.post(`${baseUrl}/api/setAddonsOptions`, sanitizeRequest(options))
-		.then((response) => {
-			console.log(response.data);
-			return true;
-		})
-		.catch((err) => {
-			console.error(err);
+async function setAddonsOptions(options) {
+if (options.keyboardHostMap) {
+let data = {};
+Object.keys(options.keyboardHostMap).map(
+(button) => (data[button] = 
+options.keyboardHostMap[button].key),
+);
+options.keyboardHostMap = data;
+}
+return Http.post(`${baseUrl}/api/setAddonsOptions`, options)
+.then((response) => {
+console.log(response.data);
+return true;
+})
+.catch((err) => {
+console.error(err);
+
+	
 			return false;
 		});
 }
