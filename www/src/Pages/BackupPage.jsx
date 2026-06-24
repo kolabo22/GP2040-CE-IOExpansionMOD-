@@ -177,16 +177,21 @@ export default function BackupPage() {
 				setNoticeMessage(`Failed to parse data for ${fileName}!`);
 				return;
 			}
- 
+
+			
  if (!fileData) {
  setNoticeMessage(`No file data found for ${fileName}`);
  return;
  }
-	if (fileData.addons || fileData.gamepad || fileData.pins) {
+ if (fileData.addons || fileData.gamepad || fileData.pins) {
      fetch('/api/setAddonsOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fileData) })
      .then(() => fetch('/api/setPeripheralOptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fileData) }))
      .then(() => {
-         setNoticeMessage(`Successfully restored all 16MB addons configuration!`);
+         if (typeof changeAddonOptions === 'function') changeAddonOptions(fileData.addons || fileData);
+         if (typeof changePeripheralOptions === 'function') changePeripheralOptions(fileData.peripheralOptions || fileData);
+         if (typeof changeLedOptions === 'function') changeLedOptions(fileData.ledOptions || fileData);
+         
+         setNoticeMessage(`Successfully restored and synced all configuration!`);
      });
  }
 
