@@ -53,21 +53,23 @@ const FormContext = () => {
     async function fetchData() {
       await WebApi.getGamepadOptions(setLoading);
       let peripheralOptions = await WebApi.getPeripheralOptions(setLoading);
+
+      // 🔥【最上流マージ】Wiiアサイン等のバックアップデータを先にマージ
+      const savedJson = localStorage.getItem('restore_raw_json');
+      if (savedJson) {
+        try {
+          const fileData = JSON.parse(savedJson);
+          if (fileData) {
+            peripheralOptions = { ...peripheralOptions, ...fileData };
+            console.log('✅ [Peripheral Sync] Success.');
+          }
+        } catch (e) {}
+      }
+
+      // 🔥【鉄壁のセーフティ】周辺機器マッピング側のバグオブジェクトも完全に0へ叩き落とす
       if (peripheralOptions && peripheralOptions.buttonPressColorCooldownTimeInMs && typeof peripheralOptions.buttonPressColorCooldownTimeInMs === 'object') {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
-
-        // 🔥【Wiiアサイン死守】ルート直下にある設定群を、実機データの上にそのまま丸ごと強制マージ
-        const savedJson = localStorage.getItem('restore_raw_json');
-        if (savedJson) {
-          try {
-            const fileData = JSON.parse(savedJson);
-            if (fileData) {
-              peripheralOptions = { ...peripheralOptions, ...fileData };
-              console.log('✅ [Peripheral Sync] Success.');
-            }
-          } catch (e) {}
-        }
 
       setValues(peripheralOptions);
     }
