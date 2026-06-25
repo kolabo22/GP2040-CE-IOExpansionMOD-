@@ -137,12 +137,19 @@ const API_BINDING = {
 			}
 
 					
-  if (!fileData) {
+ if (!fileData) {
  setNoticeMessage(`No file data found for ${fileName}`);
  return;
  }
-
-if (fileData) {
+ if (fileData) {
+   // 🔥【絶対安全圏】実機送信パケットを絶対に汚さないよう、読み込んだ生のJSON文字列をそのまま100%退避
+   try {
+     localStorage.setItem('restore_raw_json', reader.result);
+     console.log('✅ [Backup Storage] Raw JSON successfully stored.');
+   } catch (e) {
+     console.error('localStorage store error', e);
+   }
+	 
   // 📥 16MB 基板対応・アイコンが100%パスできる公式一括送信（addons）の正しい構造へ、すべての設定を送信直前で強制ドッキング
   if (fileData.addons) {
     fileData.addons.wiiOptions = fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.wiiOptions ? { ...fileData.wiiOptions } : {});
