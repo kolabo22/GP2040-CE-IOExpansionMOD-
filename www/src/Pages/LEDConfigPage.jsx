@@ -203,41 +203,33 @@ const FormContext = ({
 
   useEffect(() => {
     async function fetchData() {
-      await WebApi.getGamepadOptions(setLoading);
-      let peripheralOptions = await WebApi.getPeripheralOptions(setLoading);
+      let data = await WebApi.getLedOptions(setLoading);
+      if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
+        data.buttonPressColorCooldownTimeInMs = 0;
+      }
 
+      // 🔥【深層強制同期】リアクティブLEDの全色・全ピン構造をディープコピーで完全上書き
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
           if (fileData) {
-            peripheralOptions = { ...peripheralOptions, ...fileData };
-            console.log('✅ [Peripheral Sync] Success.');
+            data = JSON.parse(JSON.stringify({ ...data, ...fileData }));
+            console.log('✅ [LED Sync] Force Deep Updated.');
           }
         } catch (e) {}
       }
 
-      if (peripheralOptions && peripheralOptions.buttonPressColorCooldownTimeInMs && typeof peripheralOptions.buttonPressColorCooldownTimeInMs === 'object') {
-        peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
-      }
-
-      setValues(peripheralOptions);
+      // 完全に新しくなった data（バックアップ由来）からドラッグ順マップを生成してバインド
+      const dataSources = createDataSource(
+        data.ledButtonMap,
+        buttonLabelType,
+        swapTpShareLabels,
+      );
+      setDataSources(dataSources);
+      setValues(data);
     }
 
-
-    fetchData();
-  }, []);
-
-
-
-	useEffect(() => {
-		const dataSources = createDataSource(
-			ledButtonMap,
-			buttonLabelType,
-			swapTpShareLabels,
-		);
-		setDataSources(dataSources);
-	}, [buttonLabelType, swapTpShareLabels]);
 
 	return null;
 };
