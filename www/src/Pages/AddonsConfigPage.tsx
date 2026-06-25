@@ -104,17 +104,17 @@ const FormContext = ({ setStoredData }) => {
 				data.buttonPressColorCooldownTimeInMs = 0;
 			}
 
-			// 🔥【逆流ロード阻止】localStorage 内にフルバックアップがあればアドオン設定を強制差し替え
-			const savedFullBackup = localStorage.getItem('restore_full_backup_data');
-			if (savedFullBackup) {
+			// 🔥 ロードしたJSONの「addons」キーの中身を、実機データの上に100%強制マージ
+			const savedJson = localStorage.getItem('restore_raw_json');
+			if (savedJson) {
 				try {
-					const fullData = JSON.parse(savedFullBackup);
-					if (fullData && fullData.addons) {
-						data = { ...data, ...fullData.addons };
-						console.log('✅ [Addons Sync] Forcefully injected backup data into Formik.');
+					const fileData = JSON.parse(savedJson);
+					if (fileData && fileData.addons) {
+						data = { ...data, ...fileData.addons };
+						console.log('✅ [Addons Sync] Success.');
 					}
 				} catch (e) {
-					console.error('Failed to injection backup into addons', e);
+					console.error('Addons restore parse error', e);
 				}
 			}
 
@@ -122,6 +122,7 @@ const FormContext = ({ setStoredData }) => {
 			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
+
 		fetchData();
 	}, [setValues]);
 
