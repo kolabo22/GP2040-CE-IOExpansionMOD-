@@ -203,34 +203,27 @@ const FormContext = ({
 
   useEffect(() => {
     async function fetchData() {
-      let data = await WebApi.getLedOptions(setLoading);
+      await WebApi.getGamepadOptions(setLoading);
+      let peripheralOptions = await WebApi.getPeripheralOptions(setLoading);
 
-      // 🔥【最上流マージ】ドラッグ順を含むバックアップデータを先にマージ
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
           if (fileData) {
-            data = { ...data, ...fileData };
-            console.log('✅ [LED Sync] Success.');
+            peripheralOptions = { ...peripheralOptions, ...fileData };
+            console.log('✅ [Peripheral Sync] Success.');
           }
         } catch (e) {}
       }
 
-      // 🔥【鉄壁のセーフティ】マージされたデータも含めてオブジェクト型バグを完全消滅させる
-      if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
-        data.buttonPressColorCooldownTimeInMs = 0;
+      if (peripheralOptions && peripheralOptions.buttonPressColorCooldownTimeInMs && typeof peripheralOptions.buttonPressColorCooldownTimeInMs === 'object') {
+        peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      const dataSources = createDataSource(
-
-        data.ledButtonMap,
-        buttonLabelType,
-        swapTpShareLabels,
-      );
-      setDataSources(dataSources);
-      setValues(data);
+      setValues(peripheralOptions);
     }
+
 
     fetchData();
   }, []);
