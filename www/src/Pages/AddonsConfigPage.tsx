@@ -99,7 +99,7 @@ const FormContext = ({ setStoredData }) => {
 
 	useEffect(() => {
 		async function fetchData() {
-			let data = await WebApi.getAddonsOptions(setLoading);
+			const data = await WebApi.getAddonsOptions(setLoading);
 			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
 				data.buttonPressColorCooldownTimeInMs = 0;
 			}
@@ -107,24 +107,19 @@ const FormContext = ({ setStoredData }) => {
 			// 1. まず公式の初期値マージを終わらせる
 			let mergedData = { ...DEFAULT_VALUES, ...data };
 
-			// 🔥【Formik完全強制突破】バックアップ項目を狙い撃ちで上書き
+			// 🔥【主客逆転】組み立てられた器の上に、バックアップのフラットデータをそのまま100%最優先で被せる
 			const savedJson = localStorage.getItem('restore_raw_json');
 			if (savedJson) {
 				try {
 					const fileData = JSON.parse(savedJson);
 					if (fileData) {
-						if (fileData.wiiOptions && mergedData.wiiOptions) mergedData.wiiOptions = { ...mergedData.wiiOptions, ...fileData.wiiOptions };
-						if (fileData.keyboardMapping && mergedData.keyboardMapping) mergedData.keyboardMapping = { ...mergedData.keyboardMapping, ...fileData.keyboardMapping };
-						if (fileData.playerNumberOptions && mergedData.playerNumberOptions) mergedData.playerNumberOptions = { ...mergedData.playerNumberOptions, ...fileData.playerNumberOptions };
+						mergedData = JSON.parse(JSON.stringify({ ...mergedData, ...fileData }));
 						console.log('✅ [Addons Sync] Force Deep Updated.');
 					}
 				} catch (e) {}
 			}
 
-			// 🔥【ラストピース】setValues ではなく resetForm で初期値の壁を完全に破壊して強制反映！
-			const { resetForm } = useFormikContext();
-setValues(mergedData);
-
+			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
 
