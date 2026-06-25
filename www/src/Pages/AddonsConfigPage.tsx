@@ -100,11 +100,8 @@ const FormContext = ({ setStoredData }) => {
 	useEffect(() => {
 		async function fetchData() {
 			let data = await WebApi.getAddonsOptions(setLoading);
-			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
-				data.buttonPressColorCooldownTimeInMs = 0;
-			}
 
-			// 🔥【完全覚醒】ルート直下にある設定群を、実機データの上にそのまま丸ごと強制マージ
+			// 🔥【最上流マージ】バグ除去処理が走る前に、バックアップを強制マージ
 			const savedJson = localStorage.getItem('restore_raw_json');
 			if (savedJson) {
 				try {
@@ -116,7 +113,13 @@ const FormContext = ({ setStoredData }) => {
 				} catch (e) {}
 			}
 
+			// 🔥【鉄壁のセーフティ】マージされたデータに潜むバグオブジェクトを100%検知して0へ叩き落とす！
+			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
+				data.buttonPressColorCooldownTimeInMs = 0;
+			}
+
 			const mergedData = { ...DEFAULT_VALUES, ...data };
+
 			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
