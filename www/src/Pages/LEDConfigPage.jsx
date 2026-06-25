@@ -233,7 +233,11 @@ const FormContext = ({
 
       // 🔥【ラストピース】resetForm で頑固なFormikの初期表示を粉砕！
       const { resetForm } = useFormikContext();
-      resetForm({ values: data });
+      resetForm({ 
+  values: data,
+  initialValues: data
+});
+
     }
 
 		
