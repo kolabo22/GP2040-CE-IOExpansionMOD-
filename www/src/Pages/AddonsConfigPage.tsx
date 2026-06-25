@@ -123,10 +123,7 @@ const FormContext = ({ setStoredData }) => {
 
 			// 🔥【ラストピース】setValues ではなく resetForm で初期値の壁を完全に破壊して強制反映！
 			const { resetForm } = useFormikContext();
-			resetForm({ 
-  values: mergedData,
-  initialValues: mergedData
-});
+setValues(mergedData);
 
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
