@@ -99,10 +99,25 @@ const FormContext = ({ setStoredData }) => {
 
 	useEffect(() => {
 		async function fetchData() {
-			const data = await WebApi.getAddonsOptions(setLoading);
+			let data = await WebApi.getAddonsOptions(setLoading);
 			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
 				data.buttonPressColorCooldownTimeInMs = 0;
 			}
+
+			// 🔥【逆流ロード阻止】localStorage 内にフルバックアップがあればアドオン設定を強制差し替え
+			const savedFullBackup = localStorage.getItem('restore_full_backup_data');
+			if (savedFullBackup) {
+				try {
+					const fullData = JSON.parse(savedFullBackup);
+					if (fullData && fullData.addons) {
+						data = { ...data, ...fullData.addons };
+						console.log('✅ [Addons Sync] Forcefully injected backup data into Formik.');
+					}
+				} catch (e) {
+					console.error('Failed to injection backup into addons', e);
+				}
+			}
+
 			const mergedData = { ...DEFAULT_VALUES, ...data };
 			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
@@ -110,13 +125,13 @@ const FormContext = ({ setStoredData }) => {
 		fetchData();
 	}, [setValues]);
 
-
 	useEffect(() => {
 		sanitizeData(values);
 	}, [values, setValues]);
 
 	return null;
 };
+
 
 // データの数値変換処理
 const sanitizeData = (values) => {
