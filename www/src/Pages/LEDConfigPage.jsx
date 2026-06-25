@@ -203,47 +203,40 @@ const FormContext = ({
 
   useEffect(() => {
     async function fetchData() {
-      let data = await WebApi.getLedOptions(setLoading);
-      if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
-        data.buttonPressColorCooldownTimeInMs = 0;
-      }
+      const data = await WebApi.getLedOptions(setLoading);
 
-      // 🔥【Formik完全強制突破】実機構造にバックアップを注入
+      // 🔥【主客逆転】バックアップデータを主役に据え、実機データを添える
+      let finalLedData = { ...data };
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
           if (fileData) {
-            Object.keys(data).forEach((key) => {
-              if (fileData[key] !== undefined) {
-                data[key] = fileData[key];
-              }
-            });
+            // バックアップ(fileData)をベースにし、実機にしかないプロパティだけを data から補完する
+            finalLedData = JSON.parse(JSON.stringify({ ...data, ...fileData }));
             console.log('✅ [LED Sync] Force Deep Updated.');
           }
         } catch (e) {}
       }
 
+      // 🔥【鉄壁のセーフティ】オブジェクト型バグを完全消滅させる
+      if (finalLedData && finalLedData.buttonPressColorCooldownTimeInMs && typeof finalLedData.buttonPressColorCooldownTimeInMs === 'object') {
+        finalLedData.buttonPressColorCooldownTimeInMs = 0;
+      }
+
+      // 💡 100%バックアップ由来のデータからドラッグリストを組み立てる
       const dataSources = createDataSource(
-        data.ledButtonMap,
+        finalLedData.ledButtonMap,
         buttonLabelType,
         swapTpShareLabels,
       );
       setDataSources(dataSources);
-
-      // 🔥【ラストピース】resetForm で頑固なFormikの初期表示を粉砕！
-      const { resetForm } = useFormikContext();
-// 🔥 修正後: ドラッグリスト更新直後にストレートに反映
-setDataSources(dataSources);
-setValues(data);
+      setValues(finalLedData);
     }
 
-		
-    // 💡 忘れずに定義した関数をここで実行する
     fetchData();
-  }, [setValues]); // 💡 他の画面とタイミングを合わせるため、ここでuseEffectをきれいに閉じる
+  }, [setValues]);
 
-  // 💡 コンポーネント自体の戻り値（return null）はuseEffectの外側に置く
   return null;
 };
 
