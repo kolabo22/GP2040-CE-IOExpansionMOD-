@@ -172,11 +172,16 @@ const API_BINDING = {
 
   // 連続した POST を遮断し、きれいに整えられた1 つのパケットとして公式エンジンへ引き渡すことで実機のフリーズを100%完全にシャットアウト！
   setOptionsToAPIStorage(fileData).then(() => {
-    location.reload();
+    // 🔥【鉄壁のディレイ】ストレージ書き込み完了を待つため、リロードを1.2秒わざと遅らせる
+    console.log('⏳ Waiting for localStorage serialization...');
+    setTimeout(() => {
+      location.reload();
+    }, 1200);
   }).catch((err) => console.error('Restore Error:', err));
 
   return;
 }
+
 
  let filteredData = {};
 
