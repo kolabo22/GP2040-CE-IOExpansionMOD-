@@ -100,29 +100,31 @@ const FormContext = ({ setStoredData }) => {
 	useEffect(() => {
 		async function fetchData() {
 			let data = await WebApi.getAddonsOptions(setLoading);
+			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
+				data.buttonPressColorCooldownTimeInMs = 0;
+			}
 
-			// 🔥【最上流マージ】バグ除去処理が走る前に、バックアップを強制マージ
+			// 1. まず公式の初期値マージを完全に終わらせる
+			let mergedData = { ...DEFAULT_VALUES, ...data };
+
+			// 🔥【深層強制同期】完全に組み立てられた mergedData に対し、バックアップを深層展開して上書き
 			const savedJson = localStorage.getItem('restore_raw_json');
 			if (savedJson) {
 				try {
 					const fileData = JSON.parse(savedJson);
 					if (fileData) {
-						data = { ...data, ...fileData };
-						console.log('✅ [Addons Sync] Success.');
+						// 深い階層の参照を切るため、一度文字列化して完全な別物としてドッキング
+						mergedData = JSON.parse(JSON.stringify({ ...mergedData, ...fileData }));
+						console.log('✅ [Addons Sync] Force Deep Updated.');
 					}
 				} catch (e) {}
 			}
 
-			// 🔥【鉄壁のセーフティ】マージされたデータに潜むバグオブジェクトを100%検知して0へ叩き落とす！
-			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
-				data.buttonPressColorCooldownTimeInMs = 0;
-			}
-
-			const mergedData = { ...DEFAULT_VALUES, ...data };
-
+			// 2. 完全に新しく生まれ変わったオブジェクトをFormikに認知させる
 			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
+
 
 		fetchData();
 	}, [setValues]);
