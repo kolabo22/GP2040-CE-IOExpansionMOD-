@@ -233,11 +233,9 @@ const FormContext = ({
 
       // 🔥【ラストピース】resetForm で頑固なFormikの初期表示を粉砕！
       const { resetForm } = useFormikContext();
-      resetForm({ 
-  values: data,
-  initialValues: data
-});
-
+// 🔥 修正後: ドラッグリスト更新直後にストレートに反映
+setDataSources(dataSources);
+setValues(data);
     }
 
 		
