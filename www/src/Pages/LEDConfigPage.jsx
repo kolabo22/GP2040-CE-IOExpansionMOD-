@@ -193,30 +193,48 @@ const createLedMap = (ledButtons, clear) => {
 };
 
 const FormContext = ({
-	buttonLabelType,
-	ledButtonMap,
-	swapTpShareLabels,
-	setDataSources,
+  buttonLabelType,
+  ledButtonMap,
+  swapTpShareLabels,
+  setDataSources,
 }) => {
-	const { setValues } = useFormikContext();
-	const { setLoading } = useContext(AppContext);
+  const { setValues } = useFormikContext();
+  const { setLoading } = useContext(AppContext);
 
-	useEffect(() => {
-		async function fetchData() {
-			const data = await WebApi.getLedOptions(setLoading);
-			if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
-				data.buttonPressColorCooldownTimeInMs = 0;
-			}
-			const dataSources = createDataSource(
-				data.ledButtonMap,
-				buttonLabelType,
-				swapTpShareLabels,
-			);
-			setDataSources(dataSources);
-			setValues(data);
-		}
-		fetchData();
-	}, []);
+  useEffect(() => {
+    async function fetchData() {
+      let data = await WebApi.getLedOptions(setLoading);
+      if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
+        data.buttonPressColorCooldownTimeInMs = 0;
+      }
+
+      // 🔥【自爆上書き阻止】localStorage からリアクティブLEDのバックアップデータを最優先で奪取
+      const savedFullBackup = localStorage.getItem('restore_full_backup_data');
+      if (savedFullBackup) {
+        try {
+          const fullData = JSON.parse(savedFullBackup);
+          // BackupPage の構造上、led または addons.reactiveLEDOptions に格納されている
+          const backupLED = fullData.led || (fullData.addons && fullData.addons.reactiveLEDOptions);
+          if (backupLED) {
+            data = { ...data, ...backupLED };
+            console.log('✅ [LED Sync] Forcefully injected backup data into LED Formik and DragList.');
+          }
+        } catch (e) {
+          console.error('Failed to injection backup into LED config', e);
+        }
+      }
+
+      const dataSources = createDataSource(
+        data.ledButtonMap,
+        buttonLabelType,
+        swapTpShareLabels,
+      );
+      setDataSources(dataSources);
+      setValues(data);
+    }
+    fetchData();
+  }, []);
+
 
 
 	useEffect(() => {
