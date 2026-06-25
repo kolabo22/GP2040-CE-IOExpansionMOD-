@@ -57,19 +57,17 @@ const FormContext = () => {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥 ロードしたJSONの「peripheral」キーの中身を、実機データの上に100%強制マージ
-      const savedJson = localStorage.getItem('restore_raw_json');
-      if (savedJson) {
-        try {
-          const fileData = JSON.parse(savedJson);
-          if (fileData && fileData.peripheral) {
-            peripheralOptions = { ...peripheralOptions, ...fileData.peripheral };
-            console.log('✅ [Peripheral Sync] Success.');
-          }
-        } catch (e) {
-          console.error('Peripheral restore parse error', e);
+        // 🔥【Wiiアサイン死守】ルート直下にある設定群を、実機データの上にそのまま丸ごと強制マージ
+        const savedJson = localStorage.getItem('restore_raw_json');
+        if (savedJson) {
+          try {
+            const fileData = JSON.parse(savedJson);
+            if (fileData) {
+              peripheralOptions = { ...peripheralOptions, ...fileData };
+              console.log('✅ [Peripheral Sync] Success.');
+            }
+          } catch (e) {}
         }
-      }
 
       setValues(peripheralOptions);
     }
