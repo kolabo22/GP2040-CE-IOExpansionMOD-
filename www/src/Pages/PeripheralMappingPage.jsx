@@ -46,7 +46,7 @@ const schema = yup.object().shape({
 });
 
 const FormContext = () => {
-  const { values, setValues } = useFormikContext();
+  const { values, setFieldValue, setValues } = useFormikContext(); // 💡 setFieldValue を追加
   const { setLoading } = useContext(AppContext);
 
   useEffect(() => {
@@ -57,36 +57,32 @@ const FormContext = () => {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【構造完全一致】バックアップJSON(fileData)からピン設定を抽出して器に直撃注入
+      // 🔥【ダイレクト直撃】Formikの内部オブジェクトに、バックアップから抽出したピン情報を直接叩き込む
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
-          if (fileData && peripheralOptions.peripheral) {
-            // バックアップ直下にあるピン情報を実機の peripheral オブジェクトの中に展開
-            peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData };
-            // バックアップ内に peripheral キーがある場合もケアして二重ガード
+          if (fileData) {
+            // 1. 実機からフェッチしたベースに、バックアップ(ルート直下のフラットデータ)をマージ
+            let mergedPeripheral = { ...peripheralOptions.peripheral, ...fileData };
+            
+            // 2. もしバックアップ内に「peripheral」という塊が別に存在していた場合も上書き
             if (fileData.peripheral) {
-              peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData.peripheral };
+              mergedPeripheral = { ...mergedPeripheral, ...fileData.peripheral };
             }
-            console.log('✅ [Peripheral Sync] Force Deep Updated.');
+
+            // 💡【禁じ手】Formik全体の管理エリア（peripheral）へ、完成したデータを直接叩き込む！
+            setFieldValue('peripheral', JSON.parse(JSON.stringify(mergedPeripheral)));
+            console.log('✅ [Peripheral Sync] Force Field Directly Injected.');
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error('Peripheral direct inject error', e);
+        }
       }
-
-      // 完全に参照を切り離してディープクローン
-      const finalPeripheralData = JSON.parse(JSON.stringify(peripheralOptions));
-
-      // 🔥【ラストピース修正】values と initialValues を両方同時にバックアップデータへ強制リセット！
-      const { resetForm } = useFormikContext();
-      resetForm({ 
-        values: finalPeripheralData,
-        initialValues: finalPeripheralData
-      });
     }
 
     fetchData();
-  }, [setValues]);
+  }, [setValues]); // 💡 既存のトリガーは維持
 
   useEffect(() => {}, [values, setValues]);
 
