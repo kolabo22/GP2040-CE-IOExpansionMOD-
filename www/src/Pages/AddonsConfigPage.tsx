@@ -104,18 +104,16 @@ const FormContext = ({ setStoredData }) => {
 				data.buttonPressColorCooldownTimeInMs = 0;
 			}
 
-			// 🔥 ロードしたJSONの「addons」キーの中身を、実機データの上に100%強制マージ
+			// 🔥【完全覚醒】ルート直下にある設定群を、実機データの上にそのまま丸ごと強制マージ
 			const savedJson = localStorage.getItem('restore_raw_json');
 			if (savedJson) {
 				try {
 					const fileData = JSON.parse(savedJson);
-					if (fileData && fileData.addons) {
-						data = { ...data, ...fileData.addons };
+					if (fileData) {
+						data = { ...data, ...fileData };
 						console.log('✅ [Addons Sync] Success.');
 					}
-				} catch (e) {
-					console.error('Addons restore parse error', e);
-				}
+				} catch (e) {}
 			}
 
 			const mergedData = { ...DEFAULT_VALUES, ...data };
