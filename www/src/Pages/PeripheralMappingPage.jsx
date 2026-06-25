@@ -46,7 +46,8 @@ const schema = yup.object().shape({
 });
 
 const FormContext = () => {
-  const { values, setFieldValue, setValues } = useFormikContext(); // 💡 setFieldValue を追加
+  // 💡 【超重要】Formik内部をダイレクトに書き換えるため、setFieldValue をしっかり定義
+  const { values, setFieldValue, setValues } = useFormikContext();
   const { setLoading } = useContext(AppContext);
 
   useEffect(() => {
@@ -57,36 +58,34 @@ const FormContext = () => {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
- // 🔥【構造完全調和】実機の深い入れ子構造(wii)に対し、バックアップの本物データをピンポイントで直撃注入！
- const savedJson = localStorage.getItem('restore_raw_json');
- if (savedJson) {
-   try {
-     const fileData = JSON.parse(savedJson);
-     if (fileData && peripheralOptions.peripheral) {
-       
-       // 💡 バックアップ直下にある本物の wiiOptions を、実機の peripheral.wii の中へ正確にドッキング！
-       if (fileData.wiiOptions && peripheralOptions.peripheral.wii) {
-         peripheralOptions.peripheral.wii = { 
-           ...peripheralOptions.peripheral.wii, 
-           ...fileData.wiiOptions 
-         };
-       }
+      // 🔥【ダイレクトハック】ブラウザのdisabled拒否を完全にバイパスし、Formikの値を直接ピン留め
+      const savedJson = localStorage.getItem('restore_raw_json');
+      if (savedJson) {
+        try {
+          const fileData = JSON.parse(savedJson);
+          if (fileData && fileData.wiiOptions) {
+            
+            // 1. まずWiiアドオンの「有効化フラグ(enabled)」を強制的に 1 (ON) にして disabled を解除！
+            setFieldValue('peripheral.wii.enabled', 1);
 
-       // 完全に参照を切り離して深層複製
-       peripheralOptions = JSON.parse(JSON.stringify(peripheralOptions));
-       console.log('✅ [Peripheral Sync] Force Deep Updated.');
-     }
-   } catch (e) {
-     console.error('Peripheral sync error', e);
-   }
- }
+            // 2. バックアップ(wiiOptions)の中に並んでいるすべてのピン（sda, sclなど）をループで1個ずつダイレクト代入！
+            Object.keys(fileData.wiiOptions).forEach((pinKey) => {
+              if (fileData.wiiOptions[pinKey] !== undefined) {
+                // 例: peripheral.wii.pinSDA に対して、バックアップのピン番号を直接叩き込む
+                setFieldValue(`peripheral.wii.${pinKey}`, fileData.wiiOptions[pinKey]);
+              }
+            });
 
-      setValues(peripheralOptions);
+            console.log('✅ [Peripheral Sync] Force Field Directly Injected.');
+          }
+        } catch (e) {
+          console.error('Wii direct inject error', e);
+        }
+      }
     }
 
-
     fetchData();
-  }, [setValues]); // 💡 既存のトリガーは維持
+  }, [setValues]);
 
   useEffect(() => {}, [values, setValues]);
 
