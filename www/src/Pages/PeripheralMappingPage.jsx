@@ -57,25 +57,29 @@ const FormContext = () => {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【主客逆転】Formikが待っている peripheral の器の中に、バックアップの全データを直撃注入する
-      const savedJson = localStorage.getItem('restore_raw_json');
-      if (savedJson) {
-        try {
-          const fileData = JSON.parse(savedJson);
-          if (fileData && peripheralOptions.peripheral) {
-            // 実機の空ピンアサインを、バックアップに並んでいる本物のピンアサインで完全に上書き
-            peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData };
-            
-            // バックアップ内に peripheral というキーが直接あった場合も想定して二重ガード
-            if (fileData.peripheral) {
-              peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData.peripheral };
-            }
-            
-            peripheralOptions = JSON.parse(JSON.stringify(peripheralOptions));
-            console.log('✅ [Peripheral Sync] Force Deep Updated.');
-          }
-        } catch (e) {}
-      }
+ // 🔥【構造完全調和】実機の深い入れ子構造(wii)に対し、バックアップの本物データをピンポイントで直撃注入！
+ const savedJson = localStorage.getItem('restore_raw_json');
+ if (savedJson) {
+   try {
+     const fileData = JSON.parse(savedJson);
+     if (fileData && peripheralOptions.peripheral) {
+       
+       // 💡 バックアップ直下にある本物の wiiOptions を、実機の peripheral.wii の中へ正確にドッキング！
+       if (fileData.wiiOptions && peripheralOptions.peripheral.wii) {
+         peripheralOptions.peripheral.wii = { 
+           ...peripheralOptions.peripheral.wii, 
+           ...fileData.wiiOptions 
+         };
+       }
+
+       // 完全に参照を切り離して深層複製
+       peripheralOptions = JSON.parse(JSON.stringify(peripheralOptions));
+       console.log('✅ [Peripheral Sync] Force Deep Updated.');
+     }
+   } catch (e) {
+     console.error('Peripheral sync error', e);
+   }
+ }
 
       setValues(peripheralOptions);
     }
