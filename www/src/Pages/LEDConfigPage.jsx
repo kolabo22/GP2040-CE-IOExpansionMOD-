@@ -229,10 +229,14 @@ const FormContext = ({
       setDataSources(dataSources);
       setValues(data);
     }
+    // 💡 忘れずに定義した関数をここで実行する
+    fetchData();
+  }, [setValues]); // 💡 他の画面とタイミングを合わせるため、ここでuseEffectをきれいに閉じる
 
-
-	return null;
+  // 💡 コンポーネント自体の戻り値（return null）はuseEffectの外側に置く
+  return null;
 };
+
 
 export default function LEDConfigPage() {
 	const { buttonLabels, updateUsedPins } = useContext(AppContext);
