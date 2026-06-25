@@ -208,19 +208,17 @@ const FormContext = ({
         data.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥 ロードしたJSONの「led」キーの中身を、実機データの上に100%強制マージ
-      const savedJson = localStorage.getItem('restore_raw_json');
-      if (savedJson) {
-        try {
-          const fileData = JSON.parse(savedJson);
-          if (fileData && fileData.led) {
-            data = { ...data, ...fileData.led };
-            console.log('✅ [LED Sync] Success.');
-          }
-        } catch (e) {
-          console.error('LED restore parse error', e);
+        // 🔥【ドラッグ順も死守】ルート直下にある設定群を、実機データの上にそのまま丸ごと強制マージ
+        const savedJson = localStorage.getItem('restore_raw_json');
+        if (savedJson) {
+          try {
+            const fileData = JSON.parse(savedJson);
+            if (fileData) {
+              data = { ...data, ...fileData };
+              console.log('✅ [LED Sync] Success.');
+            }
+          } catch (e) {}
         }
-      }
 
       const dataSources = createDataSource(
         data.ledButtonMap,
