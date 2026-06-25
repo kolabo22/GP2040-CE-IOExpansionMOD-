@@ -57,29 +57,29 @@ const FormContext = () => {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【ダイレクト直撃】Formikの内部オブジェクトに、バックアップから抽出したピン情報を直接叩き込む
+      // 🔥【主客逆転】Formikが待っている peripheral の器の中に、バックアップの全データを直撃注入する
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
-          if (fileData) {
-            // 1. 実機からフェッチしたベースに、バックアップ(ルート直下のフラットデータ)をマージ
-            let mergedPeripheral = { ...peripheralOptions.peripheral, ...fileData };
+          if (fileData && peripheralOptions.peripheral) {
+            // 実機の空ピンアサインを、バックアップに並んでいる本物のピンアサインで完全に上書き
+            peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData };
             
-            // 2. もしバックアップ内に「peripheral」という塊が別に存在していた場合も上書き
+            // バックアップ内に peripheral というキーが直接あった場合も想定して二重ガード
             if (fileData.peripheral) {
-              mergedPeripheral = { ...mergedPeripheral, ...fileData.peripheral };
+              peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData.peripheral };
             }
-
-            // 💡【禁じ手】Formik全体の管理エリア（peripheral）へ、完成したデータを直接叩き込む！
-            setFieldValue('peripheral', JSON.parse(JSON.stringify(mergedPeripheral)));
-            console.log('✅ [Peripheral Sync] Force Field Directly Injected.');
+            
+            peripheralOptions = JSON.parse(JSON.stringify(peripheralOptions));
+            console.log('✅ [Peripheral Sync] Force Deep Updated.');
           }
-        } catch (e) {
-          console.error('Peripheral direct inject error', e);
-        }
+        } catch (e) {}
       }
+
+      setValues(peripheralOptions);
     }
+
 
     fetchData();
   }, [setValues]); // 💡 既存のトリガーは維持
