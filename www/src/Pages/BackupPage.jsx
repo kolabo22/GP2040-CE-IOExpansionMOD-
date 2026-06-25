@@ -142,13 +142,15 @@ const API_BINDING = {
  return;
  }
  if (fileData) {
-   // 🔥【絶対安全圏】実機送信パケットを絶対に汚さないよう、読み込んだ生のJSON文字列をそのまま100%退避
+   // 🔥【完全覚醒】組み立てが100%完了したfileDataオブジェクトを、安全に完全複製して格納！
    try {
-     localStorage.setItem('restore_raw_json', reader.result);
-     console.log('✅ [Backup Storage] Raw JSON successfully stored.');
+     const clearJsonObj = JSON.parse(JSON.stringify(fileData));
+     localStorage.setItem('restore_raw_json', JSON.stringify(clearJsonObj));
+     console.log('✅ [Backup Storage] Pure JSON Object successfully cached.');
    } catch (e) {
      console.error('localStorage store error', e);
    }
+
 	 
   // 📥 16MB 基板対応・アイコンが100%パスできる公式一括送信（addons）の正しい構造へ、すべての設定を送信直前で強制ドッキング
   if (fileData.addons) {
