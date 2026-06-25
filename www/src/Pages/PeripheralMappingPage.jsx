@@ -57,13 +57,15 @@ const FormContext = () => {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【Formik完全強制突破】器（peripheral）の中身を上書き
+      // 🔥【構造完全一致】バックアップJSON(fileData)からピン設定を抽出して器に直撃注入
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
           if (fileData && peripheralOptions.peripheral) {
+            // バックアップ直下にあるピン情報を実機の peripheral オブジェクトの中に展開
             peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData };
+            // バックアップ内に peripheral キーがある場合もケアして二重ガード
             if (fileData.peripheral) {
               peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData.peripheral };
             }
@@ -72,20 +74,25 @@ const FormContext = () => {
         } catch (e) {}
       }
 
-      // 🔥【ラストピース】resetForm でWiiアサインなどのピン設定を確実に目の前で復活させる！
-      const { resetForm } = useFormikContext();
-      resetForm({ values: peripheralOptions });
-    }
+      // 完全に参照を切り離してディープクローン
+      const finalPeripheralData = JSON.parse(JSON.stringify(peripheralOptions));
 
+      // 🔥【ラストピース修正】values と initialValues を両方同時にバックアップデータへ強制リセット！
+      const { resetForm } = useFormikContext();
+      resetForm({ 
+        values: finalPeripheralData,
+        initialValues: finalPeripheralData
+      });
+    }
 
     fetchData();
   }, [setValues]);
 
+  useEffect(() => {}, [values, setValues]);
 
-	useEffect(() => {}, [values, setValues]);
-
-	return null;
+  return null;
 };
+
 
 export default function PeripheralMappingPage() {
 	const { setButtonLabels, usedPins } = useContext(AppContext);
