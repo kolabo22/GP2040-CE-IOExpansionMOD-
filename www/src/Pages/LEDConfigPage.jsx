@@ -208,19 +208,24 @@ const FormContext = ({
         data.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【深層強制同期】リアクティブLEDの全色・全ピン構造をディープコピーで完全上書き
+      // 🔥【ピンポイント同調】実機の純粋なLED構造に、バックアップからLED関連のキーだけを狙い撃ち注入
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
           if (fileData) {
-            data = JSON.parse(JSON.stringify({ ...data, ...fileData }));
-            console.log('✅ [LED Sync] Force Deep Updated.');
+            // 実機データのプロパティをループし、バックアップ側に存在するものだけを安全に移植（ノイズの完全排除）
+            Object.keys(data).forEach((key) => {
+              if (fileData[key] !== undefined) {
+                data[key] = fileData[key];
+              }
+            });
+            console.log('✅ [LED Sync] Success.');
           }
         } catch (e) {}
       }
 
-      // 完全に新しくなった data（バックアップ由来）からドラッグ順マップを生成してバインド
+      // ドラッグ順の元データ（data.ledButtonMap）もこれで100%バックアップ由来に書き換わります
       const dataSources = createDataSource(
         data.ledButtonMap,
         buttonLabelType,
@@ -229,6 +234,8 @@ const FormContext = ({
       setDataSources(dataSources);
       setValues(data);
     }
+
+		
     // 💡 忘れずに定義した関数をここで実行する
     fetchData();
   }, [setValues]); // 💡 他の画面とタイミングを合わせるため、ここでuseEffectをきれいに閉じる
