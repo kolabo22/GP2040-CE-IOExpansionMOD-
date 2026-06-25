@@ -204,23 +204,26 @@ const FormContext = ({
   useEffect(() => {
     async function fetchData() {
       let data = await WebApi.getLedOptions(setLoading);
+
+      // 🔥【最上流マージ】ドラッグ順を含むバックアップデータを先にマージ
+      const savedJson = localStorage.getItem('restore_raw_json');
+      if (savedJson) {
+        try {
+          const fileData = JSON.parse(savedJson);
+          if (fileData) {
+            data = { ...data, ...fileData };
+            console.log('✅ [LED Sync] Success.');
+          }
+        } catch (e) {}
+      }
+
+      // 🔥【鉄壁のセーフティ】マージされたデータも含めてオブジェクト型バグを完全消滅させる
       if (data && data.buttonPressColorCooldownTimeInMs && typeof data.buttonPressColorCooldownTimeInMs === 'object') {
         data.buttonPressColorCooldownTimeInMs = 0;
       }
 
-        // 🔥【ドラッグ順も死守】ルート直下にある設定群を、実機データの上にそのまま丸ごと強制マージ
-        const savedJson = localStorage.getItem('restore_raw_json');
-        if (savedJson) {
-          try {
-            const fileData = JSON.parse(savedJson);
-            if (fileData) {
-              data = { ...data, ...fileData };
-              console.log('✅ [LED Sync] Success.');
-            }
-          } catch (e) {}
-        }
-
       const dataSources = createDataSource(
+
         data.ledButtonMap,
         buttonLabelType,
         swapTpShareLabels,
