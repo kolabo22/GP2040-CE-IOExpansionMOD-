@@ -104,23 +104,23 @@ const FormContext = ({ setStoredData }) => {
 				data.buttonPressColorCooldownTimeInMs = 0;
 			}
 
-			// 1. まず公式の初期値マージを完全に終わらせる
-			let mergedData = { ...DEFAULT_VALUES, ...data };
-
-			// 🔥【深層強制同期】完全に組み立てられた mergedData に対し、バックアップを深層展開して上書き
+			// 🔥【ピンポイント同調】実機の綺麗なデータ構造に対し、バックアップ内の特定項目だけを狙い撃ちで上書き
 			const savedJson = localStorage.getItem('restore_raw_json');
 			if (savedJson) {
 				try {
 					const fileData = JSON.parse(savedJson);
 					if (fileData) {
-						// 深い階層の参照を切るため、一度文字列化して完全な別物としてドッキング
-						mergedData = JSON.parse(JSON.stringify({ ...mergedData, ...fileData }));
-						console.log('✅ [Addons Sync] Force Deep Updated.');
+						// 実機データの各子オブジェクトに、バックアップ直下の同名データを綺麗に上書きバインド
+						if (fileData.wiiOptions && data.wiiOptions) data.wiiOptions = { ...data.wiiOptions, ...fileData.wiiOptions };
+						if (fileData.keyboardMapping && data.keyboardMapping) data.keyboardMapping = { ...data.keyboardMapping, ...fileData.keyboardMapping };
+						if (fileData.playerNumberOptions && data.playerNumberOptions) data.playerNumberOptions = { ...data.playerNumberOptions, ...fileData.playerNumberOptions };
+						console.log('✅ [Addons Sync] Success.');
 					}
 				} catch (e) {}
 			}
 
-			// 2. 完全に新しく生まれ変わったオブジェクトをFormikに認知させる
+			// バックアップがピンポイントで注入された完璧なdataを、公式の処理（初期値マージ）に引き渡す
+			const mergedData = { ...DEFAULT_VALUES, ...data };
 			setValues(mergedData);
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
