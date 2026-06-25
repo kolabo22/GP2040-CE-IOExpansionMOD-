@@ -46,20 +46,38 @@ const schema = yup.object().shape({
 });
 
 const FormContext = () => {
-	const { values, setValues } = useFormikContext();
-	const { setLoading } = useContext(AppContext);
+  const { values, setValues } = useFormikContext();
+  const { setLoading } = useContext(AppContext);
 
-	useEffect(() => {
-		async function fetchData() {
-			await WebApi.getGamepadOptions(setLoading);
-			const peripheralOptions = await WebApi.getPeripheralOptions(setLoading);
-			if (peripheralOptions && peripheralOptions.buttonPressColorCooldownTimeInMs && typeof peripheralOptions.buttonPressColorCooldownTimeInMs === 'object') {
-				peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
-			}
-			setValues(peripheralOptions);
-		}
-		fetchData();
-	}, [setValues]);
+  useEffect(() => {
+    async function fetchData() {
+      await WebApi.getGamepadOptions(setLoading);
+      let peripheralOptions = await WebApi.getPeripheralOptions(setLoading);
+      if (peripheralOptions && peripheralOptions.buttonPressColorCooldownTimeInMs && typeof peripheralOptions.buttonPressColorCooldownTimeInMs === 'object') {
+        peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
+      }
+
+      // 🔥【Wiiアサイン死守】localStorage から周辺機器ピンアサインデータを最優先で奪取して上書き
+      const savedFullBackup = localStorage.getItem('restore_full_backup_data');
+      if (savedFullBackup) {
+        try {
+          const fullData = JSON.parse(savedFullBackup);
+          // BackupPage の構造上、peripheralOptions または addons.peripheralOptions に格納されている
+          const backupPeripheral = fullData.peripheralOptions || (fullData.addons && fullData.addons.peripheralOptions);
+          if (backupPeripheral) {
+            peripheralOptions = { ...peripheralOptions, ...backupPeripheral };
+            console.log('✅ [Peripheral Sync] Forcefully injected backup data into Peripheral Formik.');
+          }
+        } catch (e) {
+          console.error('Failed to injection backup into Peripheral config', e);
+        }
+      }
+
+      setValues(peripheralOptions);
+    }
+    fetchData();
+  }, [setValues]);
+
 
 	useEffect(() => {}, [values, setValues]);
 
