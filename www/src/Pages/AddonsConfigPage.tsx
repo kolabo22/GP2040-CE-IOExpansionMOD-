@@ -104,24 +104,26 @@ const FormContext = ({ setStoredData }) => {
 				data.buttonPressColorCooldownTimeInMs = 0;
 			}
 
-			// 🔥【ピンポイント同調】実機の綺麗なデータ構造に対し、バックアップ内の特定項目だけを狙い撃ちで上書き
+			// 1. まず公式の初期値マージを終わらせる
+			let mergedData = { ...DEFAULT_VALUES, ...data };
+
+			// 🔥【Formik完全強制突破】バックアップ項目を狙い撃ちで上書き
 			const savedJson = localStorage.getItem('restore_raw_json');
 			if (savedJson) {
 				try {
 					const fileData = JSON.parse(savedJson);
 					if (fileData) {
-						// 実機データの各子オブジェクトに、バックアップ直下の同名データを綺麗に上書きバインド
-						if (fileData.wiiOptions && data.wiiOptions) data.wiiOptions = { ...data.wiiOptions, ...fileData.wiiOptions };
-						if (fileData.keyboardMapping && data.keyboardMapping) data.keyboardMapping = { ...data.keyboardMapping, ...fileData.keyboardMapping };
-						if (fileData.playerNumberOptions && data.playerNumberOptions) data.playerNumberOptions = { ...data.playerNumberOptions, ...fileData.playerNumberOptions };
-						console.log('✅ [Addons Sync] Success.');
+						if (fileData.wiiOptions && mergedData.wiiOptions) mergedData.wiiOptions = { ...mergedData.wiiOptions, ...fileData.wiiOptions };
+						if (fileData.keyboardMapping && mergedData.keyboardMapping) mergedData.keyboardMapping = { ...mergedData.keyboardMapping, ...fileData.keyboardMapping };
+						if (fileData.playerNumberOptions && mergedData.playerNumberOptions) mergedData.playerNumberOptions = { ...mergedData.playerNumberOptions, ...fileData.playerNumberOptions };
+						console.log('✅ [Addons Sync] Force Deep Updated.');
 					}
 				} catch (e) {}
 			}
 
-			// バックアップがピンポイントで注入された完璧なdataを、公式の処理（初期値マージ）に引き渡す
-			const mergedData = { ...DEFAULT_VALUES, ...data };
-			setValues(mergedData);
+			// 🔥【ラストピース】setValues ではなく resetForm で初期値の壁を完全に破壊して強制反映！
+			const { resetForm } = useFormikContext();
+			resetForm({ values: mergedData });
 			setStoredData(JSON.parse(JSON.stringify(mergedData)));
 		}
 
