@@ -208,19 +208,17 @@ const FormContext = ({
         data.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【自爆上書き阻止】localStorage からリアクティブLEDのバックアップデータを最優先で奪取
-      const savedFullBackup = localStorage.getItem('restore_full_backup_data');
-      if (savedFullBackup) {
+      // 🔥 ロードしたJSONの「led」キーの中身を、実機データの上に100%強制マージ
+      const savedJson = localStorage.getItem('restore_raw_json');
+      if (savedJson) {
         try {
-          const fullData = JSON.parse(savedFullBackup);
-          // BackupPage の構造上、led または addons.reactiveLEDOptions に格納されている
-          const backupLED = fullData.led || (fullData.addons && fullData.addons.reactiveLEDOptions);
-          if (backupLED) {
-            data = { ...data, ...backupLED };
-            console.log('✅ [LED Sync] Forcefully injected backup data into LED Formik and DragList.');
+          const fileData = JSON.parse(savedJson);
+          if (fileData && fileData.led) {
+            data = { ...data, ...fileData.led };
+            console.log('✅ [LED Sync] Success.');
           }
         } catch (e) {
-          console.error('Failed to injection backup into LED config', e);
+          console.error('LED restore parse error', e);
         }
       }
 
@@ -232,6 +230,7 @@ const FormContext = ({
       setDataSources(dataSources);
       setValues(data);
     }
+
     fetchData();
   }, []);
 
