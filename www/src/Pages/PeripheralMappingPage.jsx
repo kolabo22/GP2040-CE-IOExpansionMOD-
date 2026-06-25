@@ -57,25 +57,24 @@ const FormContext = () => {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【ピンポイント同調】Formikが待っている peripheralOptions.peripheral の中身だけを正確に狙い撃ち上書き
+      // 🔥【Formik完全強制突破】器（peripheral）の中身を上書き
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
           if (fileData && peripheralOptions.peripheral) {
-            // バックアップ直下にピン情報が直接フラットに並んでいる場合はそのままマージ
             peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData };
-            
-            // もしバックアップ内に「peripheral」という塊が別に存在していた場合もケア
             if (fileData.peripheral) {
               peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData.peripheral };
             }
-            console.log('✅ [Peripheral Sync] Success.');
+            console.log('✅ [Peripheral Sync] Force Deep Updated.');
           }
         } catch (e) {}
       }
 
-      setValues(peripheralOptions);
+      // 🔥【ラストピース】resetForm でWiiアサインなどのピン設定を確実に目の前で復活させる！
+      const { resetForm } = useFormikContext();
+      resetForm({ values: peripheralOptions });
     }
 
 
