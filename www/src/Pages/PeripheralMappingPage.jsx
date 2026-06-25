@@ -53,26 +53,25 @@ const FormContext = () => {
     async function fetchData() {
       await WebApi.getGamepadOptions(setLoading);
       let peripheralOptions = await WebApi.getPeripheralOptions(setLoading);
+      if (peripheralOptions && peripheralOptions.buttonPressColorCooldownTimeInMs && typeof peripheralOptions.buttonPressColorCooldownTimeInMs === 'object') {
+        peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
+      }
 
-      // 🔥【最上流マージ】Wiiアサイン等のバックアップデータを先にマージ
+      // 🔥【深層強制同期】Wiiアサインのピンマップ構造をディープコピーで完全上書き
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
           if (fileData) {
-            peripheralOptions = { ...peripheralOptions, ...fileData };
-            console.log('✅ [Peripheral Sync] Success.');
+            peripheralOptions = JSON.parse(JSON.stringify({ ...peripheralOptions, ...fileData }));
+            console.log('✅ [Peripheral Sync] Force Deep Updated.');
           }
         } catch (e) {}
       }
 
-      // 🔥【鉄壁のセーフティ】周辺機器マッピング側のバグオブジェクトも完全に0へ叩き落とす
-      if (peripheralOptions && peripheralOptions.buttonPressColorCooldownTimeInMs && typeof peripheralOptions.buttonPressColorCooldownTimeInMs === 'object') {
-        peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
-      }
-
       setValues(peripheralOptions);
     }
+
 
     fetchData();
   }, [setValues]);
