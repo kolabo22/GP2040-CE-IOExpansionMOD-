@@ -208,31 +208,32 @@ const FormContext = ({
         data.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【ピンポイント同調】実機の純粋なLED構造に、バックアップからLED関連のキーだけを狙い撃ち注入
+      // 🔥【Formik完全強制突破】実機構造にバックアップを注入
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
           if (fileData) {
-            // 実機データのプロパティをループし、バックアップ側に存在するものだけを安全に移植（ノイズの完全排除）
             Object.keys(data).forEach((key) => {
               if (fileData[key] !== undefined) {
                 data[key] = fileData[key];
               }
             });
-            console.log('✅ [LED Sync] Success.');
+            console.log('✅ [LED Sync] Force Deep Updated.');
           }
         } catch (e) {}
       }
 
-      // ドラッグ順の元データ（data.ledButtonMap）もこれで100%バックアップ由来に書き換わります
       const dataSources = createDataSource(
         data.ledButtonMap,
         buttonLabelType,
         swapTpShareLabels,
       );
       setDataSources(dataSources);
-      setValues(data);
+
+      // 🔥【ラストピース】resetForm で頑固なFormikの初期表示を粉砕！
+      const { resetForm } = useFormikContext();
+      resetForm({ values: data });
     }
 
 		
