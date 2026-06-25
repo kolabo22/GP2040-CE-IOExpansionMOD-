@@ -57,14 +57,20 @@ const FormContext = () => {
         peripheralOptions.buttonPressColorCooldownTimeInMs = 0;
       }
 
-      // 🔥【深層強制同期】Wiiアサインのピンマップ構造をディープコピーで完全上書き
+      // 🔥【ピンポイント同調】Formikが待っている peripheralOptions.peripheral の中身だけを正確に狙い撃ち上書き
       const savedJson = localStorage.getItem('restore_raw_json');
       if (savedJson) {
         try {
           const fileData = JSON.parse(savedJson);
-          if (fileData) {
-            peripheralOptions = JSON.parse(JSON.stringify({ ...peripheralOptions, ...fileData }));
-            console.log('✅ [Peripheral Sync] Force Deep Updated.');
+          if (fileData && peripheralOptions.peripheral) {
+            // バックアップ直下にピン情報が直接フラットに並んでいる場合はそのままマージ
+            peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData };
+            
+            // もしバックアップ内に「peripheral」という塊が別に存在していた場合もケア
+            if (fileData.peripheral) {
+              peripheralOptions.peripheral = { ...peripheralOptions.peripheral, ...fileData.peripheral };
+            }
+            console.log('✅ [Peripheral Sync] Success.');
           }
         } catch (e) {}
       }
