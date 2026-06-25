@@ -142,24 +142,33 @@ const API_BINDING = {
  return;
  }
 
- if (fileData) {
-     // 【16MB紫基板対応】マイコンが100%パースできる公式一括送信（addons）の正しい構造へ、すべての設定を送信直前で強制ドッキング
-     if (fileData.addons) {
-         fileData.addons.wiiOptions = fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.wiiOptions ? { ...fileData.wiiOptions } : {});
-         fileData.addons.reactiveLEDOptions = fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : (fileData.led ? { ...fileData.led } : (fileData.ledOptions ? { ...fileData.ledOptions } : {}));
-         fileData.addons.peripheralOptions = fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.peripheralOptions ? { ...fileData.peripheralOptions } : {});
-         
-         // 2Pで追加した C++ 側のバッファ（24KB）を1発で直撃させるため、親キーの最上階に完全バインド
-         fileData.addons = { ...fileData.addons };
-     }
+if (fileData) {
+  // 📥 16MB 基板対応・アイコンが100%パスできる公式一括送信（addons）の正しい構造へ、すべての設定を送信直前で強制ドッキング
+  if (fileData.addons) {
+    fileData.addons.wiiOptions = fileData.addons.wiiOptions ? { ...fileData.addons.wiiOptions } : (fileData.wiiOptions ? { ...fileData.wiiOptions } : {});
+    fileData.addons.reactiveLEDOptions = fileData.addons.reactiveLEDOptions ? { ...fileData.addons.reactiveLEDOptions } : (fileData.led ? { ...fileData.led } : (fileData.ledOptions ? { ...fileData.ledOptions } : {}));
+    fileData.addons.peripheralOptions = fileData.addons.peripheralOptions ? { ...fileData.addons.peripheralOptions } : (fileData.peripheralOptions ? { ...fileData.peripheralOptions } : {});
 
-     // 連続POSTを遮断し、きれいに整えられた1つのパケットとして公式エンジンへ引き渡すことで実機のフリーズを100%完全にシャットアウト！
-     setOptionsToAPIStorage(fileData).then(() => {
-         location.reload();
-     }).catch((err) => console.error('Restore Error:', err));
-     
-     return;
- }
+    // 2P で追加した C++ 側のバッファ（4KB）を 1 発で直撃させるため、親キーの最上層に完全バインド
+    fileData.addons = { ...fileData.addons };
+  }
+
+  // 🔥【防波堤の仕込み】画面リロードで消えないよう、送信直前の100%完全体パケットを localStorage へ極秘保管
+  try {
+    localStorage.setItem('restore_full_backup_data', JSON.stringify(fileData));
+    console.log('✅ [Backup Storage] Full backup cached to localStorage before reload.');
+  } catch (e) {
+    console.error('Failed to store backup to localStorage', e);
+  }
+
+  // 連続した POST を遮断し、きれいに整えられた1 つのパケットとして公式エンジンへ引き渡すことで実機のフリーズを100%完全にシャットアウト！
+  setOptionsToAPIStorage(fileData).then(() => {
+    location.reload();
+  }).catch((err) => console.error('Restore Error:', err));
+
+  return;
+}
+
  let filteredData = {};
 
 
