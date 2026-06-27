@@ -168,80 +168,10 @@ function makefsdata() {
 		fsdata += `static const unsigned int dummy_align_${varName} = ${payloadAlignmentDummyCounter++};\n`;
 		fsdata += '#endif\n';
 
-		
-let fileContent = fs.readFileSync(file);
-
-// 🔥【最終奥義：高精度・セーブ完全防衛インジェクション】
-// 全ての .json() 通信をキャッチしつつ、データの中に「success」キーがあるセーブパケットは100%スルー！
-// 読み込み時（GET）の正しいプロパティ構造の時だけ、バックアップデータを安全にピンポイントマージ！
-if (ext === 'js') {
-  let jsText = fileContent.toString('utf8');
-
-  if (jsText.includes('.json()')) {
-    jsText = jsText.replace(
-      /\.json\(\)/g,
-      `.json().then(data => {
-        // 💡【鉄壁のセーブ防衛】保存成功レスポンス（success）なら、ハックを一切行わずそのまま返す！
-        if (data && data.success !== undefined) {
-          return data;
-        }
-
-        const s = localStorage.getItem("restore_raw_json");
-        if (s && data && typeof data === 'object' && !Array.isArray(data)) {
-          try {
-            const t = JSON.parse(s);
-            if (t) {
-              // 🧪 ① アドオン設定（getAddonsOptions）のデータだと判定された場合
-              if ('wiiOptions' in data || 'keyboardMapping' in data || 'playerNumberOptions' in data) {
-                if (t.wiiOptions && data.wiiOptions) data.wiiOptions = { ...data.wiiOptions, ...t.wiiOptions };
-                if (t.keyboardMapping && data.keyboardMapping) data.keyboardMapping = { ...data.keyboardMapping, ...t.keyboardMapping };
-                if (t.playerNumberOptions && data.playerNumberOptions) data.playerNumberOptions = { ...data.playerNumberOptions, ...t.playerNumberOptions };
-                
-                data = JSON.parse(JSON.stringify({ ...data, ...t }));
-                console.log('✅ [Addons Sync] Force Deep Updated.');
-              }
-              
-              // 🧪 ② 周辺機器設定（getPeripheralOptions）のデータだと判定された場合
-              else if ('peripheral' in data) {
-                if (t.wiiOptions && data.peripheral && data.peripheral.wii) {
-                  data.peripheral.wii = { ...data.peripheral.wii, ...t.wiiOptions };
-                }
-                if (t.peripheral && data.peripheral) {
-                  data.peripheral = { ...data.peripheral, ...t.peripheral };
-                }
-                
-                data = JSON.parse(JSON.stringify(data));
-                console.log('✅ [Peripheral Sync] Force Deep Updated.');
-              }
-              
-              // 🧪 ③ リアクティブLED設定（getLedOptions）のデータだと判定された場合
-              else if ('ledButtonMap' in data || 'ledFormat' in data) {
-                data = JSON.parse(JSON.stringify({ ...data, ...t }));
-                console.log('✅ [LED Sync] Force Deep Updated.');
-              }
-            }
-          } catch(e) {
-            console.error("FSData Sync Error", e);
-          }
-        }
-        // 🔥【鉄壁のセーフティ】オブジェクト型バグを完全消滅させる
-        if (data && data.buttonPressColorCooldownTimeInMs && "object" == typeof data.buttonPressColorCooldownTimeInMs) {
-          data.buttonPressColorCooldownTimeInMs = 0;
-        }
-        return data;
-      })`
-    );
-  }
-
-  fileContent = Buffer.from(jsText, 'utf8');
-}
-
-
-let compressed = fileContent.buffer;
-let isCompressed = false;
-if (!skipCompressionExtensions.has(ext)) {
-
-
+		const fileContent = fs.readFileSync(file);
+		let compressed = fileContent.buffer;
+		let isCompressed = false;
+		if (!skipCompressionExtensions.has(ext)) {
 			compressed = pako.deflate(fileContent, {
 				level: 9,
 				windowBits: 15,
