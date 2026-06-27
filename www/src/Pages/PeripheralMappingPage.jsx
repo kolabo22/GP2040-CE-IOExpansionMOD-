@@ -89,6 +89,51 @@ const FormContext = () => {
 
   useEffect(() => {}, [values, setValues]);
 
+  // 🔥【後出しジャンケンシステム - Wiiアサイン専用機】
+  // 公式の器の初期化が完全に終わったその後、バックアップの本物ピンアサインを正しい器へ直撃上書き！
+  useEffect(() => {
+    const savedJson = localStorage.getItem('restore_raw_json');
+    if (savedJson) {
+      try {
+        const fileData = JSON.parse(savedJson);
+        if (fileData) {
+          // 1. 公式が実機からロードし終わった現在のFormikの値（peripheralOptions全体）をベースにする
+          let currentValues = { ...values };
+
+          // 2. Formikが手ぐすね引いて待っている「peripheral.wii」の器の内部だけを、バックアップの本物データで上書き！
+          if (fileData.wiiOptions && currentValues.peripheral && currentValues.peripheral.wii) {
+            currentValues.peripheral.wii = {
+              ...currentValues.peripheral.wii,
+              ...fileData.wiiOptions
+            };
+          }
+
+          // 3. もしバックアップJSON内に純粋な周辺機器オブジェクト(peripheral)があればそれもマージ
+          if (fileData.peripheral && currentValues.peripheral) {
+            currentValues.peripheral = {
+              ...currentValues.peripheral,
+              ...fileData.peripheral
+            };
+          }
+
+          // 4. 完全に参照を切り離してディープクローン
+          currentValues = JSON.parse(JSON.stringify(currentValues));
+
+          // 5. 鉄壁のセーフティ（オブジェクト型バグの消滅）
+          if (currentValues && currentValues.buttonPressColorCooldownTimeInMs && typeof currentValues.buttonPressColorCooldownTimeInMs === 'object') {
+            currentValues.buttonPressColorCooldownTimeInMs = 0;
+          }
+
+          // 6. 完璧に変形・翻訳された本物のピンデータをFormikに「後出し」で強制認知させる！
+          setValues(currentValues);
+          console.log('🔮 [Peripheral Late Sync] Wii assignment pins successfully overlaid after official load.');
+        }
+      } catch (e) {
+        console.error('Peripheral late sync error', e);
+      }
+    }
+  }, [setValues]); // 💡 画面が開いて公式のロードが落ち着いたタイミングで1回確実に発動
+
   return null;
 };
 
