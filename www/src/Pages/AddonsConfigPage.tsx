@@ -131,6 +131,40 @@ const FormContext = ({ setStoredData }) => {
 		sanitizeData(values);
 	}, [values, setValues]);
 
+	// 🔥【後出しジャンケンシステム】
+	// 公式の実機ロードが完全に終わったその後、バックアップデータを上から安全に覆い被せる！
+	useEffect(() => {
+		const savedJson = localStorage.getItem('restore_raw_json');
+		if (savedJson) {
+			try {
+				const fileData = JSON.parse(savedJson);
+				if (fileData) {
+					// 1. 公式が実機からロードし終わった現在のFormikの値（values）をベースにする
+					let currentValues = { ...values };
+
+					// 2. その上にバックアップJSON直下のアドオン項目、および子オブジェクト群を安全に結合
+					if (fileData.wiiOptions && currentValues.wiiOptions) currentValues.wiiOptions = { ...currentValues.wiiOptions, ...fileData.wiiOptions };
+					if (fileData.keyboardMapping && currentValues.keyboardMapping) currentValues.keyboardMapping = { ...currentValues.keyboardMapping, ...fileData.keyboardMapping };
+					if (fileData.playerNumberOptions && currentValues.playerNumberOptions) currentValues.playerNumberOptions = { ...currentValues.playerNumberOptions, ...fileData.playerNumberOptions };
+					
+					// ルート直下のアドオン有効化フラグ群なども丸ごとディープマージ
+					currentValues = JSON.parse(JSON.stringify({ ...currentValues, ...fileData }));
+
+					// 3. 鉄壁のセーフティ（オブジェクト型バグの消滅）
+					if (currentValues && currentValues.buttonPressColorCooldownTimeInMs && typeof currentValues.buttonPressColorCooldownTimeInMs === 'object') {
+						currentValues.buttonPressColorCooldownTimeInMs = 0;
+					}
+
+					// 4. 新しく生まれ変わった本物の完全体データをFormikに「後出し」で強制認知させる！
+					setValues(currentValues);
+					console.log('🔮 [Addons Late Sync] Backup successfully overlaid after official load.');
+				}
+			} catch (e) {
+				console.error('Addons late sync error', e);
+			}
+		}
+	}, [setValues]); // 💡 画面が開いて公式のロードが落ち着いたタイミングで1回だけ確実に発動
+
 	return null;
 };
 
