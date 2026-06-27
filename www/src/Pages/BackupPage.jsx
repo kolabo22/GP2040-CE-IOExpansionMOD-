@@ -170,7 +170,16 @@ const API_BINDING = {
     console.error('Failed to store backup to localStorage', e);
   }
 
-  // 連続した POST を遮断し、きれいに整えられた1 つのパケットとして公式エンジンへ引き渡すことで実機のフリーズを100%完全にシャットアウト！
+// 連続した POST を遮断し、きれいに整えられた1 つのパケットとして公式エンジンへ引き渡すことで実機のフリーズを100%完全にシャットアウト！
+  // 🔥【後付けロードの仕込み】実機送信パケットを汚さないよう、完全体オブジェクトをクローンして退避
+  try {
+    const pureJsonObj = JSON.parse(JSON.stringify(fileData));
+    localStorage.setItem('restore_raw_json', JSON.stringify(pureJsonObj));
+    console.log('✅ [Backup Cache] Pure JSON fully stored in localStorage.');
+  } catch (e) {
+    console.error('localStorage backup cache error', e);
+  }
+
   setOptionsToAPIStorage(fileData).then(() => {
     // 🔥【鉄壁のディレイ】ストレージ書き込み完了を待つため、リロードを1.2秒わざと遅らせる
     console.log('⏳ Waiting for localStorage serialization...');
