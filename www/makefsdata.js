@@ -168,10 +168,52 @@ function makefsdata() {
 		fsdata += `static const unsigned int dummy_align_${varName} = ${payloadAlignmentDummyCounter++};\n`;
 		fsdata += '#endif\n';
 
-		const fileContent = fs.readFileSync(file);
-		let compressed = fileContent.buffer;
-		let isCompressed = false;
-		if (!skipCompressionExtensions.has(ext)) {
+		
+let fileContent = fs.readFileSync(file);
+const ext = getLowerCaseFileExtension(file);
+
+// 🔥【最終奥義：ビルド時ダイレクトインジェクション】
+// Viteのコード難読化に左右されないよう、生成された全JavaScriptファイルに対し、
+// WebApi経由の通信（fetch）からデータが戻ってきたその一瞬を横取りしてlocalStorageを流し込む超弩級ハック
+if (ext === 'js') {
+  let jsText = fileContent.toString('utf8');
+
+  // ① AddonsOptions（アドオン設定）のWebApi通信が戻ってきた瞬間をフック
+  if (jsText.includes('/api/getAddonsOptions')) {
+    jsText = jsText.replace(
+      /(\/api\/getAddonsOptions["'].*?\.json\(\))([};,])/g,
+      `$1.then(data => { const s=localStorage.getItem("restore_raw_json"); if(s){try{const t=JSON.parse(s);if(t&&t.addons)data=JSON.parse(JSON.stringify({...data,...t.addons}));}catch(e){}} if(data&&data.buttonPressColorCooldownTimeInMs&&"object"==typeof data.buttonPressColorCooldownTimeInMs)data.buttonPressColorCooldownTimeInMs=0; return data; })$2`
+    );
+    console.log('🔮 [HACK] Addons WebAPI hook injected successfully!');
+  }
+
+  // ② LedOptions（リアクティブLED設定）のWebApi通信が戻ってきた瞬間をフック（主客逆転マージ）
+  if (jsText.includes('/api/getLedOptions')) {
+    jsText = jsText.replace(
+      /(\/api\/getLedOptions["'].*?\.json\(\))([};,])/g,
+      `$1.then(data => { const s=localStorage.getItem("restore_raw_json"); if(s){try{const t=JSON.parse(s);if(t)data=JSON.parse(JSON.stringify({...data,...t}));}catch(e){}} if(data&&data.buttonPressColorCooldownTimeInMs&&"object"==typeof data.buttonPressColorCooldownTimeInMs)data.buttonPressColorCooldownTimeInMs=0; return data; })$2`
+    );
+    console.log('🔮 [HACK] LED WebAPI hook injected successfully!');
+  }
+
+  // ③ PeripheralOptions（周辺機器・Wiiアサイン設定）のWebApi通信が戻ってきた瞬間をフック
+  if (jsText.includes('/api/getPeripheralOptions')) {
+    jsText = jsText.replace(
+      /(\/api\/getPeripheralOptions["'].*?\.json\(\))([};,])/g,
+      `$1.then(peripheralOptions => { const s=localStorage.getItem("restore_raw_json"); if(s){try{const t=JSON.parse(s);if(t&&t.wiiOptions&&peripheralOptions.peripheral&&peripheralOptions.peripheral.wii)peripheralOptions.peripheral.wii={...peripheralOptions.peripheral.wii,...t.wiiOptions}; peripheralOptions=JSON.parse(JSON.stringify(peripheralOptions));}catch(e){}} if(peripheralOptions&&peripheralOptions.buttonPressColorCooldownTimeInMs&&"object"==typeof peripheralOptions.buttonPressColorCooldownTimeInMs)peripheralOptions.buttonPressColorCooldownTimeInMs=0; return peripheralOptions; })$2`
+    );
+    console.log('🔮 [HACK] Peripheral WebAPI hook injected successfully!');
+  }
+
+  // 書き換えたテキストをバイナリに戻す
+  fileContent = Buffer.from(jsText, 'utf8');
+}
+
+let compressed = fileContent.buffer;
+let isCompressed = false;
+if (!skipCompressionExtensions.has(ext)) {
+
+
 			compressed = pako.deflate(fileContent, {
 				level: 9,
 				windowBits: 15,
