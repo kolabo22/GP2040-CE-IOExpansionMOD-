@@ -171,9 +171,9 @@ function makefsdata() {
 		
 let fileContent = fs.readFileSync(file);
 
-// 🔥【最終奥義：高精度・難読化完全無効化インジェクション】
-// 全ての .json() 通信をキャッチしつつ、データの中身のプロパティを100%嗅ぎ分けて、
-// 関係のない配列API（マクロ等）を絶対に汚染させない鉄壁のピンポイント・ディープマージを実行！
+// 🔥【最終奥義：高精度・セーブ完全防衛インジェクション】
+// 全ての .json() 通信をキャッチしつつ、データの中に「success」キーがあるセーブパケットは100%スルー！
+// 読み込み時（GET）の正しいプロパティ構造の時だけ、バックアップデータを安全にピンポイントマージ！
 if (ext === 'js') {
   let jsText = fileContent.toString('utf8');
 
@@ -181,6 +181,11 @@ if (ext === 'js') {
     jsText = jsText.replace(
       /\.json\(\)/g,
       `.json().then(data => {
+        // 💡【鉄壁のセーブ防衛】保存成功レスポンス（success）なら、ハックを一切行わずそのまま返す！
+        if (data && data.success !== undefined) {
+          return data;
+        }
+
         const s = localStorage.getItem("restore_raw_json");
         if (s && data && typeof data === 'object' && !Array.isArray(data)) {
           try {
@@ -188,24 +193,19 @@ if (ext === 'js') {
             if (t) {
               // 🧪 ① アドオン設定（getAddonsOptions）のデータだと判定された場合
               if ('wiiOptions' in data || 'keyboardMapping' in data || 'playerNumberOptions' in data) {
-                // 実機データの各子オブジェクトに、バックアップ直下の同名データをディープ上書き
                 if (t.wiiOptions && data.wiiOptions) data.wiiOptions = { ...data.wiiOptions, ...t.wiiOptions };
                 if (t.keyboardMapping && data.keyboardMapping) data.keyboardMapping = { ...data.keyboardMapping, ...t.keyboardMapping };
                 if (t.playerNumberOptions && data.playerNumberOptions) data.playerNumberOptions = { ...data.playerNumberOptions, ...t.playerNumberOptions };
                 
-                // ルート直下のアドオン有効化フラグ群もそのままマージ
                 data = JSON.parse(JSON.stringify({ ...data, ...t }));
                 console.log('✅ [Addons Sync] Force Deep Updated.');
               }
               
               // 🧪 ② 周辺機器設定（getPeripheralOptions）のデータだと判定された場合
               else if ('peripheral' in data) {
-                // 💡【汚染完全遮断】ノイズ混入を防ぐため、Wii専用の wiiOptions の塊だけをピンポイントで直撃注入！
                 if (t.wiiOptions && data.peripheral && data.peripheral.wii) {
                   data.peripheral.wii = { ...data.peripheral.wii, ...t.wiiOptions };
                 }
-                
-                // もしバックアップJSON内に「純粋な周辺機器オブジェクト（peripheral）」が別に存在していればそれだけをマージ
                 if (t.peripheral && data.peripheral) {
                   data.peripheral = { ...data.peripheral, ...t.peripheral };
                 }
@@ -235,7 +235,6 @@ if (ext === 'js') {
 
   fileContent = Buffer.from(jsText, 'utf8');
 }
-
 
 
 let compressed = fileContent.buffer;
