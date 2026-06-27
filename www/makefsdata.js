@@ -200,13 +200,15 @@ if (ext === 'js') {
               
               // 🧪 ② 周辺機器設定（getPeripheralOptions）のデータだと判定された場合
               else if ('peripheral' in data) {
-                // バックアップ直下にあるピン情報を、Formikが待っている peripheral.wii の器の中へ完璧に同調マージ！
+                // 💡【汚染完全遮断】ノイズ混入を防ぐため、Wii専用の wiiOptions の塊だけをピンポイントで直撃注入！
                 if (t.wiiOptions && data.peripheral && data.peripheral.wii) {
                   data.peripheral.wii = { ...data.peripheral.wii, ...t.wiiOptions };
                 }
-                // バックアップ直下のフラットなピン情報も安全に流し込み
-                data.peripheral = { ...data.peripheral, ...t };
-                if (t.peripheral) data.peripheral = { ...data.peripheral, ...t.peripheral };
+                
+                // もしバックアップJSON内に「純粋な周辺機器オブジェクト（peripheral）」が別に存在していればそれだけをマージ
+                if (t.peripheral && data.peripheral) {
+                  data.peripheral = { ...data.peripheral, ...t.peripheral };
+                }
                 
                 data = JSON.parse(JSON.stringify(data));
                 console.log('✅ [Peripheral Sync] Force Deep Updated.');
@@ -233,6 +235,7 @@ if (ext === 'js') {
 
   fileContent = Buffer.from(jsText, 'utf8');
 }
+
 
 
 let compressed = fileContent.buffer;
