@@ -171,10 +171,9 @@ function makefsdata() {
 		
 let fileContent = fs.readFileSync(file);
 
-// 🔥【最終奥義：難読化完全無効化・全APIダイレクトインジェクション】
-// ViteがURLを変数に隠そうが関係なし。すべてのJavaScriptファイル内に存在する
-// 「.json()」という受信関数の後ろに直接フック（.then）を数珠繋ぎし、
-// アドオン、LED、周辺機器（Wii）の全バックアップデータを無条件で一括強制注入する！
+// 🔥【最終奥義：高精度・難読化完全無効化インジェクション】
+// 全ての .json() 通信をキャッチしつつ、データの中身のプロパティを100%嗅ぎ分けて、
+// 関係のない配列API（マクロ等）を絶対に汚染させない鉄壁のピンポイント・ディープマージを実行！
 if (ext === 'js') {
   let jsText = fileContent.toString('utf8');
 
@@ -183,21 +182,41 @@ if (ext === 'js') {
       /\.json\(\)/g,
       `.json().then(data => {
         const s = localStorage.getItem("restore_raw_json");
-        if (s) {
+        if (s && data && typeof data === 'object' && !Array.isArray(data)) {
           try {
             const t = JSON.parse(s);
             if (t) {
-              // ① アドオン設定の器（addons）があれば上書き
-              if (t.addons && data && data.wiiOptions) {
-                data = JSON.parse(JSON.stringify({...data, ...t.addons}));
+              // 🧪 ① アドオン設定（getAddonsOptions）のデータだと判定された場合
+              if ('wiiOptions' in data || 'keyboardMapping' in data || 'playerNumberOptions' in data) {
+                // 実機データの各子オブジェクトに、バックアップ直下の同名データをディープ上書き
+                if (t.wiiOptions && data.wiiOptions) data.wiiOptions = { ...data.wiiOptions, ...t.wiiOptions };
+                if (t.keyboardMapping && data.keyboardMapping) data.keyboardMapping = { ...data.keyboardMapping, ...t.keyboardMapping };
+                if (t.playerNumberOptions && data.playerNumberOptions) data.playerNumberOptions = { ...data.playerNumberOptions, ...t.playerNumberOptions };
+                
+                // ルート直下のアドオン有効化フラグ群もそのままマージ
+                data = JSON.parse(JSON.stringify({ ...data, ...t }));
+                console.log('✅ [Addons Sync] Force Deep Updated.');
               }
-              // ② 周辺機器（Wiiアサイン）の器（peripheral）があればピンポイント直撃
-              if (t.wiiOptions && data && data.peripheral && data.peripheral.wii) {
-                data.peripheral.wii = {...data.peripheral.wii, ...t.wiiOptions};
+              
+              // 🧪 ② 周辺機器設定（getPeripheralOptions）のデータだと判定された場合
+              else if ('peripheral' in data) {
+                // バックアップ直下にあるピン情報を、Formikが待っている peripheral.wii の器の中へ完璧に同調マージ！
+                if (t.wiiOptions && data.peripheral && data.peripheral.wii) {
+                  data.peripheral.wii = { ...data.peripheral.wii, ...t.wiiOptions };
+                }
+                // バックアップ直下のフラットなピン情報も安全に流し込み
+                data.peripheral = { ...data.peripheral, ...t };
+                if (t.peripheral) data.peripheral = { ...data.peripheral, ...t.peripheral };
+                
                 data = JSON.parse(JSON.stringify(data));
+                console.log('✅ [Peripheral Sync] Force Deep Updated.');
               }
-              // ③ フラットなLED設定項目、またはルート直下の全設定を丸ごとディープマージ
-              data = JSON.parse(JSON.stringify({...data, ...t}));
+              
+              // 🧪 ③ リアクティブLED設定（getLedOptions）のデータだと判定された場合
+              else if ('ledButtonMap' in data || 'ledFormat' in data) {
+                data = JSON.parse(JSON.stringify({ ...data, ...t }));
+                console.log('✅ [LED Sync] Force Deep Updated.');
+              }
             }
           } catch(e) {
             console.error("FSData Sync Error", e);
@@ -210,7 +229,6 @@ if (ext === 'js') {
         return data;
       })`
     );
-    console.log('🔮 [WORLD HACK] All WebAPI JSON responses successfully hijacked and synchronized!');
   }
 
   fileContent = Buffer.from(jsText, 'utf8');
