@@ -237,6 +237,43 @@ const FormContext = ({
     fetchData();
   }, [setValues]);
 
+  // 🔥【後出しジャンケンシステム - LED専用機】
+  // 公式の実機ロードが完全に終わった直後、バックアップのLEDピンアサイン・ドラッグ順マップで画面全体を上書き！
+  useEffect(() => {
+    const savedJson = localStorage.getItem('restore_raw_json');
+    if (savedJson) {
+      try {
+        const fileData = JSON.parse(savedJson);
+        if (fileData) {
+          // 1. 公式が実機からロードし終わった現在のFormikの値（values）をベースにする
+          let currentValues = { ...values };
+
+          // 2. その上にバックアップJSON直下のLED関連項目（dataPin, ledButtonMap等）をディープマージ
+          currentValues = JSON.parse(JSON.stringify({ ...currentValues, ...fileData }));
+
+          // 3. 鉄壁のセーフティ（オブジェクト型バグの消滅）
+          if (currentValues && currentValues.buttonPressColorCooldownTimeInMs && typeof currentValues.buttonPressColorCooldownTimeInMs === 'object') {
+            currentValues.buttonPressColorCooldownTimeInMs = 0;
+          }
+
+          // 4. 復活した本物の ledButtonMap を元に、ドラッグリスト用のデータソースをその場で再組み立て！
+          const updatedDataSources = createDataSource(
+            currentValues.ledButtonMap,
+            buttonLabelType,
+            swapTpShareLabels,
+          );
+          setDataSources(updatedDataSources);
+
+          // 5. 新しく生まれ変わった完全体データをFormikに「後出し」で強制認知させる！
+          setValues(currentValues);
+          console.log('🔮 [LED Late Sync] LED parameters and DragList successfully overlaid after official load.');
+        }
+      } catch (e) {
+        console.error('LED late sync error', e);
+      }
+    }
+  }, [setValues]); // 💡 画面が開いて公式のロードが落ち着いたタイミングで1回確実に発動
+
   return null;
 };
 
